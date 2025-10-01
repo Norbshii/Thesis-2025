@@ -1,0 +1,816 @@
+/* Original Mobile-First Design */
+.student-profile {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e9ecef;
+  border-top: 4px solid #2c2c2c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN SYSTEM - Mobile First for All Screens
+   ======================================== */
+
+/* Small Screens (320px - 480px) */
+@media (max-width: 480px) {
+  .profile-container {
+    max-width: 100%;
+    margin: 10px;
+    padding: 15px;
+  }
+  
+  .dashboard-title-text {
+    font-size: 20px;
+  }
+  
+  .profile-picture .avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 20px;
+  }
+  
+  .profile-info h2 {
+    font-size: 20px;
+  }
+  
+  .profile-info p {
+    font-size: 13px;
+  }
+  
+  .edit-profile-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .classes-title {
+    font-size: 18px;
+  }
+}
+
+/* Medium Screens (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .profile-container {
+    max-width: 450px;
+    padding: 20px;
+  }
+  
+  .dashboard-title-text {
+    font-size: 22px;
+  }
+  
+  .profile-picture .avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 24px;
+  }
+  
+  .profile-info h2 {
+    font-size: 22px;
+  }
+  
+  .profile-info p {
+    font-size: 14px;
+  }
+  
+  .edit-profile-btn {
+    padding: 12px 24px;
+    font-size: 15px;
+  }
+}
+
+/* Large Screens (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .profile-container {
+    max-width: 600px;
+    padding: 30px;
+  }
+  
+  .dashboard-title-text {
+    font-size: 24px;
+  }
+  
+  .profile-picture .avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 28px;
+  }
+  
+  .profile-info h2 {
+    font-size: 24px;
+  }
+  
+  .profile-info p {
+    font-size: 14px;
+  }
+  
+  .edit-profile-btn {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+}
+
+/* Extra Large Screens (1025px+) */
+@media (min-width: 1025px) {
+  .profile-container {
+    max-width: 800px;
+    padding: 40px;
+  }
+  
+  .dashboard-title-text {
+    font-size: 26px;
+  }
+  
+  .profile-picture .avatar {
+    width: 90px;
+    height: 90px;
+    font-size: 32px;
+  }
+  
+  .profile-info h2 {
+    font-size: 26px;
+  }
+  
+  .profile-info p {
+    font-size: 15px;
+  }
+  
+  .edit-profile-btn {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
+  
+  .classes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+}
+
+/* Profile Header - Mobile Style for All Screens */
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  padding-bottom: 0;
+}
+
+.profile-picture .avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #2c2c2c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  border: 4px solid #007bff;
+}
+
+.profile-info {
+  flex: 1;
+  text-align: center;
+}
+
+/* Student Name - Separate Container */
+.student-name-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.student-name-container h2 {
+  margin: 0;
+  text-align: center;
+}
+
+/* Dashboard Title - Separate Container */
+.dashboard-title-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 0;
+}
+
+.dashboard-title-text {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a365d;
+  margin: 0;
+  text-align: center;
+}
+
+.profile-info h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.profile-info p {
+  margin: 0 0 5px 0;
+  color: #495057;
+  font-size: 14px;
+}
+
+.current-time {
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 12px;
+  display: inline-block;
+  margin-top: 10px;
+  text-align: center;
+  width: fit-content;
+}
+
+/* Avatar styles are now handled by .profile-picture .avatar */
+
+/* Student Information - Now using admin dashboard style */
+
+/* Edit Profile Button - Separate section */
+.edit-profile-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: -10px 0 10px 0;
+  padding: 10px 0;
+}
+
+.edit-profile-btn {
+  padding: 12px 24px;
+  background: #2c2c2c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.edit-profile-btn:hover {
+  background: #1a1a1a;
+}
+
+/* Current Time */
+.current-time {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* Classes Section */
+.classes-section {
+  margin-bottom: 30px;
+}
+
+.classes-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.classes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.class-item {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.class-item:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.class-item.unavailable {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.class-item.unavailable:hover {
+  transform: none;
+  background: #f8f9fa;
+  box-shadow: none;
+}
+
+.class-item.signed-in {
+  border-color: #28a745;
+  background: #d4edda;
+}
+
+.class-info {
+  margin-bottom: 15px;
+}
+
+.class-code {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 5px;
+}
+
+.class-name {
+  display: block;
+  font-size: 16px;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.class-time {
+  display: block;
+  font-size: 14px;
+  color: #6c757d;
+  margin-bottom: 5px;
+}
+
+.class-instructor {
+  display: block;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.class-status {
+  text-align: center;
+}
+
+.status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status.available {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status.signed-in {
+  background: #28a745;
+  color: white;
+}
+
+.status.unavailable {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status.always-available {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+/* No Classes */
+.no-classes {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+/* Logout Button - Copied from AdminDashboard */
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  width: 100%;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: #f8f9fa;
+  color: #2c3e50;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.btn-primary.sign-in-btn {
+  background: #28a745;
+}
+
+.btn-primary.sign-in-btn:hover {
+  background: #218838;
+}
+
+.btn-primary.sign-out-btn {
+  background: #dc3545;
+}
+
+.btn-primary.sign-out-btn:hover {
+  background: #c82333;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.form-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Class Info Modal */
+.class-info-modal h4 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin: 0 0 15px 0;
+}
+
+.class-info-modal p {
+  margin: 0 0 10px 0;
+  color: #495057;
+  font-size: 14px;
+}
+
+/* Time Restriction Modal */
+.time-restriction-info {
+  text-align: center;
+}
+
+.restriction-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.restriction-message h4 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin: 0 0 15px 0;
+}
+
+.restriction-message p {
+  color: #6c757d;
+  margin: 0 0 15px 0;
+  font-size: 14px;
+}
+
+.time-info {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.time-info p {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.time-info p:last-child {
+  margin: 0;
+}
+
+.help-text {
+  font-size: 14px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  animation: slideInRight 0.3s ease;
+}
+
+.toast.success {
+  border-left: 4px solid #28a745;
+}
+
+.toast.error {
+  border-left: 4px solid #dc3545;
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  gap: 12px;
+}
+
+.toast-icon {
+  font-size: 18px;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.toast-close:hover {
+  background: #f8f9fa;
+  color: #2c3e50;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .profile-container {
+    max-width: 500px;
+    padding: 40px;
+  }
+  
+  .avatar {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .avatar-placeholder {
+    font-size: 36px;
+  }
+  
+  .classes-title {
+    font-size: 28px;
+  }
+  
+  .class-item {
+    padding: 25px;
+  }
+  
+  .modal {
+    max-width: 500px;
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 25px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .profile-container {
+    max-width: 600px;
+    padding: 50px;
+  }
+  
+  .classes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  .class-item {
+    padding: 30px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .profile-container {
+    max-width: 700px;
+  }
+  
+  .classes-list {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+  }
+}
+
+/* Ensure dashboard title stays centered on all screen sizes */
+@media (min-width: 768px) {
+  .dashboard-title-container {
+    justify-content: center !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-title-container {
+    justify-content: center !important;
+  }
+  
+  .profile-info {
+    text-align: left !important;
+  }
+}
