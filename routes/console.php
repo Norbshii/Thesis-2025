@@ -24,3 +24,4 @@ Artisan::command('inspire', function () {
 
 
 
+
