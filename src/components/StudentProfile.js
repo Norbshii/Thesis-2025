@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import api, { authAPI } from '../services/api';
 import './StudentProfile.css';
 
 const StudentProfile = () => {
   const [student, setStudent] = useState({
-    name: 'Dave Lima',
-    age: 22,
-    course: 'BSCS 4B',
-    address: '123 Main Street, City, Province',
-    guardianName: 'Maria Lima',
-    relationship: 'Mother',
-    guardianPhone: '+63 912 345 6789',
+    name: '',
+    age: '',
+    course: '',
+    address: '',
+    guardianName: '',
+    relationship: '',
+    guardianPhone: '',
     profilePicture: null
   });
   
@@ -25,14 +25,16 @@ const StudentProfile = () => {
   const [toastType, setToastType] = useState('success');
   const [selectedClass, setSelectedClass] = useState(null);
   const [restrictedClassInfo, setRestrictedClassInfo] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: student.name,
-    age: student.age,
-    course: student.course,
-    address: student.address,
-    guardianName: student.guardianName,
-    relationship: student.relationship,
-    guardianPhone: student.guardianPhone
+    name: '',
+    age: '',
+    course: '',
+    address: '',
+    guardianName: '',
+    relationship: '',
+    guardianPhone: ''
   });
 
   useEffect(() => {
@@ -40,63 +42,90 @@ const StudentProfile = () => {
       setCurrentTime(new Date());
     }, 1000);
 
-    // Simulate loading and fetch data
+    // Load classes + profile
     const loadData = async () => {
-      try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock classes data
-        const mockClasses = [
-          {
-            id: 1,
-            code: 'CC 201',
-            name: 'Introduction to Computing 2',
-            timeSlot: '8:00 AM - 10:00 AM',
-            instructor: 'Prof. Smith',
-            isSignedIn: false
-          },
-          {
-            id: 2,
-            code: 'CS 301',
-            name: 'Data Structures',
-            timeSlot: '10:00 AM - 12:00 PM',
-            instructor: 'Prof. Johnson',
-            isSignedIn: false
-          },
-          {
-            id: 3,
-            code: 'CS 401',
-            name: 'Algorithm Analysis',
-            timeSlot: '1:00 PM - 3:00 PM',
-            instructor: 'Prof. Williams',
-            isSignedIn: false
-          },
-          {
-            id: 4,
-            code: 'CS 501',
-            name: 'Software Engineering',
-            timeSlot: '3:00 PM - 5:00 PM',
-            instructor: 'Prof. Brown',
-            isSignedIn: false
-          },
-          {
-            id: 5,
-            code: 'TEST 101',
-            name: 'Testing Class (Always Open)',
-            timeSlot: 'Always Available',
-            instructor: 'Prof. Test',
-            isSignedIn: false,
-            alwaysAvailable: true
-          }
-        ];
-        
-        setClasses(mockClasses);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setLoading(false);
+      const currentUser = authAPI.getStoredUser();
+      
+      // Load student profile first (independent of classes)
+      if (currentUser?.email) {
+        try {
+          const prof = await api.get('/student/profile', { params: { email: currentUser.email } });
+          const p = prof?.data?.profile || {};
+          const fallbackNameFromEmail = String(currentUser.email).split('@')[0].replace(/\./g, ' ').trim();
+          const merged = {
+            name: p.name || currentUser?.name || fallbackNameFromEmail || '',
+            age: p.age || '',
+            course: p.course || '',
+            address: p.address || '',
+            guardianName: p.guardianName || '',
+            relationship: p.relationship || '',
+            guardianPhone: p.guardianPhone || '',
+            profilePicture: null
+          };
+          setStudent(merged);
+          setEditForm(merged);
+        } catch (e) {
+          console.error('Profile load error:', e);
+          // Fallback to email-derived name
+          const fallbackNameFromEmail = String(currentUser.email).split('@')[0].replace(/\./g, ' ').trim();
+          const fallback = {
+            name: currentUser?.name || fallbackNameFromEmail || '',
+            age: '',
+            course: '',
+            address: '',
+            guardianName: '',
+            relationship: '',
+            guardianPhone: '',
+            profilePicture: null
+          };
+          setStudent(fallback);
+          setEditForm(fallback);
+        }
       }
+
+      // Load classes (separate try/catch so profile still loads if classes fail)
+      try {
+        const response = await api.get('/classes');
+        const allClasses = response?.data?.classes || [];
+        
+        // Get student's record ID from students API
+        let studentRecordId = null;
+        try {
+          const studentsResponse = await api.get('/students');
+          const allStudents = studentsResponse.data.students || [];
+          const studentRecord = allStudents.find(s => s.email === currentUser?.email);
+          studentRecordId = studentRecord?.id;
+        } catch (e) {
+          console.error('Error fetching student ID:', e);
+        }
+        
+        // Filter to only show classes where student is enrolled
+        const enrolledClasses = studentRecordId 
+          ? allClasses.filter(classItem => {
+              const enrolledStudents = classItem.enrolledStudents || [];
+              return enrolledStudents.includes(studentRecordId);
+            })
+          : []; // If no student ID found, show no classes
+        
+        const mapped = enrolledClasses.map(r => ({
+          id: r.id,
+          code: r.code || 'N/A',
+          name: r.name || 'N/A',
+          timeSlot: r.time_slot || 'Always Available',
+          instructor: r.instructor || 'N/A',
+          isSignedIn: !!r.is_signed_in,
+          alwaysAvailable: !!r.always_available,
+          isOpen: !!r.isOpen,
+          startTime: r.startTime || null,
+          endTime: r.endTime || null
+        }));
+        setClasses(mapped);
+      } catch (error) {
+        console.error('Error loading classes:', error);
+        // Keep empty classes array
+      }
+
+        setLoading(false);
     };
 
     loadData();
@@ -172,24 +201,108 @@ const StudentProfile = () => {
   const handleSignInOut = async (action) => {
     if (!selectedClass) return;
 
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+    if (action === 'sign_in') {
+      // For sign-in, we need geolocation
+      if (!navigator.geolocation) {
+        showToastMessage('Geolocation is not supported by your browser', 'error');
+        return;
+      }
+
+      setIsSigningIn(true);
+
+      try {
+        // Get student's current location
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        });
+
+        const { latitude, longitude } = position.coords;
+        const currentUser = authAPI.getStoredUser();
+
+        // Call API to sign in with geolocation validation
+        const response = await api.post('/classes/student-signin', {
+          classId: selectedClass.id,
+          studentEmail: currentUser?.email || '',
+          studentName: student.name || currentUser?.name || 'Student',
+          latitude: latitude,
+          longitude: longitude
+        });
+
+        if (response.data.success) {
+          setClasses(classes.map(c => 
+            c.id === selectedClass.id 
+              ? { ...c, isSignedIn: true }
+              : c
+          ));
+
+          const message = response.data.message;
+          const distance = response.data.distance;
+          showToastMessage(`${message} (Distance: ${distance}m from classroom)`, 'success');
+          
+          setShowSignInModal(false);
+          setSelectedClass(null);
+        } else {
+          showToastMessage(response.data.message || 'Failed to sign in', 'error');
+        }
+      } catch (error) {
+        console.error('Error signing in:', error);
+        
+        // Better error messages
+        if (error.response?.status === 403) {
+          const errorMsg = error.response?.data?.message || '';
+          console.log('403 Error Message:', errorMsg);
+          
+          if (errorMsg.includes('not open')) {
+            showToastMessage('⏸️ Class is not open yet. Please wait for the teacher to open the class.', 'error');
+          } else if (errorMsg.includes('not within')) {
+            showToastMessage('📍 You are not in the classroom area. Please move closer to sign in.', 'error');
+          } else if (errorMsg.includes('geofence not set')) {
+            showToastMessage('⏸️ Class is not open yet. Teacher needs to open the class first.', 'error');
+          } else {
+            showToastMessage(errorMsg || 'Cannot sign in at this time', 'error');
+          }
+        } else if (error.code) {
+          // Geolocation error
+          const errorMessages = {
+            1: 'Location permission denied. Please enable location access to sign in.',
+            2: 'Location unavailable. Please check your device settings.',
+            3: 'Location request timed out. Please try again.'
+          };
+          showToastMessage(errorMessages[error.code] || 'Failed to get location', 'error');
+        } else if (error.response?.data?.message) {
+          showToastMessage(error.response.data.message, 'error');
+        } else {
+          showToastMessage('Failed to sign in. Please try again.', 'error');
+        }
+      } finally {
+        setIsSigningIn(false);
+      }
+    } else {
+      // For sign-out, no geolocation needed
+      try {
+        await api.post('/class/toggle-signin', {
+          record_id: selectedClass.id,
+          action: 'sign_out'
+        });
 
       setClasses(classes.map(c => 
         c.id === selectedClass.id 
-          ? { ...c, isSignedIn: action === 'sign_in' }
+            ? { ...c, isSignedIn: false }
           : c
       ));
 
-      const actionText = action === 'sign_in' ? 'signed in to' : 'signed out of';
-      showToastMessage(`Successfully ${actionText} ${selectedClass.code} - ${selectedClass.name}`, 'success');
+        showToastMessage(`Successfully signed out of ${selectedClass.code} - ${selectedClass.name}`, 'success');
       
       setShowSignInModal(false);
       setSelectedClass(null);
     } catch (error) {
-      console.error('Error updating class status:', error);
-      showToastMessage('Failed to update class status', 'error');
+        console.error('Error signing out:', error);
+        showToastMessage('Failed to sign out', 'error');
+      }
     }
   };
 
@@ -203,10 +316,34 @@ const StudentProfile = () => {
   };
 
   const handleEditProfile = () => {
+    // Preload edit form with current student values
+    setEditForm({
+      name: student.name || '',
+      age: student.age || '',
+      course: student.course || '',
+      address: student.address || '',
+      guardianName: student.guardianName || '',
+      relationship: student.relationship || '',
+      guardianPhone: student.guardianPhone || ''
+    });
     setShowEditModal(true);
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const currentUser = authAPI.getStoredUser();
+      const response = await api.post('/student/profile', {
+        email: currentUser?.email,
+        name: editForm.name,
+        age: editForm.age ? parseInt(editForm.age, 10) : null,
+        course: editForm.course,
+        address: editForm.address,
+        guardianName: editForm.guardianName,
+        relationship: editForm.relationship,
+        guardianPhone: editForm.guardianPhone
+      });
+      console.log('Profile save response:', response.data);
     setStudent({
       ...student,
       name: editForm.name,
@@ -219,6 +356,13 @@ const StudentProfile = () => {
     });
     setShowEditModal(false);
     showToastMessage('Profile updated successfully', 'success');
+    } catch (err) {
+      console.error('Profile save failed:', err);
+      const errorMsg = err?.response?.data?.message || err?.message || 'Failed to update profile';
+      showToastMessage(errorMsg, 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -244,6 +388,11 @@ const StudentProfile = () => {
     });
   };
 
+  // Derive a display name even if Airtable field is briefly unavailable
+  const storedUser = authAPI.getStoredUser();
+  const emailDerived = storedUser?.email ? String(storedUser.email).split('@')[0].replace(/\./g, ' ').trim() : '';
+  const displayName = (student.name && String(student.name).trim()) || storedUser?.name || emailDerived || '';
+
   if (loading) {
     return (
       <div className="student-profile">
@@ -267,13 +416,13 @@ const StudentProfile = () => {
         <div className="profile-header">
           <div className="profile-picture">
             <div className="avatar">
-              {student.name.split(' ').map(n => n[0]).join('')}
+              {displayName.split(' ').map(n => n[0]).join('')}
             </div>
           </div>
           <div className="profile-info">
             {/* Student Name - Separate Container */}
             <div className="student-name-container">
-              <h2>{student.name}</h2>
+              <h2>{displayName}</h2>
             </div>
             
             <p><strong>Course & Section:</strong> {student.course}</p>
@@ -454,11 +603,11 @@ const StudentProfile = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowEditModal(false)}>
+              <button className="btn-secondary" onClick={() => setShowEditModal(false)} disabled={isSaving}>
                 Cancel
               </button>
-              <button className="btn-primary" onClick={handleSaveProfile}>
-                Save Changes
+              <button className="btn-primary" onClick={handleSaveProfile} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -496,8 +645,16 @@ const StudentProfile = () => {
               <button 
                 className={`btn-primary ${selectedClass.isSignedIn ? 'sign-out-btn' : 'sign-in-btn'}`}
                 onClick={() => handleSignInOut(selectedClass.isSignedIn ? 'sign_out' : 'sign_in')}
+                disabled={isSigningIn}
               >
-                {selectedClass.isSignedIn ? 'Sign Out' : 'Sign In'}
+                {isSigningIn ? (
+                  <>
+                    <span className="spinner"></span>
+                    Signing in...
+                  </>
+                ) : (
+                  selectedClass.isSignedIn ? 'Sign Out' : 'Sign In'
+                )}
               </button>
             </div>
           </div>

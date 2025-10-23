@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../services/api';
 import './LoginPage.css';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('student'); // 'student' or 'admin'
   const [formData, setFormData] = useState({
     email: '',
@@ -60,54 +63,28 @@ const LoginPage = () => {
     setIsLoading(true);
     setError('');
 
-    // TEMPORARY: Bypass authentication for testing
-    let mockUser;
-    
-    if (activeTab === 'student') {
-      // Student login - any email/password works
-      mockUser = {
-        id: 1,
-        username: formData.email,
-        email: formData.email,
-        first_name: 'Dave',
-        last_name: 'Lima',
-        role: 'student'
-      };
-    } else {
-      // Admin login - check credentials
-      if (formData.email === 'admin@gmail.com' && formData.password === 'admin123') {
-        mockUser = {
-          id: 2,
-          username: 'admin@gmail.com',
-          email: 'admin@gmail.com',
-          first_name: 'Dr. Maria',
-          last_name: 'Santos',
-          role: 'admin'
-        };
-      } else {
-        setError('Invalid admin credentials. Use: admin@gmail.com / admin123');
-        setIsLoading(false);
-        return;
-      }
-    }
+    try {
+      const { email, password } = formData;
+      const username = email; // backend accepts username or email
+      const login_type = activeTab === 'admin' ? 'admin' : 'student';
+      const resp = await authAPI.login({ username, password, login_type });
 
-    // Store mock authentication data
-    localStorage.setItem('auth_token', 'mock_token_for_testing');
-    localStorage.setItem('user_data', JSON.stringify(mockUser));
-    
-    // Store remember me preference
-    if (rememberMe) {
-      localStorage.setItem('rememberMe', 'true');
-    } else {
-      localStorage.removeItem('rememberMe');
+      // Store remember me preference
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberMe');
+      }
+
+      setError('');
+      setValidationErrors({});
+      const role = String(resp?.user?.role || '').toLowerCase();
+      const isStaff = role === 'admin' || role === 'teacher';
+      navigate(isStaff ? '/admin' : '/dashboard', { replace: true });
+    } catch (e) {
+      const message = typeof e === 'string' ? e : (e?.message || 'Login failed');
+      setError(message);
     }
-    
-    // Clear any existing errors
-    setError('');
-    setValidationErrors({});
-    
-    // Redirect to dashboard
-    window.location.href = '/dashboard';
     
     setIsLoading(false);
   };

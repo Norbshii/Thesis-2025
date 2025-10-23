@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import api, { authAPI } from '../services/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
   const [professor, setProfessor] = useState({
-    name: 'Dr. Maria Santos',
-    department: 'Computer Science',
-    email: 'admin@gmail.com',
+    name: '',
+    department: '',
+    email: '',
     profilePicture: null
   });
 
@@ -21,6 +21,9 @@ const AdminDashboard = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showManageStudentsModal, setShowManageStudentsModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
   
   // Toast states
   const [showToast, setShowToast] = useState(false);
@@ -45,6 +48,10 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [availableStudents, setAvailableStudents] = useState([]);
+  
+  // Loading states
+  const [isCreatingClass, setIsCreatingClass] = useState(false);
+  const [isAddingStudents, setIsAddingStudents] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -53,64 +60,65 @@ const AdminDashboard = () => {
 
     const loadData = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const currentUser = authAPI.getStoredUser();
         
-        // Mock classes data
-        const mockClasses = [
-          {
-            id: 1,
-            code: 'CC 201',
-            name: 'Introduction to Computing 2',
-            date: '2024-01-15',
-            startTime: '08:00',
-            endTime: '10:00',
-            maxStudents: 30,
-            lateThreshold: 15,
-            isManualControl: false,
-            isOpen: false,
-            enrolledStudents: ['Dave Lima', 'Mary Johnson', 'John Smith'],
-            attendance: [
-              { name: 'Dave Lima', signedIn: true, time: '08:05', isLate: false },
-              { name: 'Mary Johnson', signedIn: true, time: '07:55', isLate: false },
-              { name: 'John Smith', signedIn: false, time: null, isLate: false }
-            ]
-          },
-          {
-            id: 2,
-            code: 'CS 301',
-            name: 'Data Structures',
-            date: '2024-01-15',
-            startTime: '10:00',
-            endTime: '12:00',
-            maxStudents: 25,
-            lateThreshold: 15,
-            isManualControl: true,
-            isOpen: true,
-            enrolledStudents: ['Dave Lima', 'Mary Johnson'],
-            attendance: [
-              { name: 'Dave Lima', signedIn: true, time: '10:02', isLate: false },
-              { name: 'Mary Johnson', signedIn: true, time: '10:18', isLate: true }
-            ]
+        // Load teacher profile from Airtable
+        if (currentUser?.email) {
+          try {
+            const prof = await api.get('/student/profile', { params: { email: currentUser.email } });
+            const p = prof?.data?.profile || {};
+            const emailDerived = String(currentUser.email).split('@')[0].replace(/\./g, ' ').trim();
+            setProfessor({
+              name: p.name || currentUser?.name || emailDerived || 'Teacher',
+              department: p.department || 'Computer Science',
+              email: p.email || currentUser.email || '',
+              profilePicture: null
+            });
+          } catch (e) {
+            // Fallback if profile not found
+            const emailDerived = String(currentUser.email).split('@')[0].replace(/\./g, ' ').trim();
+            setProfessor({
+              name: currentUser?.name || emailDerived || 'Teacher',
+              department: 'Computer Science',
+              email: currentUser.email || '',
+              profilePicture: null
+            });
           }
-        ];
-
-        const mockStudents = [
-          { id: 1, name: 'Dave Lima', email: 'dave.lima@student.edu', course: 'BSCS 4B' },
-          { id: 2, name: 'Mary Johnson', email: 'mary.johnson@student.edu', course: 'BSCS 3A' },
-          { id: 3, name: 'John Smith', email: 'john.smith@student.edu', course: 'BSCS 4B' },
-          { id: 4, name: 'Sarah Wilson', email: 'sarah.wilson@student.edu', course: 'BSCS 3B' },
-          { id: 5, name: 'Mike Brown', email: 'mike.brown@student.edu', course: 'BSCS 4A' },
-          { id: 6, name: 'Emily Davis', email: 'emily.davis@student.edu', course: 'BSCS 3A' },
-          { id: 7, name: 'James Wilson', email: 'james.wilson@student.edu', course: 'BSCS 4B' },
-          { id: 8, name: 'Lisa Anderson', email: 'lisa.anderson@student.edu', course: 'BSCS 3C' },
-          { id: 9, name: 'Robert Taylor', email: 'robert.taylor@student.edu', course: 'BSCS 4A' },
-          { id: 10, name: 'Jennifer Martinez', email: 'jennifer.martinez@student.edu', course: 'BSCS 3B' },
-          { id: 11, name: 'David Garcia', email: 'david.garcia@student.edu', course: 'BSCS 4C' },
-          { id: 12, name: 'Amanda Lee', email: 'amanda.lee@student.edu', course: 'BSCS 3A' }
-        ];
+        }
         
-        setClasses(mockClasses);
-        setStudents(mockStudents);
+        // Load classes from Airtable (filtered by teacher email)
+        try {
+          const classesResponse = await api.get('/classes', {
+            params: { teacherEmail: currentUser?.email }
+          });
+          const loadedClasses = classesResponse.data.classes || [];
+          
+          // Filter out empty classes (rows with no code or name)
+          const validClasses = loadedClasses.filter(cls => cls.code && cls.name);
+          
+          // Classes already have enrolledStudents from Airtable
+          const classesWithAttendance = validClasses.map(cls => ({
+            ...cls,
+            enrolledStudents: cls.enrolledStudents || [],
+            attendance: []
+          }));
+          
+          setClasses(classesWithAttendance);
+        } catch (error) {
+          console.error('Error loading classes:', error);
+          showToastMessage('Failed to load classes', 'error');
+        }
+
+        // Load students from Airtable Students table
+        try {
+          const studentsResponse = await api.get('/students');
+          const loadedStudents = studentsResponse.data.students || [];
+          setStudents(loadedStudents);
+        } catch (error) {
+          console.error('Error loading students:', error);
+          showToastMessage('Failed to load students', 'error');
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error('Error loading data:', error);
@@ -131,56 +139,193 @@ const AdminDashboard = () => {
     }, 3000);
   };
 
-  const handleAddClass = () => {
-    if (!newClass.code || !newClass.name || !newClass.date || !newClass.startTime || !newClass.endTime) {
+  const handleAddClass = async () => {
+    if (!newClass.code || !newClass.name || !newClass.startTime || !newClass.endTime) {
       showToastMessage('Please fill in all required fields', 'error');
       return;
     }
 
-    const classData = {
-      id: classes.length + 1,
-      ...newClass,
-      isOpen: false,
-      enrolledStudents: [],
-      attendance: []
-    };
+    setIsCreatingClass(true);
+    try {
+      const currentUser = authAPI.getStoredUser();
+      // Always use today's date
+      const today = new Date().toISOString().split('T')[0];
+      const payload = {
+        code: newClass.code,
+        name: newClass.name,
+        date: today,
+        startTime: newClass.startTime,
+        endTime: newClass.endTime,
+        maxStudents: parseInt(newClass.maxStudents, 10) || 30,
+        lateThreshold: parseInt(newClass.lateThreshold, 10) || 15,
+        isManualControl: newClass.isManualControl,
+        teacherEmail: currentUser?.email
+      };
+      console.log('Creating class with payload:', payload);
+      const response = await api.post('/classes', payload);
 
-    setClasses([...classes, classData]);
-    setNewClass({
-      code: '',
-      name: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      maxStudents: 30,
-      lateThreshold: 15,
-      isManualControl: false
-    });
-    setShowAddClassModal(false);
-    showToastMessage('Class added successfully', 'success');
+      const newClassData = {
+        ...response.data.class,
+        enrolledStudents: [],
+        attendance: []
+      };
+
+      setClasses([...classes, newClassData]);
+      // Get today's date for the next class
+      const nextClassDate = new Date().toISOString().split('T')[0];
+      setNewClass({
+        code: '',
+        name: '',
+        date: nextClassDate,
+        startTime: '',
+        endTime: '',
+        maxStudents: 30,
+        lateThreshold: 15,
+        isManualControl: false
+      });
+      setShowAddClassModal(false);
+      showToastMessage('Class added successfully', 'success');
+    } catch (error) {
+      console.error('Error adding class:', error);
+      const errorMsg = error.response?.data?.message || 'Failed to add class';
+      showToastMessage(errorMsg, 'error');
+    } finally {
+      setIsCreatingClass(false);
+    }
   };
 
-  const handleToggleClassStatus = (classId) => {
-    setClasses(classes.map(c => 
-      c.id === classId ? { ...c, isOpen: !c.isOpen } : c
-    ));
+  const handleToggleClassStatus = async (classId) => {
     const classItem = classes.find(c => c.id === classId);
-    showToastMessage(`Class ${classItem.isOpen ? 'closed' : 'opened'} successfully`, 'success');
+    const isCurrentlyOpen = classItem.isOpen;
+
+    if (!isCurrentlyOpen) {
+      // Opening class - get teacher's location
+      if (!navigator.geolocation) {
+        showToastMessage('Geolocation is not supported by your browser. Please use a modern browser like Chrome, Firefox, or Safari.', 'error');
+        return;
+      }
+
+      // Show loading message
+      showToastMessage('Requesting your location... Please allow location access when prompted.', 'info');
+
+      try {
+        console.log('Requesting geolocation...');
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              console.log('Location obtained:', pos.coords);
+              resolve(pos);
+            },
+            (err) => {
+              console.error('Geolocation error:', err);
+              reject(err);
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 15000, // Increased timeout to 15 seconds
+              maximumAge: 0
+            }
+          );
+        });
+
+        const { latitude, longitude, accuracy } = position.coords;
+        console.log(`Location: ${latitude}, ${longitude}, Accuracy: ${accuracy}m`);
+
+        // Call API to open class with geolocation
+        const response = await api.post('/classes/open', {
+          classId: classId,
+          latitude: latitude,
+          longitude: longitude
+        });
+
+        setClasses(classes.map(c => 
+          c.id === classId ? { ...c, isOpen: true } : c
+        ));
+
+        // Check if geofencing is active
+        if (response.data.geofence_active === false) {
+          showToastMessage(`${response.data.message}\n\n${response.data.warning}`, 'info');
+        } else {
+          showToastMessage(`Class opened successfully! Geofence set (50m radius, accuracy: ${Math.round(accuracy)}m)`, 'success');
+        }
+      } catch (error) {
+        console.error('Geolocation error:', error);
+        if (error.code) {
+          // Geolocation error
+          const errorMessages = {
+            1: 'Location permission denied. Please click "Allow" when your browser asks for location access. You may need to check your browser settings.',
+            2: 'Location unavailable. Please ensure location services are enabled on your device and try again.',
+            3: 'Location request timed out. This may happen if GPS signal is weak. Try moving closer to a window or outside, then try again.'
+          };
+          showToastMessage(errorMessages[error.code] || 'Failed to get location. Please try again.', 'error');
+        } else if (error.response) {
+          showToastMessage(error.response?.data?.message || 'Failed to open class. Please try again.', 'error');
+        } else {
+          showToastMessage('Failed to open class. Please check your internet connection and try again.', 'error');
+        }
+      }
+    } else {
+      // Closing class
+      try {
+        await api.post('/classes/close', {
+          classId: classId
+        });
+
+        setClasses(classes.map(c => 
+          c.id === classId ? { ...c, isOpen: false } : c
+        ));
+        showToastMessage('Class closed successfully', 'success');
+      } catch (error) {
+        console.error('Error closing class:', error);
+        showToastMessage('Failed to close class. Please try again.', 'error');
+      }
+    }
   };
 
-  const handleViewClassDetails = (classItem) => {
+  const handleViewClassDetails = async (classItem) => {
     setSelectedClass(classItem);
     setShowClassDetailsModal(true);
+    // Fetch attendance for today by default
+    await fetchAttendance(classItem.id, selectedDate);
+  };
+
+  const fetchAttendance = async (classId, date) => {
+    setLoadingAttendance(true);
+    try {
+      const response = await api.get(`/classes/${classId}/attendance`, {
+        params: { date }
+      });
+      
+      if (response.data.success) {
+        setAttendanceRecords(response.data.attendance || []);
+      } else {
+        setAttendanceRecords([]);
+        showToastMessage('Failed to load attendance records', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching attendance:', error);
+      setAttendanceRecords([]);
+      showToastMessage('Error loading attendance', 'error');
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
+
+  const handleDateChange = async (newDate) => {
+    setSelectedDate(newDate);
+    if (selectedClass) {
+      await fetchAttendance(selectedClass.id, newDate);
+    }
   };
 
   const handleAddStudentsToClass = (classId) => {
     const classItem = classes.find(c => c.id === classId);
     setSelectedClass(classItem);
     
-    // Filter out students who are already enrolled in this class
-    const enrolledStudentNames = classItem.enrolledStudents;
+    // Filter out students who are already enrolled in this class (by student ID)
+    const enrolledStudentIds = classItem.enrolledStudents || [];
     const availableStudentsList = students.filter(student => 
-      !enrolledStudentNames.includes(student.name)
+      !enrolledStudentIds.includes(student.id)
     );
     
     setAvailableStudents(availableStudentsList);
@@ -201,55 +346,95 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleAddSelectedStudents = () => {
+  const handleAddSelectedStudents = async () => {
     if (selectedStudents.length === 0) {
       showToastMessage('Please select at least one student', 'error');
       return;
     }
 
-    const selectedStudentNames = students
-      .filter(student => selectedStudents.includes(student.id))
-      .map(student => student.name);
+    setIsAddingStudents(true);
+    try {
+      // Send student IDs to backend to save in Airtable
+      const response = await api.post('/classes/add-students', {
+        classId: selectedClass.id,
+        studentIds: selectedStudents
+      });
 
-    // Update the class with new students
-    const updatedClasses = classes.map(classItem => 
-      classItem.id === selectedClass.id 
-        ? { 
-            ...classItem, 
-            enrolledStudents: [...classItem.enrolledStudents, ...selectedStudentNames],
-            attendance: [
-              ...classItem.attendance,
-              ...selectedStudentNames.map(name => ({
-                name,
-                signedIn: false,
-                time: null,
-                isLate: false
-              }))
-            ]
-          }
-        : classItem
-    );
+      // Get the student names for display
+      const selectedStudentNames = students
+        .filter(student => selectedStudents.includes(student.id))
+        .map(student => student.name);
 
-    setClasses(updatedClasses);
-    setShowManageStudentsModal(false);
-    setSelectedStudents([]);
-    setSearchTerm('');
-    showToastMessage(`${selectedStudentNames.length} student(s) added successfully`, 'success');
+      // Update local state with enrolled students
+      const updatedClasses = classes.map(classItem => 
+        classItem.id === selectedClass.id 
+          ? { 
+              ...classItem, 
+              enrolledStudents: response.data.enrolledStudents || [...(classItem.enrolledStudents || []), ...selectedStudents],
+              attendance: [
+                ...(classItem.attendance || []),
+                ...selectedStudentNames.map(name => ({
+                  name,
+                  signedIn: false,
+                  time: null,
+                  isLate: false
+                }))
+              ]
+            }
+          : classItem
+      );
+
+      setClasses(updatedClasses);
+      setShowManageStudentsModal(false);
+      setSelectedStudents([]);
+      setSearchTerm('');
+      showToastMessage(`${selectedStudentNames.length} student(s) added successfully`, 'success');
+    } catch (error) {
+      console.error('Error adding students:', error);
+      showToastMessage('Failed to add students. Please try again.', 'error');
+    } finally {
+      setIsAddingStudents(false);
+    }
   };
 
-  const handleRemoveStudent = (studentName) => {
-    const updatedClasses = classes.map(classItem => 
-      classItem.id === selectedClass.id 
-        ? { 
-            ...classItem, 
-            enrolledStudents: classItem.enrolledStudents.filter(name => name !== studentName),
-            attendance: classItem.attendance.filter(att => att.name !== studentName)
-          }
-        : classItem
-    );
+  const handleRemoveStudent = async (studentId) => {
+    try {
+      // Get student name for display
+      const student = students.find(s => s.id === studentId);
+      const studentName = student ? student.name : 'Student';
 
-    setClasses(updatedClasses);
-    showToastMessage(`${studentName} removed from class`, 'success');
+      // Send request to backend to remove student from Airtable
+      await api.post('/classes/remove-student', {
+        classId: selectedClass.id,
+        studentId: studentId
+      });
+
+      // Update local state
+      const updatedClasses = classes.map(classItem => 
+        classItem.id === selectedClass.id 
+          ? { 
+              ...classItem, 
+              enrolledStudents: (classItem.enrolledStudents || []).filter(id => id !== studentId),
+              attendance: (classItem.attendance || []).filter(att => att.name !== studentName)
+            }
+          : classItem
+      );
+
+      setClasses(updatedClasses);
+      
+      // Update selectedClass if the modal is still open
+      if (selectedClass && selectedClass.id === selectedClass.id) {
+        setSelectedClass({
+          ...selectedClass,
+          enrolledStudents: (selectedClass.enrolledStudents || []).filter(id => id !== studentId)
+        });
+      }
+      
+      showToastMessage(`${studentName} removed from class`, 'success');
+    } catch (error) {
+      console.error('Error removing student:', error);
+      showToastMessage('Failed to remove student. Please try again.', 'error');
+    }
   };
 
   const getFilteredStudents = () => {
@@ -260,6 +445,11 @@ const AdminDashboard = () => {
       student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.course.toLowerCase().includes(searchTerm.toLowerCase())
     );
+  };
+
+  // Helper function to get student details from ID
+  const getStudentById = (studentId) => {
+    return students.find(s => s.id === studentId);
   };
 
   const handleLogout = async () => {
@@ -375,10 +565,10 @@ const AdminDashboard = () => {
                       <h3 className="class-code">{classItem.code}</h3>
                       <h4 className="class-name">{classItem.name}</h4>
                       <p className="class-schedule">
-                        📅 {formatDate(classItem.date)} | 🕒 {classItem.startTime} - {classItem.endTime}
+                        📅 {formatDate(new Date().toISOString().split('T')[0])} | 🕒 {classItem.startTime || 'N/A'} - {classItem.endTime || 'N/A'}
                       </p>
                       <p className="class-stats">
-                        👥 {classItem.enrolledStudents.length}/{classItem.maxStudents} students
+                        👥 {classItem.enrolledStudents?.length || 0}/{classItem.maxStudents || 0} students
                       </p>
                     </div>
                     <div className="class-status">
@@ -492,14 +682,6 @@ const AdminDashboard = () => {
               
               <div className="form-row">
                 <div className="form-group">
-                  <label>Date:</label>
-                  <input
-                    type="date"
-                    value={newClass.date}
-                    onChange={(e) => setNewClass({...newClass, date: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
                   <label>Max Students:</label>
                   <input
                     type="number"
@@ -507,6 +689,16 @@ const AdminDashboard = () => {
                     onChange={(e) => setNewClass({...newClass, maxStudents: parseInt(e.target.value)})}
                     min="1"
                     max="100"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Late Threshold (minutes):</label>
+                  <input
+                    type="number"
+                    value={newClass.lateThreshold}
+                    onChange={(e) => setNewClass({...newClass, lateThreshold: parseInt(e.target.value)})}
+                    min="0"
+                    max="60"
                   />
                 </div>
               </div>
@@ -532,16 +724,6 @@ const AdminDashboard = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Late Threshold (minutes):</label>
-                  <input
-                    type="number"
-                    value={newClass.lateThreshold}
-                    onChange={(e) => setNewClass({...newClass, lateThreshold: parseInt(e.target.value)})}
-                    min="1"
-                    max="60"
-                  />
-                </div>
-                <div className="form-group">
                   <label>
                     <input
                       type="checkbox"
@@ -554,11 +736,26 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowAddClassModal(false)}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowAddClassModal(false)}
+                disabled={isCreatingClass}
+              >
                 Cancel
               </button>
-              <button className="btn-primary" onClick={handleAddClass}>
-                Add Class
+              <button 
+                className="btn-primary" 
+                onClick={handleAddClass}
+                disabled={isCreatingClass}
+              >
+                {isCreatingClass ? (
+                  <>
+                    <span className="spinner"></span>
+                    Creating...
+                  </>
+                ) : (
+                  'Add Class'
+                )}
               </button>
             </div>
           </div>
@@ -586,25 +783,71 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="detail-section">
-                  <h4>Attendance ({selectedClass.attendance.length} students)</h4>
-                  <div className="attendance-list">
-                    {selectedClass.attendance.map((student, index) => (
-                      <div key={index} className={`attendance-item ${student.isLate ? 'late' : ''}`}>
-                        <div className="student-info">
-                          <span className="student-name">{student.name}</span>
-                          <span className={`status ${student.signedIn ? 'present' : 'absent'}`}>
-                            {student.signedIn ? '✅ Present' : '❌ Absent'}
-                          </span>
-                        </div>
-                        {student.signedIn && (
-                          <div className="sign-in-info">
-                            <span className="sign-in-time">Signed in: {student.time}</span>
-                            {student.isLate && <span className="late-badge">LATE</span>}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h4>Attendance Records</h4>
+                    <div className="date-picker-container">
+                      <label style={{ marginRight: '10px', fontSize: '14px' }}>Select Date:</label>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => handleDateChange(e.target.value)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1px solid #ddd',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
                   </div>
+
+                  {loadingAttendance ? (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                      Loading attendance records...
+                    </div>
+                  ) : attendanceRecords.length === 0 ? (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '20px', 
+                      color: '#999',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '8px'
+                    }}>
+                      <p style={{ margin: 0 }}>📋 No attendance records for this date</p>
+                      <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Students will appear here after they sign in</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ 
+                        color: '#666', 
+                        fontSize: '14px', 
+                        marginBottom: '10px',
+                        fontWeight: '500'
+                      }}>
+                        {attendanceRecords.length} student{attendanceRecords.length !== 1 ? 's' : ''} signed in on {formatDate(selectedDate)}
+                      </p>
+                      <div className="attendance-list">
+                        {attendanceRecords.map((record, index) => (
+                          <div key={record.id || index} className={`attendance-item ${record.isLate ? 'late' : ''}`}>
+                            <div className="student-info">
+                              <span className="student-name">{record.studentName}</span>
+                              <span className={record.isLate ? 'late-status' : 'on-time-status'}>
+                                {record.isLate ? 'Late' : 'On Time'}
+                              </span>
+                            </div>
+                            <div className="sign-in-info">
+                              <span className="sign-in-time">
+                                {record.signInTime}
+                              </span>
+                              <span className="distance-info">
+                                {record.distance}m
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -670,22 +913,30 @@ const AdminDashboard = () => {
             <div className="modal-body">
               {/* Current Enrolled Students */}
               <div className="detail-section">
-                <h4>Current Enrolled Students ({selectedClass.enrolledStudents.length})</h4>
+                <h4>Current Enrolled Students ({selectedClass.enrolledStudents?.length || 0})</h4>
                 <div className="enrolled-students-list">
-                  {selectedClass.enrolledStudents.map((studentName, index) => (
-                    <div key={index} className="enrolled-student-item">
-                      <div className="student-info">
-                        <span className="student-name">{studentName}</span>
-                        <span className="student-status">Enrolled</span>
-                      </div>
-                      <button 
-                        className="remove-student-btn"
-                        onClick={() => handleRemoveStudent(studentName)}
-                      >
-                        ❌ Remove
-                      </button>
-                    </div>
-                  ))}
+                  {(selectedClass.enrolledStudents || []).length > 0 ? (
+                    (selectedClass.enrolledStudents || []).map((studentId, index) => {
+                      const student = getStudentById(studentId);
+                      return student ? (
+                        <div key={studentId || index} className="enrolled-student-item">
+                          <div className="student-info">
+                            <span className="student-name">{student.name}</span>
+                            <span className="student-email">{student.email}</span>
+                            <span className="student-status">Enrolled</span>
+                          </div>
+                          <button 
+                            className="remove-student-btn"
+                            onClick={() => handleRemoveStudent(studentId)}
+                          >
+                            ❌ Remove
+                          </button>
+                        </div>
+                      ) : null;
+                    })
+                  ) : (
+                    <p className="no-students">No students enrolled yet.</p>
+                  )}
                 </div>
               </div>
 
@@ -740,15 +991,26 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowManageStudentsModal(false)}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowManageStudentsModal(false)}
+                disabled={isAddingStudents}
+              >
                 Cancel
               </button>
               <button 
                 className="btn-primary" 
                 onClick={handleAddSelectedStudents}
-                disabled={selectedStudents.length === 0}
+                disabled={selectedStudents.length === 0 || isAddingStudents}
               >
-                Add Selected Students ({selectedStudents.length})
+                {isAddingStudents ? (
+                  <>
+                    <span className="spinner"></span>
+                    Adding Students...
+                  </>
+                ) : (
+                  `Add Selected Students (${selectedStudents.length})`
+                )}
               </button>
             </div>
           </div>

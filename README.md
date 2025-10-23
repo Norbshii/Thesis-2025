@@ -45,7 +45,7 @@ A modern, responsive login system for a student portal built with React and Lara
    cp .env.example .env
    ```
    
-   Update the `.env` file with your database credentials:
+   Update the `.env` file with your database credentials (optional if using Airtable-only):
    ```
    DB_CONNECTION=mysql
    DB_HOST=127.0.0.1
@@ -55,22 +55,57 @@ A modern, responsive login system for a student portal built with React and Lara
    DB_PASSWORD=your_password
    ```
 
+   Airtable configuration (for using Airtable as the data source):
+   ```
+   AIRTABLE_API_KEY=your_airtable_personal_access_token
+   AIRTABLE_BASE_ID=appXXXXXXXXXXXXXX
+   AIRTABLE_TABLE_CLASSES=Classes
+   AIRTABLE_TABLE_USERS=Users
+   # Optional split tables
+   AIRTABLE_TABLE_STUDENTS=Students
+   AIRTABLE_TABLE_TEACHERS=Teachers
+   ```
+   
+   **Create Airtable Tables:**
+   
+   **Classes Table** (Required fields):
+   - `Class Code` (Single line text)
+   - `Class Name` (Single line text)
+   - `Date` (Date)
+   - `Start Time` (Single line text, e.g., "08:00")
+   - `End Time` (Single line text, e.g., "10:00")
+   - `Max Students` (Number, integer)
+   - `Late Threshold` (Number, integer) - Minutes after start time before student is marked late
+   - `Teacher` (Email or Single line text) - Stores the teacher's email who created the class
+   - `Enrolled Students` (Link to another record) - **IMPORTANT:** Link to Students table, allow multiple records
+   - `isManualControl` (Checkbox, optional)
+   - `isOpen` (Checkbox, optional)
+   
+   **Students Table** (Required fields):
+   - `email` (Email or Single line text)
+   - `name` (Single line text)
+   - `password` (Single line text)
+   - `role` (Single line text, set to "student")
+   - `age` (Number, integer, optional)
+   - `course` (Single line text, optional)
+   - `address` (Long text, optional)
+   - `guardianName` (Single line text, optional)
+   - `relationship` (Single line text, optional)
+   - `guardianPhone` (Phone or Single line text, optional)
+   
+   **Teachers Table** (Required fields):
+   - `email` (Email or Single line text)
+   - `name` (Single line text)
+   - `password` (Single line text)
+   - `role` (Single line text, set to "teacher" or "admin")
+   - `department` (Single line text, optional)
+
 3. **Generate Application Key:**
    ```bash
    php artisan key:generate
    ```
 
-4. **Run Database Migrations:**
-   ```bash
-   php artisan migrate
-   ```
-
-5. **Seed Sample Data:**
-   ```bash
-   php artisan db:seed
-   ```
-
-6. **Start Laravel Server:**
+4. **Start Laravel Server:**
    ```bash
    php artisan serve
    ```
@@ -90,6 +125,47 @@ A modern, responsive login system for a student portal built with React and Lara
    ```
    
    The app will be available at `http://localhost:3000`
+
+### Airtable API Endpoints
+
+**Classes Management:**
+- `GET /api/classes?teacherEmail=...` → Returns classes from Airtable `Classes` table (filtered by teacher email)
+  - Returns: `{ classes: [{ id, code, name, date, startTime, endTime, maxStudents, lateThreshold, enrolledStudents, ... }] }`
+- `POST /api/classes` → Create a new class
+  - Body: `{ code, name, date, startTime, endTime, maxStudents, lateThreshold, isManualControl, teacherEmail }`
+  - Automatically saves the teacher's email to the `Teacher` field for ownership tracking
+- `GET /api/students` → Get all students from Airtable Students table
+  - Returns: `{ students: [{ id, name, email, course, age, address }], count }`
+- `POST /api/classes/add-students` → Add students to a class
+  - Body: `{ "classId": "recXXXXXXXXXXXX", "studentIds": ["recStudentID1", "recStudentID2"] }`
+  - Saves student IDs to the `Enrolled Students` field (linked records)
+- `POST /api/classes/remove-student` → Remove a student from a class
+  - Body: `{ "classId": "recXXXXXXXXXXXX", "studentId": "recStudentID" }`
+  - Updates the `Enrolled Students` field
+- `POST /api/class/toggle-signin` → Updates `is_signed_in` for a record
+  - Body: `{ "record_id": "recXXXXXXXXXXXX", "action": "sign_in" }` or `"sign_out"`
+
+**Authentication:**
+- `POST /api/login` → Body: `{ "username": "email", "password": "..." }`
+  - Searches Students and Teachers tables
+  - Returns user data with role-based information
+- `POST /api/register` → Body: `{ email, name, password, password_confirmation, role }`
+  - Creates user in Students or Teachers table based on `role`
+
+**Student Profile:**
+- `GET /api/student/profile?email=...` → Get student/teacher profile data
+- `POST /api/student/profile` → Update profile
+  - Body: `{ email, name, age, course, address, guardianName, relationship, guardianPhone }`
+
+If you encounter SSL errors on Windows (cURL error 60):
+- Preferred: install a CA bundle (e.g., cacert.pem) and set in `.env`:
+  - `AIRTABLE_CA_BUNDLE=C:\\path\\to\\cacert.pem`
+- Temporary (dev only): disable verification in `.env`:
+  - `AIRTABLE_VERIFY_SSL=false`
+  - Then run `php artisan config:clear`.
+
+Notes:
+- These Airtable endpoints are public by default to simplify setup for non-technical users. If you need to restrict them, wrap them with Sanctum middleware and add appropriate auth in the frontend.
 
 ## Sample Users
 
