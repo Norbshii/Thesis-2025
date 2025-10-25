@@ -422,7 +422,7 @@ class ClassesController extends Controller
                 ], 403);
             }
 
-            // Get student's guardian phone number
+            // Get student's guardian phone number (optional for SMS)
             $studentsTable = config('airtable.tables.students');
             $guardianPhone = null;
             try {
@@ -434,15 +434,6 @@ class ClassesController extends Controller
                 if (!empty($studentsList['records'])) {
                     $studentRecord = $studentsList['records'][0];
                     $guardianPhone = $studentRecord['fields']['guardianPhone'] ?? null;
-                    
-                    // Check if guardian phone is missing
-                    if (empty($guardianPhone)) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Please add your guardian\'s phone number in your profile before signing in.',
-                            'requiresGuardianPhone' => true
-                        ], 400);
-                    }
                 }
             } catch (\Exception $e) {
                 \Log::error('Failed to fetch student guardian phone: ' . $e->getMessage());
@@ -500,8 +491,9 @@ class ClassesController extends Controller
                 \Log::error('Record data: ' . json_encode($attendanceRecord));
             }
 
-            // Send SMS to guardian
-            if ($guardianPhone) {
+            // Send SMS to guardian (if phone number exists and SMS is configured)
+            $smsResult = null;
+            if ($guardianPhone && !empty(env('SEMAPHORE_API_KEY'))) {
                 try {
                     $className = $fields['Class Name'] ?? 'Class';
                     $teacherName = $fields['Teacher'] ?? 'Teacher';
@@ -532,6 +524,10 @@ class ClassesController extends Controller
                 } catch (\Exception $smsError) {
                     \Log::error('SMS exception: ' . $smsError->getMessage());
                 }
+            } elseif (!$guardianPhone) {
+                \Log::info('SMS not sent: No guardian phone number for student', ['student' => $studentName]);
+            } else {
+                \Log::info('SMS not sent: SEMAPHORE_API_KEY not configured');
             }
 
             return response()->json([
@@ -540,7 +536,8 @@ class ClassesController extends Controller
                 'isLate' => $isLate,
                 'signInTime' => $currentDateTime->format('H:i:s'),
                 'distance' => round($distance, 2),
-                'smsSent' => isset($smsResult) && $smsResult['success']
+                'smsSent' => isset($smsResult) && $smsResult['success'],
+                'smsNote' => !$guardianPhone ? 'Add guardian phone to receive SMS alerts' : ($smsResult ? null : 'SMS service not configured')
             ]);
 
         } catch (\Exception $e) {
