@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\AirtableService;
+use App\Services\SmsService;
 use Illuminate\Support\Facades\Validator;
 
 class ClassesController extends Controller
 {
-    public function __construct(private AirtableService $airtable)
-    {
+    public function __construct(
+        private AirtableService $airtable,
+        private SmsService $sms
+    ) {
     }
 
     public function index(Request $request)
@@ -419,6 +422,32 @@ class ClassesController extends Controller
                 ], 403);
             }
 
+            // Get student's guardian phone number
+            $studentsTable = config('airtable.tables.students');
+            $guardianPhone = null;
+            try {
+                $studentsList = $this->airtable->listRecords($studentsTable, [
+                    'filterByFormula' => "{email}='" . str_replace("'", "\\'", $studentEmail) . "'",
+                    'maxRecords' => 1
+                ]);
+                
+                if (!empty($studentsList['records'])) {
+                    $studentRecord = $studentsList['records'][0];
+                    $guardianPhone = $studentRecord['fields']['guardianPhone'] ?? null;
+                    
+                    // Check if guardian phone is missing
+                    if (empty($guardianPhone)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Please add your guardian\'s phone number in your profile before signing in.',
+                            'requiresGuardianPhone' => true
+                        ], 400);
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to fetch student guardian phone: ' . $e->getMessage());
+            }
+
             // Student is within geofence, record attendance
             $currentDateTime = now();
             $lateThreshold = $fields['Late Threshold'] ?? 15;
@@ -471,12 +500,47 @@ class ClassesController extends Controller
                 \Log::error('Record data: ' . json_encode($attendanceRecord));
             }
 
+            // Send SMS to guardian
+            if ($guardianPhone) {
+                try {
+                    $className = $fields['Class Name'] ?? 'Class';
+                    $teacherName = $fields['Teacher'] ?? 'Teacher';
+                    $signInTime = $currentDateTime->format('g:i A'); // 12-hour format
+                    
+                    $message = $this->sms->generateAttendanceMessage(
+                        $studentName,
+                        $className,
+                        $teacherName,
+                        $signInTime,
+                        $isLate
+                    );
+                    
+                    $smsResult = $this->sms->sendSMS($guardianPhone, $message);
+                    
+                    if ($smsResult['success']) {
+                        \Log::info('SMS sent to guardian', [
+                            'phone' => $guardianPhone,
+                            'student' => $studentName,
+                            'class' => $className
+                        ]);
+                    } else {
+                        \Log::warning('SMS failed to send', [
+                            'phone' => $guardianPhone,
+                            'error' => $smsResult['message']
+                        ]);
+                    }
+                } catch (\Exception $smsError) {
+                    \Log::error('SMS exception: ' . $smsError->getMessage());
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => $isLate ? 'Signed in successfully (Late)' : 'Signed in successfully (On time)',
                 'isLate' => $isLate,
                 'signInTime' => $currentDateTime->format('H:i:s'),
-                'distance' => round($distance, 2)
+                'distance' => round($distance, 2),
+                'smsSent' => isset($smsResult) && $smsResult['success']
             ]);
 
         } catch (\Exception $e) {
