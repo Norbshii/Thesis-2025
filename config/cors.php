@@ -21,8 +21,7 @@ return [
 
     'allowed_origins' => [
         'http://localhost:3000',
-        // Add your Render frontend URL here after deployment
-        // 'https://student-attendance-frontend.onrender.com',
+        'https://pinpointfe.onrender.com',
     ],
 
     'allowed_origins_patterns' => [],
