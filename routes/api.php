@@ -19,6 +19,20 @@ use App\Http\Controllers\StudentsController;
 |
 */
 
+// Health check route
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'API is running!',
+        'timestamp' => now(),
+        'env' => [
+            'APP_ENV' => env('APP_ENV'),
+            'APP_DEBUG' => env('APP_DEBUG'),
+            'AIRTABLE_CONFIGURED' => env('AIRTABLE_API_KEY') ? 'yes' : 'no',
+        ]
+    ]);
+});
+
 // Public routes (Airtable-backed auth)
 Route::post('/login', [AirtableAuthController::class, 'login']);
 Route::post('/register', [AirtableAuthController::class, 'register']);
