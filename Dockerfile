@@ -1,5 +1,5 @@
 # Use official PHP image with Apache
-FROM php:8.1-apache
+FROM php:8.2-apache
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -32,17 +32,25 @@ RUN chown -R www-data:www-data /var/www/html
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Set permissions
-RUN chmod -R 755 storage bootstrap/cache
+# Create necessary directories
+RUN mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs
+RUN mkdir -p bootstrap/cache
 
-# Generate Laravel key if not exists
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
-RUN php artisan view:cache || true
+# Set permissions
+RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+# Don't cache routes in Docker build - do it at runtime
+# Clear any existing caches
+RUN php artisan config:clear || true
+RUN php artisan cache:clear || true
+RUN php artisan route:clear || true
+RUN php artisan view:clear || true
 
 # Expose port
 EXPOSE 8000
 
 # Start Laravel server
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+# Don't use --env flag, it causes issues. Environment is set via env vars.
+CMD php artisan config:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
 
