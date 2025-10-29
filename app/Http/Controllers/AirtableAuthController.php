@@ -148,6 +148,92 @@ class AirtableAuthController extends Controller
             'token' => $token,
         ], 201);
     }
+
+    /**
+     * Change password for authenticated user
+     */
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'currentPassword' => 'required|string',
+            'newPassword' => 'required|string|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $tableUsers = config('airtable.tables.users');
+        $tableStudents = config('airtable.tables.students');
+        $tableTeachers = config('airtable.tables.teachers');
+
+        // Find user across all tables
+        $record = $this->airtable->findAcrossTables([
+            $tableUsers,
+            $tableStudents,
+            $tableTeachers,
+        ], $request->email);
+
+        if (!$record) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $fields = $record['fields'] ?? [];
+        $recordId = $record['id'];
+        $tableName = $record['table'] ?? $tableUsers;
+
+        // Verify current password
+        $storedHash = $fields['password_hash'] ?? null;
+        $storedPlain = $fields['password'] ?? null;
+
+        $valid = false;
+        if ($storedHash) {
+            $valid = Hash::check($request->currentPassword, $storedHash);
+        } elseif ($storedPlain) {
+            $valid = hash_equals($storedPlain, $request->currentPassword);
+        }
+
+        if (!$valid) {
+            return response()->json([
+                'message' => 'Current password is incorrect'
+            ], 401);
+        }
+
+        // Update password
+        try {
+            $newPasswordHash = Hash::make($request->newPassword);
+            
+            $this->airtable->updateRecord($tableName, $recordId, [
+                'password_hash' => $newPasswordHash,
+                // Optionally clear plaintext password field if it exists
+                // 'password' => null,
+            ]);
+
+            \Log::info('Password changed successfully', [
+                'email' => $request->email,
+                'recordId' => $recordId,
+                'table' => $tableName
+            ]);
+
+            return response()->json([
+                'message' => 'Password changed successfully',
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to change password: ' . $e->getMessage());
+            
+            return response()->json([
+                'message' => 'Failed to change password. Please try again.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
 
 

@@ -36,6 +36,7 @@ Route::get('/health', function () {
 // Public routes (Airtable-backed auth)
 Route::post('/login', [AirtableAuthController::class, 'login']);
 Route::post('/register', [AirtableAuthController::class, 'register']);
+Route::post('/change-password', [AirtableAuthController::class, 'changePassword']);
 
 // Public Airtable-backed class routes (no auth, to reduce setup for non-technical users)
 Route::get('/classes', [ClassesController::class, 'index']);

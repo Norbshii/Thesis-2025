@@ -20,6 +20,7 @@ const StudentProfile = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showTimeRestrictionModal, setShowTimeRestrictionModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -27,6 +28,12 @@ const StudentProfile = () => {
   const [restrictedClassInfo, setRestrictedClassInfo] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    newPassword_confirmation: ''
+  });
   const [editForm, setEditForm] = useState({
     name: '',
     age: '',
@@ -382,6 +389,51 @@ const StudentProfile = () => {
     }
   };
 
+  const handleChangePassword = async () => {
+    // Validation
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.newPassword_confirmation) {
+      showToastMessage('Please fill in all password fields', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      showToastMessage('New password must be at least 6 characters', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.newPassword_confirmation) {
+      showToastMessage('New passwords do not match', 'error');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const currentUser = authAPI.getStoredUser();
+      const response = await api.post('/change-password', {
+        email: currentUser?.email,
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        newPassword_confirmation: passwordForm.newPassword_confirmation
+      });
+
+      if (response.data.success) {
+        showToastMessage('Password changed successfully! Please use your new password next time you log in.', 'success');
+        setShowChangePasswordModal(false);
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          newPassword_confirmation: ''
+        });
+      }
+    } catch (err) {
+      console.error('Password change failed:', err);
+      const errorMsg = err?.response?.data?.message || err?.message || 'Failed to change password';
+      showToastMessage(errorMsg, 'error');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await authAPI.logout();
@@ -452,10 +504,27 @@ const StudentProfile = () => {
               Current Time: {formatTime(currentTime)}
             </div>
             
-            {/* Edit Profile Button - Above Separator */}
+            {/* Edit Profile & Change Password Buttons - Above Separator */}
             <div className="edit-profile-section">
               <button className="edit-profile-btn" onClick={handleEditProfile}>
-                Edit Profile
+                📝 Edit Profile
+              </button>
+              <button 
+                className="change-password-btn" 
+                onClick={() => setShowChangePasswordModal(true)}
+                style={{
+                  marginLeft: '10px',
+                  backgroundColor: '#2196F3',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}
+              >
+                🔒 Change Password
               </button>
             </div>
           </div>
@@ -713,6 +782,83 @@ const StudentProfile = () => {
                 setRestrictedClassInfo(null);
               }}>
                 OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>🔒 Change Password</h3>
+              <button className="close-btn" onClick={() => {
+                setShowChangePasswordModal(false);
+                setPasswordForm({
+                  currentPassword: '',
+                  newPassword: '',
+                  newPassword_confirmation: ''
+                });
+              }}>×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Enter your current password and choose a new password (minimum 6 characters).
+              </p>
+              <div className="form-group">
+                <label>Current Password:</label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                  placeholder="Enter current password"
+                  disabled={isChangingPassword}
+                />
+              </div>
+              <div className="form-group">
+                <label>New Password:</label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                  placeholder="Enter new password (min 6 characters)"
+                  disabled={isChangingPassword}
+                />
+              </div>
+              <div className="form-group">
+                <label>Confirm New Password:</label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword_confirmation}
+                  onChange={(e) => setPasswordForm({...passwordForm, newPassword_confirmation: e.target.value})}
+                  placeholder="Confirm new password"
+                  disabled={isChangingPassword}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setShowChangePasswordModal(false);
+                  setPasswordForm({
+                    currentPassword: '',
+                    newPassword: '',
+                    newPassword_confirmation: ''
+                  });
+                }}
+                disabled={isChangingPassword}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleChangePassword}
+                disabled={isChangingPassword}
+              >
+                {isChangingPassword ? 'Changing Password...' : 'Change Password'}
               </button>
             </div>
           </div>
