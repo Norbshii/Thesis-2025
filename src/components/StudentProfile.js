@@ -34,6 +34,11 @@ const StudentProfile = () => {
     newPassword: '',
     newPassword_confirmation: ''
   });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
   const [editForm, setEditForm] = useState({
     name: '',
     age: '',
@@ -424,6 +429,11 @@ const StudentProfile = () => {
           newPassword: '',
           newPassword_confirmation: ''
         });
+        setShowPasswords({
+          current: false,
+          new: false,
+          confirm: false
+        });
       }
     } catch (err) {
       console.error('Password change failed:', err);
@@ -801,6 +811,11 @@ const StudentProfile = () => {
                   newPassword: '',
                   newPassword_confirmation: ''
                 });
+                setShowPasswords({
+                  current: false,
+                  new: false,
+                  confirm: false
+                });
               }}>×</button>
             </div>
             <div className="modal-body">
@@ -809,33 +824,96 @@ const StudentProfile = () => {
               </p>
               <div className="form-group">
                 <label>Current Password:</label>
-                <input
-                  type="password"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                  placeholder="Enter current password"
-                  disabled={isChangingPassword}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.current ? "text" : "password"}
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                    placeholder="Enter current password"
+                    disabled={isChangingPassword}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#666'
+                    }}
+                    disabled={isChangingPassword}
+                  >
+                    {showPasswords.current ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
               </div>
               <div className="form-group">
                 <label>New Password:</label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                  placeholder="Enter new password (min 6 characters)"
-                  disabled={isChangingPassword}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.new ? "text" : "password"}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                    placeholder="Enter new password (min 6 characters)"
+                    disabled={isChangingPassword}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#666'
+                    }}
+                    disabled={isChangingPassword}
+                  >
+                    {showPasswords.new ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
               </div>
               <div className="form-group">
                 <label>Confirm New Password:</label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword_confirmation}
-                  onChange={(e) => setPasswordForm({...passwordForm, newPassword_confirmation: e.target.value})}
-                  placeholder="Confirm new password"
-                  disabled={isChangingPassword}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.confirm ? "text" : "password"}
+                    value={passwordForm.newPassword_confirmation}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword_confirmation: e.target.value})}
+                    placeholder="Confirm new password"
+                    disabled={isChangingPassword}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#666'
+                    }}
+                    disabled={isChangingPassword}
+                  >
+                    {showPasswords.confirm ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="modal-footer">
@@ -847,6 +925,11 @@ const StudentProfile = () => {
                     currentPassword: '',
                     newPassword: '',
                     newPassword_confirmation: ''
+                  });
+                  setShowPasswords({
+                    current: false,
+                    new: false,
+                    confirm: false
                   });
                 }}
                 disabled={isChangingPassword}

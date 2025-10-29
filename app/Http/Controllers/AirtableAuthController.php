@@ -186,7 +186,7 @@ class AirtableAuthController extends Controller
 
         $fields = $record['fields'] ?? [];
         $recordId = $record['id'];
-        $tableName = $record['table'] ?? $tableUsers;
+        $tableName = $record['__table'] ?? $tableUsers;
 
         // Verify current password
         $storedHash = $fields['password_hash'] ?? null;
