@@ -209,17 +209,35 @@ class AirtableAuthController extends Controller
         try {
             $newPasswordHash = Hash::make($request->newPassword);
             
-            $this->airtable->updateRecord($tableName, $recordId, [
-                'password_hash' => $newPasswordHash,
-                // Optionally clear plaintext password field if it exists
-                // 'password' => null,
-            ]);
-
-            \Log::info('Password changed successfully', [
-                'email' => $request->email,
-                'recordId' => $recordId,
-                'table' => $tableName
-            ]);
+            // Try to update password_hash first (preferred), fall back to password field
+            try {
+                $this->airtable->updateRecord($tableName, $recordId, [
+                    'password_hash' => $newPasswordHash,
+                ]);
+                
+                \Log::info('Password changed successfully (using password_hash)', [
+                    'email' => $request->email,
+                    'recordId' => $recordId,
+                    'table' => $tableName
+                ]);
+            } catch (\Exception $hashError) {
+                // If password_hash field doesn't exist, try password field
+                if (str_contains($hashError->getMessage(), 'UNKNOWN_FIELD_NAME')) {
+                    \Log::warning('password_hash field not found, using password field instead');
+                    
+                    $this->airtable->updateRecord($tableName, $recordId, [
+                        'password' => $newPasswordHash,
+                    ]);
+                    
+                    \Log::info('Password changed successfully (using password field)', [
+                        'email' => $request->email,
+                        'recordId' => $recordId,
+                        'table' => $tableName
+                    ]);
+                } else {
+                    throw $hashError;
+                }
+            }
 
             return response()->json([
                 'message' => 'Password changed successfully',
