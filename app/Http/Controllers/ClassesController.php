@@ -550,6 +550,53 @@ class ClassesController extends Controller
                 ], 403);
             }
 
+            // Get current time for duplicate check and attendance recording
+            $currentDateTime = now();
+            
+            // Check for duplicate sign-in (same student, same class, same day)
+            $attendanceTable = config('airtable.tables.attendance_entries');
+            $classCode = $fields['Class Code'] ?? null;
+            $todayDate = $currentDateTime->format('Y-m-d');
+            
+            if ($attendanceTable && $classCode) {
+                try {
+                    // Build filter to check if student already signed in today for this class
+                    $duplicateFilter = "AND(" .
+                        "{Class Code}='" . str_replace("'", "\\'", $classCode) . "'," .
+                        "{Student Email}='" . str_replace("'", "\\'", $studentEmail) . "'," .
+                        "DATESTR({Date})='" . $todayDate . "'" .
+                    ")";
+                    
+                    $existingRecords = $this->airtable->listRecords($attendanceTable, [
+                        'filterByFormula' => $duplicateFilter,
+                        'maxRecords' => 1
+                    ]);
+                    
+                    if (!empty($existingRecords['records'])) {
+                        $existingRecord = $existingRecords['records'][0];
+                        $signInTime = $existingRecord['fields']['Sign In Time'] ?? 'earlier';
+                        
+                        \Log::info('Duplicate sign-in attempt blocked', [
+                            'student' => $studentEmail,
+                            'class' => $classCode,
+                            'date' => $todayDate,
+                            'originalSignIn' => $signInTime
+                        ]);
+                        
+                        return response()->json([
+                            'success' => false,
+                            'message' => "You have already signed in to this class today at {$signInTime}. Attendance has been recorded.",
+                            'alreadySignedIn' => true,
+                            'signInTime' => $signInTime,
+                            'date' => $todayDate
+                        ], 400);
+                    }
+                } catch (\Exception $duplicateError) {
+                    // Log but don't block sign-in if duplicate check fails
+                    \Log::warning('Duplicate check failed, allowing sign-in: ' . $duplicateError->getMessage());
+                }
+            }
+
             // Get student's guardian phone number (optional for SMS)
             $studentsTable = config('airtable.tables.students');
             $guardianPhone = null;
@@ -568,7 +615,6 @@ class ClassesController extends Controller
             }
 
             // Student is within geofence, record attendance
-            $currentDateTime = now();
             $lateThreshold = $fields['Late Threshold'] ?? 15;
 
             // Calculate if late based on when teacher ACTUALLY opened the class

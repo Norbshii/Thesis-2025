@@ -6645,3 +6645,36 @@
 [2025-10-29 14:40:44] local.INFO: Airtable listRecords response {"recordCount":2} 
 [2025-10-29 14:40:44] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
 [2025-10-29 14:40:45] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 14:41:44] local.INFO: Fetching attendance {"classId":"recnvROEPaU6j8sFf","classCode":"SC 212","requestedDate":"2025-10-29"} 
+[2025-10-29 14:41:44] local.INFO: Airtable filter formula {"formula":"AND({Class Code}='SC 212',DATESTR({Date})='2025-10-29')"} 
+[2025-10-29 14:41:44] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":10}} 
+[2025-10-29 14:41:45] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 14:41:45] local.INFO: Total records in attendance table (unfiltered) {"count":4,"sample":{"Class Code":"CC 203","Class Name":"Software Engineering","Date":"2025-10-25","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"17:28:07","Status":"On Time","Distance":68.21,"Timestamp":"2025-10-25T09:28:07.000Z"}} 
+[2025-10-29 14:41:45] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":100,"sort[0][field]":"Sign In Time","sort[0][direction]":"asc","filterByFormula":"AND({Class Code}='SC 212',DATESTR({Date})='2025-10-29')"}} 
+[2025-10-29 14:41:46] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-29 14:41:46] local.INFO: Attendance records found {"count":0} 
+[2025-10-29 14:41:53] local.INFO: Fetching attendance {"classId":"recnvROEPaU6j8sFf","classCode":"SC 212","requestedDate":"2025-10-25"} 
+[2025-10-29 14:41:53] local.INFO: Airtable filter formula {"formula":"AND({Class Code}='SC 212',DATESTR({Date})='2025-10-25')"} 
+[2025-10-29 14:41:53] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":10}} 
+[2025-10-29 14:41:54] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 14:41:54] local.INFO: Total records in attendance table (unfiltered) {"count":4,"sample":{"Class Code":"CC 203","Class Name":"Software Engineering","Date":"2025-10-25","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"17:28:07","Status":"On Time","Distance":68.21,"Timestamp":"2025-10-25T09:28:07.000Z"}} 
+[2025-10-29 14:41:54] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":100,"sort[0][field]":"Sign In Time","sort[0][direction]":"asc","filterByFormula":"AND({Class Code}='SC 212',DATESTR({Date})='2025-10-25')"}} 
+[2025-10-29 14:41:55] local.INFO: Airtable listRecords response {"recordCount":2} 
+[2025-10-29 14:41:55] local.INFO: Attendance records found {"count":2} 
+[2025-10-29 14:41:55] local.INFO: Sample attendance record {"fields":{"Class Code":"SC 212","Class Name":"Social Studies","Date":"2025-10-25","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"18:06:03","Status":"On Time","Distance":0,"Timestamp":"2025-10-25T10:06:03.000Z"}} 
+[2025-10-29 14:45:42] local.INFO: Fetching attendance {"classId":"recafMdYuRi1SdHDB","classCode":"dada","requestedDate":"2025-10-25"} 
+[2025-10-29 14:45:42] local.INFO: Airtable filter formula {"formula":"AND({Class Code}='dada',DATESTR({Date})='2025-10-25')"} 
+[2025-10-29 14:45:42] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":10}} 
+[2025-10-29 14:45:44] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 14:45:44] local.INFO: Total records in attendance table (unfiltered) {"count":4,"sample":{"Class Code":"CC 203","Class Name":"Software Engineering","Date":"2025-10-25","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"17:28:07","Status":"On Time","Distance":68.21,"Timestamp":"2025-10-25T09:28:07.000Z"}} 
+[2025-10-29 14:45:44] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":100,"sort[0][field]":"Sign In Time","sort[0][direction]":"asc","filterByFormula":"AND({Class Code}='dada',DATESTR({Date})='2025-10-25')"}} 
+[2025-10-29 14:45:45] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-29 14:45:45] local.INFO: Attendance records found {"count":0} 
+[2025-10-29 14:45:47] local.INFO: Fetching attendance {"classId":"reco4ghhNTx2jR53q","classCode":"PH 301","requestedDate":"2025-10-25"} 
+[2025-10-29 14:45:47] local.INFO: Airtable filter formula {"formula":"AND({Class Code}='PH 301',DATESTR({Date})='2025-10-25')"} 
+[2025-10-29 14:45:47] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":10}} 
+[2025-10-29 14:45:48] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 14:45:48] local.INFO: Total records in attendance table (unfiltered) {"count":4,"sample":{"Class Code":"CC 203","Class Name":"Software Engineering","Date":"2025-10-25","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"17:28:07","Status":"On Time","Distance":68.21,"Timestamp":"2025-10-25T09:28:07.000Z"}} 
+[2025-10-29 14:45:48] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":100,"sort[0][field]":"Sign In Time","sort[0][direction]":"asc","filterByFormula":"AND({Class Code}='PH 301',DATESTR({Date})='2025-10-25')"}} 
+[2025-10-29 14:45:49] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-29 14:45:49] local.INFO: Attendance records found {"count":0} 

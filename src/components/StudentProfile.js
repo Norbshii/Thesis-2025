@@ -252,7 +252,24 @@ const StudentProfile = () => {
         console.error('Error signing in:', error);
         
         // Better error messages
-        if (error.response?.status === 403) {
+        if (error.response?.status === 400 && error.response?.data?.alreadySignedIn) {
+          // Duplicate sign-in attempt
+          const signInTime = error.response.data.signInTime || 'earlier';
+          showToastMessage(
+            `✅ Already signed in! You signed in to this class at ${signInTime}. Your attendance has been recorded.`,
+            'info'
+          );
+          
+          // Update UI to show as signed in
+          setClasses(classes.map(c => 
+            c.id === selectedClass.id 
+              ? { ...c, isSignedIn: true }
+              : c
+          ));
+          
+          setShowSignInModal(false);
+          setSelectedClass(null);
+        } else if (error.response?.status === 403) {
           const errorMsg = error.response?.data?.message || '';
           console.log('403 Error Message:', errorMsg);
           
