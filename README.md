@@ -280,6 +280,33 @@ After running the database seeder, you can use these sample accounts:
 - Safari (latest)
 - Edge (latest)
 
+## Deployment
+
+### Deploying to Render
+
+This application is ready to deploy to Render for testing and production use. See the deployment guides:
+
+- **Quick Start**: [`RENDER_QUICK_START.md`](RENDER_QUICK_START.md) - Deploy in 10 minutes
+- **Full Guide**: [`RENDER_DEPLOYMENT_GUIDE.md`](RENDER_DEPLOYMENT_GUIDE.md) - Comprehensive documentation
+- **Checklist**: [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md) - Pre-deployment checklist
+
+**Key Features for Deployment:**
+- ✅ HTTPS enabled by default (required for geolocation)
+- ✅ Auto-deploy from GitHub
+- ✅ Free tier available for testing
+- ✅ Environment variables support
+- ✅ No database required (uses Airtable)
+
+### Quick Deploy Steps
+
+1. **Push to GitHub**
+2. **Deploy Backend** on Render (Web Service)
+3. **Deploy Frontend** on Render (Static Site)
+4. **Configure CORS** with frontend URL
+5. **Test and Go Live!**
+
+See [`RENDER_QUICK_START.md`](RENDER_QUICK_START.md) for detailed instructions.
+
 ## Contributing
 
 1. Fork the repository

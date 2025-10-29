@@ -326,6 +326,134 @@ class ClassesController extends Controller
     }
 
     /**
+     * Extend class time (emergency extension for late classes or extra time needed)
+     */
+    public function extendClass(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'classId' => 'required|string',
+            'additionalMinutes' => 'required|integer|min:5|max:180', // 5 minutes to 3 hours
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $tableName = config('airtable.tables.classes');
+        $classId = $request->input('classId');
+        $additionalMinutes = $request->input('additionalMinutes');
+
+        try {
+            // Get current class data
+            $classRecord = $this->airtable->getRecord($tableName, $classId);
+            $fields = $classRecord['fields'] ?? [];
+            
+            // Parse current end time
+            $currentEndTime = $fields['End Time'] ?? null;
+            
+            if (!$currentEndTime) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Class has no end time set'
+                ], 400);
+            }
+
+            // Calculate new end time
+            try {
+                $endDateTime = \Carbon\Carbon::createFromFormat('H:i', $currentEndTime);
+                $newEndDateTime = $endDateTime->addMinutes($additionalMinutes);
+                $newEndTime = $newEndDateTime->format('H:i');
+                
+                // Update class with new end time and ensure it stays open
+                $updated = $this->airtable->updateRecord($tableName, $classId, [
+                    'End Time' => $newEndTime,
+                    'isOpen' => true, // Ensure it stays open
+                ]);
+
+                \Log::info('Class extended', [
+                    'classId' => $classId,
+                    'oldEndTime' => $currentEndTime,
+                    'newEndTime' => $newEndTime,
+                    'additionalMinutes' => $additionalMinutes
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Class extended by {$additionalMinutes} minutes",
+                    'oldEndTime' => $currentEndTime,
+                    'newEndTime' => $newEndTime,
+                    'class' => $updated,
+                ]);
+            } catch (\Exception $timeError) {
+                \Log::error('Failed to parse time: ' . $timeError->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid time format'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to extend class: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to extend class',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle manual control mode for a class
+     */
+    public function toggleManualControl(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'classId' => 'required|string',
+            'isManualControl' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $tableName = config('airtable.tables.classes');
+        $classId = $request->input('classId');
+        $isManualControl = $request->input('isManualControl');
+
+        try {
+            // Try to update manual control field
+            try {
+                $updated = $this->airtable->updateRecord($tableName, $classId, [
+                    'isManualControl' => $isManualControl
+                ]);
+
+                $mode = $isManualControl ? 'Manual Control' : 'Time-based';
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => "Class switched to {$mode} mode",
+                    'isManualControl' => $isManualControl,
+                    'class' => $updated,
+                ]);
+            } catch (\Exception $fieldError) {
+                \Log::warning('isManualControl field not found in Airtable. Add a checkbox field named "isManualControl"');
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Manual control field not available. Add "isManualControl" checkbox field to Classes table in Airtable.',
+                    'requiresAirtableField' => true
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to toggle manual control: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update control mode',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Calculate distance between two coordinates using Haversine formula
      * Returns distance in meters
      */

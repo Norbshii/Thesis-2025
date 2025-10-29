@@ -1,0 +1,86 @@
+RENDER BACKEND DEPLOYMENT - USING DOCKER
+=========================================
+
+PROBLEM: Render is trying to use Node.js instead of PHP
+SOLUTION: Use Docker deployment
+
+STEPS TO FIX:
+=============
+
+1. COMMIT THE NEW FILES
+   -----------------------
+   git add Dockerfile .dockerignore
+   git commit -m "Add Docker support for Render"
+   git push origin main
+
+2. DELETE THE FAILED SERVICE IN RENDER
+   ------------------------------------
+   - Go to Render Dashboard
+   - Find your backend service
+   - Click Settings → Delete Service
+
+3. CREATE NEW WEB SERVICE
+   ------------------------
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repo
+   - Select your repository
+
+4. CONFIGURE THE SERVICE
+   -----------------------
+   Name: student-attendance-backend
+   Region: Singapore (closest to Philippines)
+   Branch: main
+   Root Directory: (leave empty)
+   
+   **IMPORTANT:**
+   Environment: Docker  ← MUST select Docker!
+   
+   Dockerfile Path: ./Dockerfile
+   Docker Context: .
+   
+   (Build and Start commands will be handled by Dockerfile, leave empty)
+
+5. ADD ENVIRONMENT VARIABLES
+   --------------------------
+   Use the variables from BACKEND_ENV_ONLY.txt:
+   
+   APP_NAME=StudentAttendance
+   APP_ENV=production
+   APP_DEBUG=false
+   APP_KEY=(click Generate)
+   AIRTABLE_API_KEY=patziQrv2K0Gi9Ma9.74cab60fc27be24464a3198652c23f0a7189a7a7003ed227dbade557ac36d626
+   AIRTABLE_BASE_ID=appT96N6jX4ZWDYUy
+   AIRTABLE_TABLE_STUDENTS=tbldCCRCR0hLNv5BN
+   AIRTABLE_TABLE_TEACHERS=tbl7UpOOzgZsXMwFg
+   AIRTABLE_TABLE_CLASSES=tbl6kzsJkbyl5Cqqr
+   AIRTABLE_TABLE_ATTENDANCE=tblXW92OSS8XADH8Y
+   GEOFENCE_RADIUS=100
+
+6. DEPLOY
+   --------
+   Click "Create Web Service"
+   Wait 5-10 minutes for build
+
+7. GET YOUR BACKEND URL
+   --------------------
+   Copy the URL (e.g., https://student-attendance-backend.onrender.com)
+
+
+WHAT THE DOCKERFILE DOES:
+==========================
+✅ Installs PHP 8.1
+✅ Installs Composer
+✅ Installs Laravel dependencies
+✅ Caches Laravel configs
+✅ Starts the server on correct port
+✅ Works perfectly with Render!
+
+
+TROUBLESHOOTING:
+================
+If build still fails:
+1. Check Render logs
+2. Make sure Dockerfile and .dockerignore are committed
+3. Make sure "Environment" is set to "Docker"
+4. Check that all environment variables are set
+

@@ -45,6 +45,8 @@ Route::post('/classes/add-students', [ClassesController::class, 'addStudents']);
 Route::post('/classes/remove-student', [ClassesController::class, 'removeStudent']);
 Route::post('/classes/open', [ClassesController::class, 'openClass']);
 Route::post('/classes/close', [ClassesController::class, 'closeClass']);
+Route::post('/classes/extend', [ClassesController::class, 'extendClass']);
+Route::post('/classes/toggle-manual-control', [ClassesController::class, 'toggleManualControl']);
 Route::post('/classes/student-signin', [ClassesController::class, 'studentSignIn']);
 Route::get('/classes/{classId}/attendance', [ClassesController::class, 'getAttendance']);
 

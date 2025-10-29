@@ -282,6 +282,62 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleExtendClass = async (classId) => {
+    const classItem = classes.find(c => c.id === classId);
+    
+    // Show options for extending
+    const options = [
+      { label: '15 minutes', value: 15 },
+      { label: '30 minutes', value: 30 },
+      { label: '1 hour', value: 60 },
+      { label: '2 hours', value: 120 }
+    ];
+    
+    const choice = prompt(
+      `Extend "${classItem.name}" by how many minutes?\n\n` +
+      `Current end time: ${classItem.endTime}\n\n` +
+      `Enter minutes (5-180) or choose:\n` +
+      options.map(o => `- ${o.value} (${o.label})`).join('\n')
+    );
+    
+    if (!choice) return; // User cancelled
+    
+    const minutes = parseInt(choice);
+    if (isNaN(minutes) || minutes < 5 || minutes > 180) {
+      showToastMessage('Please enter a valid number between 5 and 180 minutes', 'error');
+      return;
+    }
+    
+    try {
+      const response = await api.post('/classes/extend', {
+        classId: classId,
+        additionalMinutes: minutes
+      });
+      
+      if (response.data.success) {
+        // Update local state
+        setClasses(classes.map(c => 
+          c.id === classId ? { 
+            ...c, 
+            endTime: response.data.newEndTime,
+            isOpen: true 
+          } : c
+        ));
+        
+        showToastMessage(
+          `Class extended by ${minutes} minutes! New end time: ${response.data.newEndTime}`,
+          'success'
+        );
+      }
+    } catch (error) {
+      console.error('Error extending class:', error);
+      showToastMessage(
+        error.response?.data?.message || 'Failed to extend class. Please try again.',
+        'error'
+      );
+    }
+  };
+
   const handleViewClassDetails = async (classItem) => {
     setSelectedClass(classItem);
     setShowClassDetailsModal(true);
@@ -588,6 +644,23 @@ const AdminDashboard = () => {
                     >
                       {classItem.isOpen ? 'Close Class' : 'Open Class'}
                     </button>
+                    {classItem.isOpen && (
+                      <button 
+                        className="extend-btn"
+                        onClick={() => handleExtendClass(classItem.id)}
+                        style={{
+                          backgroundColor: '#ff9800',
+                          color: 'white',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        ⏱️ Extend Time
+                      </button>
+                    )}
                     <button 
                       className="details-btn"
                       onClick={() => handleViewClassDetails(classItem)}

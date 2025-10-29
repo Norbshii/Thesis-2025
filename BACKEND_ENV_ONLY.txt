@@ -1,0 +1,42 @@
+BACKEND ENVIRONMENT VARIABLES - COPY THESE TO RENDER
+====================================================
+
+ESSENTIAL (Required for app to work):
+--------------------------------------
+APP_NAME=StudentAttendance
+APP_ENV=production
+APP_DEBUG=false
+AIRTABLE_API_KEY=patziQrv2K0Gi9Ma9.74cab60fc27be24464a3198652c23f0a7189a7a7003ed227dbade557ac36d626
+AIRTABLE_BASE_ID=appT96N6jX4ZWDYUy
+AIRTABLE_TABLE_STUDENTS=tbldCCRCR0hLNv5BN
+AIRTABLE_TABLE_TEACHERS=tbl7UpOOzgZsXMwFg
+AIRTABLE_TABLE_CLASSES=tbl6kzsJkbyl5Cqqr
+AIRTABLE_TABLE_ATTENDANCE=tblXW92OSS8XADH8Y
+GEOFENCE_RADIUS=100
+
+
+OPTIONAL (Laravel defaults, can skip if you want):
+---------------------------------------------------
+APP_URL=https://your-backend-url.onrender.com
+LOG_CHANNEL=stack
+LOG_LEVEL=error
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+
+SPECIAL (Don't paste - use Render's Generate button):
+------------------------------------------------------
+APP_KEY=(Leave empty, click "Generate" in Render dashboard)
+
+
+HOW TO ADD IN RENDER:
+=====================
+1. Go to your backend service in Render
+2. Click "Environment" tab
+3. Click "Add Environment Variable"
+4. For each line above:
+   - Left box (Key): Copy the part BEFORE the = sign
+   - Right box (Value): Copy the part AFTER the = sign
+5. For APP_KEY: Click "Generate" button instead of pasting
+
