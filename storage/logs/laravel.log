@@ -8240,3 +8240,43 @@
 [2025-10-30 23:13:14] local.INFO: Airtable listRecords response {"recordCount":4} 
 [2025-10-30 23:13:14] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
 [2025-10-30 23:13:15] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 23:17:52] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-10-30 23:17:52] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-10-30 23:17:52] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 23:17:53] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 23:17:53] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-10-30 23:17:54] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-10-30 23:17:54] local.INFO: Profile request received {"email":"trialacc@example.com"} 
+[2025-10-30 23:17:54] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='trialacc@example.com'","maxRecords":1}} 
+[2025-10-30 23:17:55] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 23:17:55] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='trialacc@example.com'","maxRecords":1}} 
+[2025-10-30 23:17:56] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 23:17:56] local.INFO: Student profile fields from Airtable {"email":"trialacc@example.com","available_fields":["Email","Password","Name","Role","Department"],"all_field_values":{"Email":"trialacc@example.com","Password":"trialacc","Name":"Lorem Ipsum","Role":"Teacher","Department":"College of Computer and Informatics (CCI)"}} 
+[2025-10-30 23:17:56] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-10-30 23:17:56] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-10-30 23:17:56] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 23:17:57] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 23:17:57] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-10-30 23:17:57] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-10-30 23:17:57] local.INFO: Profile request received {"email":"trialacc@example.com"} 
+[2025-10-30 23:17:57] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='trialacc@example.com'","maxRecords":1}} 
+[2025-10-30 23:17:59] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 23:17:59] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='trialacc@example.com'","maxRecords":1}} 
+[2025-10-30 23:18:00] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 23:18:00] local.INFO: Student profile fields from Airtable {"email":"trialacc@example.com","available_fields":["Email","Password","Name","Role","Department"],"all_field_values":{"Email":"trialacc@example.com","Password":"trialacc","Name":"Lorem Ipsum","Role":"Teacher","Department":"College of Computer and Informatics (CCI)"}} 
+[2025-10-30 23:18:00] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-30 23:18:02] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 23:18:02] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='trialacc@example.com'"}} 
+[2025-10-30 23:18:03] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 23:18:03] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-30 23:18:04] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 23:18:05] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='trialacc@example.com'"}} 
+[2025-10-30 23:18:06] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 23:18:06] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 23:18:07] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 23:18:08] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 23:18:09] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 23:18:09] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 23:18:10] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 23:18:10] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 23:18:11] local.INFO: Airtable listRecords response {"recordCount":4} 
