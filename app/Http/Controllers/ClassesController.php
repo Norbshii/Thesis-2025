@@ -255,6 +255,39 @@ class ClassesController extends Controller
         $longitude = $request->input('longitude');
 
         try {
+            // Get class details to calculate duration
+            $classRecord = $this->airtable->getRecord($tableName, $classId);
+            $classFields = $classRecord['fields'] ?? [];
+            
+            $startTime = $classFields['Start Time'] ?? null;
+            $endTime = $classFields['End Time'] ?? null;
+            
+            // Calculate auto-close time based on class duration
+            $autoCloseTime = null;
+            if ($startTime && $endTime) {
+                try {
+                    // Parse start and end times
+                    $start = \Carbon\Carbon::createFromFormat('H:i', $startTime);
+                    $end = \Carbon\Carbon::createFromFormat('H:i', $endTime);
+                    
+                    // Calculate duration in minutes
+                    $durationMinutes = $end->diffInMinutes($start);
+                    
+                    // Set auto-close time = current time + duration
+                    $autoCloseTime = now()->addMinutes($durationMinutes)->toIso8601String();
+                    
+                    \Log::info('Auto-close time calculated', [
+                        'scheduledStart' => $startTime,
+                        'scheduledEnd' => $endTime,
+                        'duration' => $durationMinutes . ' minutes',
+                        'actualOpen' => now()->format('H:i'),
+                        'autoClose' => now()->addMinutes($durationMinutes)->format('H:i')
+                    ]);
+                } catch (\Exception $timeError) {
+                    \Log::warning('Could not calculate auto-close time: ' . $timeError->getMessage());
+                }
+            }
+            
             // Try to open with session fields first
             try {
                 $fields = [
@@ -264,12 +297,24 @@ class ClassesController extends Controller
                     'Current Session Opened' => now()->toIso8601String(),
                 ];
                 
+                // Add auto-close time if calculated
+                if ($autoCloseTime) {
+                    $fields['Auto Close Time'] = $autoCloseTime;
+                }
+                
                 $updated = $this->airtable->updateRecord($tableName, $classId, $fields);
                 
+                $message = 'Class opened successfully with geofence';
+                if ($autoCloseTime) {
+                    $closeAt = now()->addMinutes(\Carbon\Carbon::createFromFormat('H:i', $startTime)->diffInMinutes(\Carbon\Carbon::createFromFormat('H:i', $endTime)))->format('h:i A');
+                    $message .= " (will auto-close at {$closeAt})";
+                }
+                
                 return response()->json([
-                    'message' => 'Class opened successfully with geofence',
+                    'message' => $message,
                     'class' => $updated,
                     'geofence_active' => true,
+                    'auto_close_time' => $autoCloseTime,
                 ]);
             } catch (\Exception $innerException) {
                 \Log::warning('Could not save session fields, opening without geofence: ' . $innerException->getMessage());

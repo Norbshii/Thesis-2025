@@ -25,15 +25,19 @@ class StudentsController extends Controller
             foreach ($records as $rec) {
                 $fields = $rec['fields'] ?? [];
                 
+                // Support both lowercase and capitalized field names
+                $email = $fields['email'] ?? $fields['Email'] ?? '';
+                $name = $fields['name'] ?? $fields['Name'] ?? '';
+                
                 // Only include records that have at least an email or name
-                if (!empty($fields['email']) || !empty($fields['name'])) {
+                if (!empty($email) || !empty($name)) {
                     $students[] = [
                         'id' => $rec['id'],
-                        'name' => $fields['name'] ?? '',
-                        'email' => $fields['email'] ?? '',
-                        'course' => $fields['course'] ?? '',
-                        'age' => $fields['age'] ?? null,
-                        'address' => $fields['address'] ?? '',
+                        'name' => $name,
+                        'email' => $email,
+                        'course' => $fields['course'] ?? $fields['Course'] ?? $fields['Course Year & Section'] ?? '',
+                        'age' => $fields['age'] ?? $fields['Age'] ?? null,
+                        'address' => $fields['address'] ?? $fields['Address'] ?? '',
                     ];
                 }
             }

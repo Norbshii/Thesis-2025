@@ -19,8 +19,9 @@ const RequireRole = ({ role, children }) => {
     return <Navigate to="/login" replace />;
   }
   const user = authAPI.getStoredUser();
-  const roles = Array.isArray(role) ? role : [role];
-  if (role && !roles.includes(user?.role)) {
+  const userRole = (user?.role || '').toLowerCase();
+  const roles = Array.isArray(role) ? role.map(r => r.toLowerCase()) : [role.toLowerCase()];
+  if (role && !roles.includes(userRole)) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -29,6 +30,9 @@ const RequireRole = ({ role, children }) => {
 function App() {
   const isAuthed = authAPI.isAuthenticated();
   const user = isAuthed ? authAPI.getStoredUser() : null;
+
+  // Debug: Log auth state
+  console.log('App render:', { isAuthed, user });
 
   return (
     <div className="App">
@@ -40,7 +44,7 @@ function App() {
               <Navigate
                 to={
                   isAuthed
-                    ? (user?.role === 'admin' || user?.role === 'teacher')
+                    ? ((user?.role || '').toLowerCase() === 'admin' || (user?.role || '').toLowerCase() === 'teacher')
                       ? '/admin'
                       : '/dashboard'
                     : '/login'

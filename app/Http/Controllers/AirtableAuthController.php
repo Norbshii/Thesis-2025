@@ -23,12 +23,11 @@ class AirtableAuthController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableUsers = config('airtable.tables.users');
         $tableStudents = config('airtable.tables.students');
         $tableTeachers = config('airtable.tables.teachers');
 
+        // Removed $tableUsers and do NOT search 'users' table
         $record = $this->airtable->findAcrossTables([
-            $tableUsers,
             $tableStudents,
             $tableTeachers,
         ], $request->username);
@@ -38,37 +37,54 @@ class AirtableAuthController extends Controller
         $fields = $record['fields'] ?? [];
 
         // Passwords are stored as plaintext or hashed? Prefer hashed; if plaintext, compare directly.
-        $storedHash = $fields['password_hash'] ?? null;
-        $storedPlain = $fields['password'] ?? null;
+        // Check both lowercase and capitalized field names for compatibility
+        $storedHash = $fields['password_hash'] ?? $fields['Password_hash'] ?? null;
+        $storedPlain = $fields['password'] ?? $fields['Password'] ?? null;
+
+        // DEBUG: Log what we found
+        \Log::info('Password check for user', [
+            'email' => $request->username,
+            'has_password_hash' => !empty($storedHash),
+            'has_password' => !empty($storedPlain),
+            'password_hash_preview' => $storedHash ? substr($storedHash, 0, 20) . '...' : 'null',
+            'password_preview' => $storedPlain ? substr($storedPlain, 0, 20) . '...' : 'null',
+            'input_password_length' => strlen($request->password)
+        ]);
 
         $valid = false;
         if ($storedHash) {
             // Standard: compare against bcrypt hash in password_hash field
             $valid = Hash::check($request->password, $storedHash);
+            \Log::info('Password check via password_hash', ['valid' => $valid]);
         } elseif ($storedPlain) {
             // Handle both legacy plaintext and bcrypt stored in "password" field
             // Detect bcrypt hash format (e.g., $2y$10$...)
             if (is_string($storedPlain) && preg_match('/^\$2[aby]\$\d{2}\$/', $storedPlain) === 1) {
                 // "password" holds a bcrypt hash; verify properly
                 $valid = Hash::check($request->password, $storedPlain);
+                \Log::info('Password check via password field (bcrypt)', ['valid' => $valid]);
             } else {
                 // Legacy plaintext fallback
                 $valid = hash_equals((string)$storedPlain, (string)$request->password);
+                \Log::info('Password check via password field (plaintext)', ['valid' => $valid]);
             }
+        } else {
+            \Log::warning('No password field found in user record');
         }
 
         if (!$valid) {
+            \Log::warning('Login failed: password validation failed');
             return response()->json(['message' => 'Invalid email or password'], 401);
         }
 
         // Enforce login tab vs role mapping
         $user = [
             'id' => $record['id'],
-            'username' => $fields['username'] ?? $fields['email'] ?? null,
-            'email' => $fields['email'] ?? null,
-            'first_name' => $fields['first_name'] ?? null,
-            'last_name' => $fields['last_name'] ?? null,
-            'role' => $fields['role'] ?? 'student',
+            'username' => $fields['username'] ?? $fields['Username'] ?? $fields['email'] ?? $fields['Email'] ?? null,
+            'email' => $fields['email'] ?? $fields['Email'] ?? null,
+            'first_name' => $fields['first_name'] ?? $fields['First_name'] ?? null,
+            'last_name' => $fields['last_name'] ?? $fields['Last_name'] ?? null,
+            'role' => $fields['role'] ?? $fields['Role'] ?? 'student',
         ];
 
         // Return a mock token since Sanctum tokens are for DB users; keep frontend flow identical
@@ -172,7 +188,6 @@ class AirtableAuthController extends Controller
 
         // Find user across all tables
         $record = $this->airtable->findAcrossTables([
-            $tableUsers,
             $tableStudents,
             $tableTeachers,
         ], $request->email);
@@ -188,14 +203,20 @@ class AirtableAuthController extends Controller
         $tableName = $record['__table'] ?? $tableUsers;
 
         // Verify current password
-        $storedHash = $fields['password_hash'] ?? null;
-        $storedPlain = $fields['password'] ?? null;
+        // Check both lowercase and capitalized field names for compatibility
+        $storedHash = $fields['password_hash'] ?? $fields['Password_hash'] ?? null;
+        $storedPlain = $fields['password'] ?? $fields['Password'] ?? null;
 
         $valid = false;
         if ($storedHash) {
             $valid = Hash::check($request->currentPassword, $storedHash);
         } elseif ($storedPlain) {
-            $valid = hash_equals($storedPlain, $request->currentPassword);
+            // Check if it's a bcrypt hash stored in Password field
+            if (is_string($storedPlain) && preg_match('/^\$2[aby]\$\d{2}\$/', $storedPlain) === 1) {
+                $valid = Hash::check($request->currentPassword, $storedPlain);
+            } else {
+                $valid = hash_equals($storedPlain, $request->currentPassword);
+            }
         }
 
         if (!$valid) {
@@ -208,7 +229,7 @@ class AirtableAuthController extends Controller
         try {
             $newPasswordHash = Hash::make($request->newPassword);
             
-            // Try to update password_hash first (preferred), fall back to password field
+            // Try to update password_hash first (preferred), fall back to password/Password field
             try {
                 $this->airtable->updateRecord($tableName, $recordId, [
                     'password_hash' => $newPasswordHash,
@@ -220,19 +241,38 @@ class AirtableAuthController extends Controller
                     'table' => $tableName
                 ]);
             } catch (\Exception $hashError) {
-                // If password_hash field doesn't exist, try password field
+                // If password_hash field doesn't exist, try password field (lowercase)
                 if (str_contains($hashError->getMessage(), 'UNKNOWN_FIELD_NAME')) {
-                    \Log::warning('password_hash field not found, using password field instead');
+                    \Log::warning('password_hash field not found, trying password field');
                     
-                    $this->airtable->updateRecord($tableName, $recordId, [
-                        'password' => $newPasswordHash,
-                    ]);
-                    
-                    \Log::info('Password changed successfully (using password field)', [
-                        'email' => $request->email,
-                        'recordId' => $recordId,
-                        'table' => $tableName
-                    ]);
+                    try {
+                        $this->airtable->updateRecord($tableName, $recordId, [
+                            'password' => $newPasswordHash,
+                        ]);
+                        
+                        \Log::info('Password changed successfully (using password field)', [
+                            'email' => $request->email,
+                            'recordId' => $recordId,
+                            'table' => $tableName
+                        ]);
+                    } catch (\Exception $passError) {
+                        // If lowercase password doesn't exist, try Password (capitalized)
+                        if (str_contains($passError->getMessage(), 'UNKNOWN_FIELD_NAME')) {
+                            \Log::warning('password field not found, trying Password field (capitalized)');
+                            
+                            $this->airtable->updateRecord($tableName, $recordId, [
+                                'Password' => $newPasswordHash,
+                            ]);
+                            
+                            \Log::info('Password changed successfully (using Password field)', [
+                                'email' => $request->email,
+                                'recordId' => $recordId,
+                                'table' => $tableName
+                            ]);
+                        } else {
+                            throw $passError;
+                        }
+                    }
                 } else {
                     throw $hashError;
                 }
