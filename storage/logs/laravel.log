@@ -7144,3 +7144,30 @@
 [2025-10-30 17:51:48] local.INFO: Airtable listRecords response {"recordCount":1} 
 [2025-10-30 17:51:52] local.WARNING: password_hash field not found, using password field instead  
 [2025-10-30 17:51:53] local.INFO: Password changed successfully (using password field) {"email":"teacher@example.com","recordId":"recpLZrOnLE9mWbX2","table":"tbl7UpOOzgZsXMwFg"} 
+[2025-10-30 18:08:06] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:09] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 18:08:09] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:10] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 18:08:10] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:11] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 18:08:12] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:17] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 18:08:17] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:18] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 18:08:18] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:19] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 18:08:19] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:23] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 18:08:23] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:24] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 18:08:24] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:27] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 18:08:27] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:33] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 18:08:33] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:34] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 18:08:34] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 18:08:38] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 18:08:38] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-30 18:08:42] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 18:08:42] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
