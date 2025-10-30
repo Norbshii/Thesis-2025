@@ -1,6 +1,6 @@
-# Student Portal Login System
+# PinPoint - Student Location Monitoring System
 
-A modern, responsive login system for a student portal built with React and Laravel. Features a beautiful dark/purple design with authentication, form validation, and a dashboard.
+A modern, responsive student location monitoring and attendance system built with React and Laravel. Features geolocation-based attendance tracking, real-time class management, and a beautiful dark/purple design with authentication.
 
 ## Features
 

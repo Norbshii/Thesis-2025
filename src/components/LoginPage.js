@@ -119,7 +119,7 @@ const LoginPage = () => {
                   <circle className="ripple" cx="50" cy="75" r="12"/>
                 </svg>
               </div>
-              <h1 className="login-title">Student Portal</h1>
+              <h1 className="login-title">PinPoint</h1>
             </div>
 
             {/* REMOVED: Tab Navigation for student/admin */}
@@ -212,7 +212,7 @@ const LoginPage = () => {
         <div className="welcome-panel">
           <div className="welcome-content">
             <h2 className="welcome-title">
-              Welcome to<br />student portal
+              Welcome to<br />PinPoint
             </h2>
             <p className="welcome-subtitle">Login to access your account.</p>
             
