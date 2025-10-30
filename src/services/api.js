@@ -42,7 +42,9 @@ export const authAPI = {
   // Login user
   login: async (credentials) => {
     try {
-      const response = await api.post('/login', credentials);
+      // Only send username and password
+      const { username, password } = credentials;
+      const response = await api.post('/login', { username, password });
       const { token, user } = response.data;
       
       // Store token and user data

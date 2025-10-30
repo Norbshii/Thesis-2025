@@ -6760,3 +6760,387 @@
 [2025-10-29 15:04:36] local.INFO: Airtable listRecords response {"recordCount":4} 
 [2025-10-29 15:04:36] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
 [2025-10-29 15:04:37] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 15:05:46] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:05:47] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:05:47] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:05:48] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:05:49] local.ERROR: Failed to change password: Airtable updateRecord failed: {"error":{"type":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"password_hash\""}}  
+[2025-10-29 15:08:05] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:08:06] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:08:06] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:08:07] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:08:08] local.WARNING: password_hash field not found, using password field instead  
+[2025-10-29 15:08:10] local.INFO: Password changed successfully (using password field) {"email":"student@example.com","recordId":"recDsNP3V1jSsEoW9","table":"tbldCCRCR0hLNv5BN"} 
+[2025-10-29 15:08:48] local.ERROR: Object of type Illuminate\Auth\AuthManager is not callable {"exception":"[object] (Error(code: 0): Object of type Illuminate\\Auth\\AuthManager is not callable at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php:181)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#32 {main}
+"} 
+[2025-10-29 15:09:02] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:03] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:09:03] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:05] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:09:19] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:21] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:09:21] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:22] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:09:22] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:24] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:09:24] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:25] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:09:25] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:26] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:09:26] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:09:27] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:09:28] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 15:09:29] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 15:09:29] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 15:09:31] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 15:09:31] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 15:09:32] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 15:09:33] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 15:09:34] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 15:12:09] local.ERROR: Object of type Illuminate\Auth\AuthManager is not callable {"exception":"[object] (Error(code: 0): Object of type Illuminate\\Auth\\AuthManager is not callable at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php:181)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#32 {main}
+"} 
+[2025-10-29 15:12:29] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:12:30] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:12:30] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:12:32] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:12:33] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:12:34] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:12:34] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:12:35] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:12:36] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:12:37] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 15:12:37] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:12:38] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:12:39] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 15:12:40] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 15:12:40] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 15:12:42] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 15:12:42] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 15:12:43] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 15:12:44] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 15:12:45] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 15:14:38] local.INFO: Geofence validation {"teacherLat":10.755555,"teacherLon":122.58429,"studentLat":10.715136,"studentLon":122.5588736,"distance":5282.96,"radius":50000,"withinRange":true} 
+[2025-10-29 15:14:38] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:14:39] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:14:39] local.INFO: Late threshold calculation {"classOpenedAt":"2025-10-25T09:15:55.000Z","signInAt":"2025-10-29T15:14:38+08:00","lateThreshold":15,"thresholdTime":"2025-10-25 17:30:55","isLate":true} 
+[2025-10-29 15:14:39] local.INFO: Creating attendance record with basic fields {"Class Code":"CC 203","Class Name":"Software Engineering","Date":"2025-10-29","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"15:14:38","Status":"Late","Distance":5282.96,"Timestamp":"2025-10-29T15:14:38+08:00"} 
+[2025-10-29 15:14:40] local.INFO: Attendance record created successfully {"recordId":"recUVA0E4yt7ZjLCp"} 
+[2025-10-29 15:14:40] local.ERROR: SMS exception: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.semaphore.co/api/v4/messages  
+[2025-10-29 15:14:40] local.WARNING: SMS failed to send {"phone":"09060633401","error":"SMS service error: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.semaphore.co/api/v4/messages"} 
+[2025-10-29 15:18:34] local.INFO: Geofence validation {"teacherLat":10.755555,"teacherLon":122.58429,"studentLat":10.7557257,"studentLon":122.5848807,"distance":67.26,"radius":"100","withinRange":true} 
+[2025-10-29 15:18:34] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 15:18:35] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 15:18:35] local.INFO: Late threshold calculation {"classOpenedAt":"2025-10-25T10:05:41.000Z","signInAt":"2025-10-29T15:18:34+08:00","lateThreshold":15,"thresholdTime":"2025-10-25 18:20:41","isLate":true} 
+[2025-10-29 15:18:35] local.INFO: Creating attendance record with basic fields {"Class Code":"SC 212","Class Name":"Social Studies","Date":"2025-10-29","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"15:18:34","Status":"Late","Distance":67.26,"Timestamp":"2025-10-29T15:18:34+08:00"} 
+[2025-10-29 15:18:36] local.INFO: Attendance record created successfully {"recordId":"recPLkre7cI46Hgty"} 
+[2025-10-29 15:18:36] local.ERROR: SMS exception: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.semaphore.co/api/v4/messages  
+[2025-10-29 15:18:36] local.WARNING: SMS failed to send {"phone":"09060633401","error":"SMS service error: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.semaphore.co/api/v4/messages"} 
+[2025-10-29 20:58:54] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-29 20:58:58] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 20:58:58] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-29 20:59:00] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-29 20:59:00] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-29 20:59:01] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 20:59:02] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-29 20:59:03] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 20:59:03] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-29 20:59:04] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-29 20:59:04] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-29 20:59:05] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 20:59:06] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
+[2025-10-29 20:59:07] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 20:59:08] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
+[2025-10-29 20:59:09] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 20:59:09] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 20:59:13] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 20:59:14] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 20:59:17] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 21:07:22] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 21:07:23] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 21:07:23] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 21:07:24] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:07:25] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 21:07:26] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 21:07:26] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 21:07:28] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:07:28] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 21:07:29] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 21:07:29] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 21:07:30] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:07:31] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 21:07:32] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 21:07:33] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 21:07:34] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 21:07:34] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 21:07:36] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 21:07:36] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 21:07:37] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 21:08:13] local.INFO: Geofence validation {"teacherLat":10.755555,"teacherLon":122.58429,"studentLat":10.715136,"studentLon":122.5588736,"distance":5282.96,"radius":"100","withinRange":false} 
+[2025-10-29 21:08:27] local.INFO: Geofence validation {"teacherLat":10.755555,"teacherLon":122.58429,"studentLat":10.715136,"studentLon":122.5588736,"distance":5282.96,"radius":"100","withinRange":false} 
+[2025-10-29 21:08:39] local.INFO: Geofence validation {"teacherLat":10.715136,"teacherLon":122.5588736,"studentLat":10.715136,"studentLon":122.5588736,"distance":0.0,"radius":"100","withinRange":true} 
+[2025-10-29 21:08:39] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-29 21:08:40] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:08:40] local.INFO: Late threshold calculation {"classOpenedAt":"2025-10-29T13:08:33.000Z","signInAt":"2025-10-29T21:08:39+08:00","lateThreshold":15,"thresholdTime":"2025-10-29 21:23:33","isLate":false} 
+[2025-10-29 21:08:40] local.INFO: Creating attendance record with basic fields {"Class Code":"SC 212","Class Name":"Social Studies","Date":"2025-10-29","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"21:08:39","Status":"On Time","Distance":0.0,"Timestamp":"2025-10-29T21:08:39+08:00"} 
+[2025-10-29 21:08:41] local.INFO: Attendance record created successfully {"recordId":"recwcdx0bOgIBOSWA"} 
+[2025-10-29 21:08:41] local.ERROR: SMS exception: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.semaphore.co/api/v4/messages  
+[2025-10-29 21:08:41] local.WARNING: SMS failed to send {"phone":"09060633401","error":"SMS service error: cURL error 60: SSL certificate problem: unable to get local issuer certificate (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.semaphore.co/api/v4/messages"} 
+[2025-10-29 21:08:52] local.INFO: Fetching attendance {"classId":"recnvROEPaU6j8sFf","classCode":"SC 212","requestedDate":"2025-10-29"} 
+[2025-10-29 21:08:52] local.INFO: Airtable filter formula {"formula":"AND({Class Code}='SC 212',DATESTR({Date})='2025-10-29')"} 
+[2025-10-29 21:08:52] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":10}} 
+[2025-10-29 21:08:54] local.INFO: Airtable listRecords response {"recordCount":8} 
+[2025-10-29 21:08:54] local.INFO: Total records in attendance table (unfiltered) {"count":8,"sample":[]} 
+[2025-10-29 21:08:54] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tblXW92OSS8XADH8Y","params":{"pageSize":100,"sort[0][field]":"Sign In Time","sort[0][direction]":"asc","filterByFormula":"AND({Class Code}='SC 212',DATESTR({Date})='2025-10-29')"}} 
+[2025-10-29 21:08:55] local.INFO: Airtable listRecords response {"recordCount":2} 
+[2025-10-29 21:08:55] local.INFO: Attendance records found {"count":2} 
+[2025-10-29 21:08:55] local.INFO: Sample attendance record {"fields":{"Class Code":"SC 212","Class Name":"Social Studies","Date":"2025-10-29","Teacher Email":"teacher@example.com","Student Email":"student@example.com","Student Name":"Dave Emanuel Lima","Sign In Time":"15:18:34","Status":"Late","Distance":67.26,"Timestamp":"2025-10-29T07:18:34.000Z"}} 
+[2025-10-29 21:11:11] local.ERROR: Object of type Illuminate\Auth\AuthManager is not callable {"exception":"[object] (Error(code: 0): Object of type Illuminate\\Auth\\AuthManager is not callable at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php:181)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#32 {main}
+"} 
+[2025-10-29 21:11:28] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:11:30] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 21:11:30] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:11:31] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:11:31] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:11:33] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 21:11:33] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:11:34] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:11:34] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:11:35] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 21:11:35] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:11:36] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:11:37] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 21:11:38] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 21:11:38] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-29 21:11:40] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-29 21:11:40] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 21:11:41] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 21:11:42] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-29 21:11:43] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-29 21:12:14] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:12:16] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-29 21:12:16] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student1@example.com'","maxRecords":1}} 
+[2025-10-29 21:12:17] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-29 21:12:18] local.WARNING: password_hash field not found, using password field instead  
+[2025-10-29 21:12:20] local.INFO: Password changed successfully (using password field) {"email":"student1@example.com","recordId":"recVBAxdMvh7KJw8A","table":"tbldCCRCR0hLNv5BN"} 
+[2025-10-30 17:29:52] local.ERROR: Object of type Illuminate\Auth\AuthManager is not callable {"exception":"[object] (Error(code: 0): Object of type Illuminate\\Auth\\AuthManager is not callable at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php:181)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#32 {main}
+"} 
+[2025-10-30 17:43:18] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:43:30] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:43:30] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:43:33] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 17:43:33] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:43:34] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:43:51] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:43:53] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:43:53] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:43:55] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 17:43:55] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:43:57] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:43:57] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:03] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:44:03] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:04] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 17:44:04] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:09] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:44:10] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:12] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:44:12] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:20] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:44:21] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
+[2025-10-30 17:44:22] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 17:44:23] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:24] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:44:24] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:28] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:44:28] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
+[2025-10-30 17:44:29] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 17:44:29] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:32] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:44:32] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-10-30 17:44:39] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:44:39] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 17:44:43] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-30 17:44:43] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-30 17:44:46] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 17:44:47] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 17:44:48] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-30 17:44:48] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-10-30 17:44:52] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 17:44:53] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 17:45:00] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-30 17:45:01] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 17:45:06] local.INFO: Airtable listRecords response {"recordCount":11} 
+[2025-10-30 17:48:04] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:48:06] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:48:06] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:48:08] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 17:48:08] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:48:11] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:48:12] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:48:13] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:48:13] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:48:15] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 17:48:15] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:48:17] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:48:18] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
+[2025-10-30 17:48:20] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 17:48:21] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
+[2025-10-30 17:48:22] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 17:48:23] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 17:48:24] local.INFO: Airtable listRecords response {"recordCount":12} 
+[2025-10-30 17:48:25] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 17:48:27] local.INFO: Airtable listRecords response {"recordCount":12} 
+[2025-10-30 17:50:22] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:50:27] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:50:27] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:50:28] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 17:50:28] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:50:29] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:50:30] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc","filterByFormula":"{Teacher}='teacher@example.com'"}} 
+[2025-10-30 17:50:31] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-10-30 17:50:32] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-10-30 17:50:35] local.INFO: Airtable listRecords response {"recordCount":12} 
+[2025-10-30 17:51:41] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/Users","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:51:43] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND\",\"message\":\"Invalid permissions, or the requested model was not found. Check that both your user and your token have the required permissions, and that the model names and/or ids are correct.\"}}"} 
+[2025-10-30 17:51:43] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:51:44] local.INFO: Airtable listRecords response {"recordCount":0} 
+[2025-10-30 17:51:44] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl7UpOOzgZsXMwFg","params":{"filterByFormula":"{email}='teacher@example.com'","maxRecords":1}} 
+[2025-10-30 17:51:48] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-10-30 17:51:52] local.WARNING: password_hash field not found, using password field instead  
+[2025-10-30 17:51:53] local.INFO: Password changed successfully (using password field) {"email":"teacher@example.com","recordId":"recpLZrOnLE9mWbX2","table":"tbl7UpOOzgZsXMwFg"} 

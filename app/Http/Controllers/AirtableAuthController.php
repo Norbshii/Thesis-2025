@@ -18,7 +18,6 @@ class AirtableAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string|min:6',
-            'login_type' => 'nullable|string|in:student,admin',
         ]);
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
@@ -44,9 +43,18 @@ class AirtableAuthController extends Controller
 
         $valid = false;
         if ($storedHash) {
+            // Standard: compare against bcrypt hash in password_hash field
             $valid = Hash::check($request->password, $storedHash);
         } elseif ($storedPlain) {
-            $valid = hash_equals($storedPlain, $request->password);
+            // Handle both legacy plaintext and bcrypt stored in "password" field
+            // Detect bcrypt hash format (e.g., $2y$10$...)
+            if (is_string($storedPlain) && preg_match('/^\$2[aby]\$\d{2}\$/', $storedPlain) === 1) {
+                // "password" holds a bcrypt hash; verify properly
+                $valid = Hash::check($request->password, $storedPlain);
+            } else {
+                // Legacy plaintext fallback
+                $valid = hash_equals((string)$storedPlain, (string)$request->password);
+            }
         }
 
         if (!$valid) {
@@ -54,15 +62,6 @@ class AirtableAuthController extends Controller
         }
 
         // Enforce login tab vs role mapping
-        $loginType = $request->input('login_type');
-        $roleValue = strtolower((string)($fields['role'] ?? ''));
-        if ($loginType === 'student' && $roleValue !== 'student') {
-            return response()->json(['message' => 'This account is not a student. Use the Admin Login tab.'], 403);
-        }
-        if ($loginType === 'admin' && $roleValue !== 'teacher') {
-            return response()->json(['message' => 'This account is not a teacher. Use the Student Login tab.'], 403);
-        }
-
         $user = [
             'id' => $record['id'],
             'username' => $fields['username'] ?? $fields['email'] ?? null,
