@@ -15,14 +15,13 @@ A modern, responsive login system for a student portal built with React and Lara
 
 ### Frontend
 - React 18
-- Axios for API calls
 - CSS3 with modern styling
 - Inter font family
 
 ### Backend
 - Laravel 9
 - Laravel Sanctum for API authentication
-- MySQL database
+- Airtable database
 - CORS configuration
 
 ## Installation & Setup

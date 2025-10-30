@@ -36,6 +36,7 @@ Route::get('/health', function () {
 // Public routes (Airtable-backed auth)
 Route::post('/login', [AirtableAuthController::class, 'login']);
 Route::post('/register', [AirtableAuthController::class, 'register']);
+Route::post('/change-password', [AirtableAuthController::class, 'changePassword']);
 
 // Public Airtable-backed class routes (no auth, to reduce setup for non-technical users)
 Route::get('/classes', [ClassesController::class, 'index']);
@@ -45,6 +46,8 @@ Route::post('/classes/add-students', [ClassesController::class, 'addStudents']);
 Route::post('/classes/remove-student', [ClassesController::class, 'removeStudent']);
 Route::post('/classes/open', [ClassesController::class, 'openClass']);
 Route::post('/classes/close', [ClassesController::class, 'closeClass']);
+Route::post('/classes/extend', [ClassesController::class, 'extendClass']);
+Route::post('/classes/toggle-manual-control', [ClassesController::class, 'toggleManualControl']);
 Route::post('/classes/student-signin', [ClassesController::class, 'studentSignIn']);
 Route::get('/classes/{classId}/attendance', [ClassesController::class, 'getAttendance']);
 

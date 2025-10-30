@@ -5,7 +5,6 @@ import './LoginPage.css';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('student'); // 'student' or 'admin'
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -66,8 +65,9 @@ const LoginPage = () => {
     try {
       const { email, password } = formData;
       const username = email; // backend accepts username or email
-      const login_type = activeTab === 'admin' ? 'admin' : 'student';
-      const resp = await authAPI.login({ username, password, login_type });
+      // REMOVED: login_type selection logic
+      // CHANGED: Remove login_type from login
+      const resp = await authAPI.login({ username, password });
 
       // Store remember me preference
       if (rememberMe) {
@@ -121,23 +121,9 @@ const LoginPage = () => {
               </div>
               <h1 className="login-title">Student Portal</h1>
             </div>
-            
-            {/* Tab Navigation */}
-            <div className="tab-navigation">
-              <button
-                className={`tab-button ${activeTab === 'student' ? 'active' : ''}`}
-                onClick={() => setActiveTab('student')}
-              >
-                Student Login
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
-                onClick={() => setActiveTab('admin')}
-              >
-                Admin Login
-              </button>
-            </div>
-            
+
+            {/* REMOVED: Tab Navigation for student/admin */}
+
             <form onSubmit={handleSubmit} className="login-form">
               <div className="input-group">
                 <label htmlFor="email" className="input-label">Email</label>
@@ -148,7 +134,7 @@ const LoginPage = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder={activeTab === 'student' ? 'student@gmail.com' : 'admin@gmail.com'}
+                    placeholder="Enter your email"
                     className={`form-input ${validationErrors.email ? 'error' : ''}`}
                     required
                   />
@@ -222,7 +208,6 @@ const LoginPage = () => {
 
           </div>
         </div>
-
         {/* Right Panel - Welcome Message */}
         <div className="welcome-panel">
           <div className="welcome-content">

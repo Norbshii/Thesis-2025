@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\AirtableService;
+use App\Services\SmsService;
 use Illuminate\Support\Facades\Validator;
 
 class ClassesController extends Controller
 {
-    public function __construct(private AirtableService $airtable)
-    {
+    public function __construct(
+        private AirtableService $airtable,
+        private SmsService $sms
+    ) {
     }
 
     public function index(Request $request)
@@ -323,6 +326,134 @@ class ClassesController extends Controller
     }
 
     /**
+     * Extend class time (emergency extension for late classes or extra time needed)
+     */
+    public function extendClass(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'classId' => 'required|string',
+            'additionalMinutes' => 'required|integer|min:5|max:180', // 5 minutes to 3 hours
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $tableName = config('airtable.tables.classes');
+        $classId = $request->input('classId');
+        $additionalMinutes = $request->input('additionalMinutes');
+
+        try {
+            // Get current class data
+            $classRecord = $this->airtable->getRecord($tableName, $classId);
+            $fields = $classRecord['fields'] ?? [];
+            
+            // Parse current end time
+            $currentEndTime = $fields['End Time'] ?? null;
+            
+            if (!$currentEndTime) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Class has no end time set'
+                ], 400);
+            }
+
+            // Calculate new end time
+            try {
+                $endDateTime = \Carbon\Carbon::createFromFormat('H:i', $currentEndTime);
+                $newEndDateTime = $endDateTime->addMinutes($additionalMinutes);
+                $newEndTime = $newEndDateTime->format('H:i');
+                
+                // Update class with new end time and ensure it stays open
+                $updated = $this->airtable->updateRecord($tableName, $classId, [
+                    'End Time' => $newEndTime,
+                    'isOpen' => true, // Ensure it stays open
+                ]);
+
+                \Log::info('Class extended', [
+                    'classId' => $classId,
+                    'oldEndTime' => $currentEndTime,
+                    'newEndTime' => $newEndTime,
+                    'additionalMinutes' => $additionalMinutes
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Class extended by {$additionalMinutes} minutes",
+                    'oldEndTime' => $currentEndTime,
+                    'newEndTime' => $newEndTime,
+                    'class' => $updated,
+                ]);
+            } catch (\Exception $timeError) {
+                \Log::error('Failed to parse time: ' . $timeError->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid time format'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to extend class: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to extend class',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle manual control mode for a class
+     */
+    public function toggleManualControl(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'classId' => 'required|string',
+            'isManualControl' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $tableName = config('airtable.tables.classes');
+        $classId = $request->input('classId');
+        $isManualControl = $request->input('isManualControl');
+
+        try {
+            // Try to update manual control field
+            try {
+                $updated = $this->airtable->updateRecord($tableName, $classId, [
+                    'isManualControl' => $isManualControl
+                ]);
+
+                $mode = $isManualControl ? 'Manual Control' : 'Time-based';
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => "Class switched to {$mode} mode",
+                    'isManualControl' => $isManualControl,
+                    'class' => $updated,
+                ]);
+            } catch (\Exception $fieldError) {
+                \Log::warning('isManualControl field not found in Airtable. Add a checkbox field named "isManualControl"');
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Manual control field not available. Add "isManualControl" checkbox field to Classes table in Airtable.',
+                    'requiresAirtableField' => true
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to toggle manual control: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update control mode',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Calculate distance between two coordinates using Haversine formula
      * Returns distance in meters
      */
@@ -419,8 +550,71 @@ class ClassesController extends Controller
                 ], 403);
             }
 
-            // Student is within geofence, record attendance
+            // Get current time for duplicate check and attendance recording
             $currentDateTime = now();
+            
+            // Check for duplicate sign-in (same student, same class, same day)
+            $attendanceTable = config('airtable.tables.attendance_entries');
+            $classCode = $fields['Class Code'] ?? null;
+            $todayDate = $currentDateTime->format('Y-m-d');
+            
+            if ($attendanceTable && $classCode) {
+                try {
+                    // Build filter to check if student already signed in today for this class
+                    $duplicateFilter = "AND(" .
+                        "{Class Code}='" . str_replace("'", "\\'", $classCode) . "'," .
+                        "{Student Email}='" . str_replace("'", "\\'", $studentEmail) . "'," .
+                        "DATESTR({Date})='" . $todayDate . "'" .
+                    ")";
+                    
+                    $existingRecords = $this->airtable->listRecords($attendanceTable, [
+                        'filterByFormula' => $duplicateFilter,
+                        'maxRecords' => 1
+                    ]);
+                    
+                    if (!empty($existingRecords['records'])) {
+                        $existingRecord = $existingRecords['records'][0];
+                        $signInTime = $existingRecord['fields']['Sign In Time'] ?? 'earlier';
+                        
+                        \Log::info('Duplicate sign-in attempt blocked', [
+                            'student' => $studentEmail,
+                            'class' => $classCode,
+                            'date' => $todayDate,
+                            'originalSignIn' => $signInTime
+                        ]);
+                        
+                        return response()->json([
+                            'success' => false,
+                            'message' => "You have already signed in to this class today at {$signInTime}. Attendance has been recorded.",
+                            'alreadySignedIn' => true,
+                            'signInTime' => $signInTime,
+                            'date' => $todayDate
+                        ], 400);
+                    }
+                } catch (\Exception $duplicateError) {
+                    // Log but don't block sign-in if duplicate check fails
+                    \Log::warning('Duplicate check failed, allowing sign-in: ' . $duplicateError->getMessage());
+                }
+            }
+
+            // Get student's guardian phone number (optional for SMS)
+            $studentsTable = config('airtable.tables.students');
+            $guardianPhone = null;
+            try {
+                $studentsList = $this->airtable->listRecords($studentsTable, [
+                    'filterByFormula' => "{email}='" . str_replace("'", "\\'", $studentEmail) . "'",
+                    'maxRecords' => 1
+                ]);
+                
+                if (!empty($studentsList['records'])) {
+                    $studentRecord = $studentsList['records'][0];
+                    $guardianPhone = $studentRecord['fields']['guardianPhone'] ?? null;
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to fetch student guardian phone: ' . $e->getMessage());
+            }
+
+            // Student is within geofence, record attendance
             $lateThreshold = $fields['Late Threshold'] ?? 15;
 
             // Calculate if late based on when teacher ACTUALLY opened the class
@@ -471,12 +665,53 @@ class ClassesController extends Controller
                 \Log::error('Record data: ' . json_encode($attendanceRecord));
             }
 
+            // Send SMS to guardian (if phone number exists and SMS is configured)
+            $smsResult = null;
+            if ($guardianPhone && !empty(env('SEMAPHORE_API_KEY'))) {
+                try {
+                    $className = $fields['Class Name'] ?? 'Class';
+                    $teacherName = $fields['Teacher'] ?? 'Teacher';
+                    $signInTime = $currentDateTime->format('g:i A'); // 12-hour format
+                    
+                    $message = $this->sms->generateAttendanceMessage(
+                        $studentName,
+                        $className,
+                        $teacherName,
+                        $signInTime,
+                        $isLate
+                    );
+                    
+                    $smsResult = $this->sms->sendSMS($guardianPhone, $message);
+                    
+                    if ($smsResult['success']) {
+                        \Log::info('SMS sent to guardian', [
+                            'phone' => $guardianPhone,
+                            'student' => $studentName,
+                            'class' => $className
+                        ]);
+                    } else {
+                        \Log::warning('SMS failed to send', [
+                            'phone' => $guardianPhone,
+                            'error' => $smsResult['message']
+                        ]);
+                    }
+                } catch (\Exception $smsError) {
+                    \Log::error('SMS exception: ' . $smsError->getMessage());
+                }
+            } elseif (!$guardianPhone) {
+                \Log::info('SMS not sent: No guardian phone number for student', ['student' => $studentName]);
+            } else {
+                \Log::info('SMS not sent: SEMAPHORE_API_KEY not configured');
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => $isLate ? 'Signed in successfully (Late)' : 'Signed in successfully (On time)',
                 'isLate' => $isLate,
                 'signInTime' => $currentDateTime->format('H:i:s'),
-                'distance' => round($distance, 2)
+                'distance' => round($distance, 2),
+                'smsSent' => isset($smsResult) && $smsResult['success'],
+                'smsNote' => !$guardianPhone ? 'Add guardian phone to receive SMS alerts' : ($smsResult ? null : 'SMS service not configured')
             ]);
 
         } catch (\Exception $e) {

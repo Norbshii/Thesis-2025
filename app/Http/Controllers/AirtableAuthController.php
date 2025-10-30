@@ -18,7 +18,6 @@ class AirtableAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string|min:6',
-            'login_type' => 'nullable|string|in:student,admin',
         ]);
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
@@ -44,9 +43,18 @@ class AirtableAuthController extends Controller
 
         $valid = false;
         if ($storedHash) {
+            // Standard: compare against bcrypt hash in password_hash field
             $valid = Hash::check($request->password, $storedHash);
         } elseif ($storedPlain) {
-            $valid = hash_equals($storedPlain, $request->password);
+            // Handle both legacy plaintext and bcrypt stored in "password" field
+            // Detect bcrypt hash format (e.g., $2y$10$...)
+            if (is_string($storedPlain) && preg_match('/^\$2[aby]\$\d{2}\$/', $storedPlain) === 1) {
+                // "password" holds a bcrypt hash; verify properly
+                $valid = Hash::check($request->password, $storedPlain);
+            } else {
+                // Legacy plaintext fallback
+                $valid = hash_equals((string)$storedPlain, (string)$request->password);
+            }
         }
 
         if (!$valid) {
@@ -54,15 +62,6 @@ class AirtableAuthController extends Controller
         }
 
         // Enforce login tab vs role mapping
-        $loginType = $request->input('login_type');
-        $roleValue = strtolower((string)($fields['role'] ?? ''));
-        if ($loginType === 'student' && $roleValue !== 'student') {
-            return response()->json(['message' => 'This account is not a student. Use the Admin Login tab.'], 403);
-        }
-        if ($loginType === 'admin' && $roleValue !== 'teacher') {
-            return response()->json(['message' => 'This account is not a teacher. Use the Student Login tab.'], 403);
-        }
-
         $user = [
             'id' => $record['id'],
             'username' => $fields['username'] ?? $fields['email'] ?? null,
@@ -147,6 +146,110 @@ class AirtableAuthController extends Controller
             'user' => $user,
             'token' => $token,
         ], 201);
+    }
+
+    /**
+     * Change password for authenticated user
+     */
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'currentPassword' => 'required|string',
+            'newPassword' => 'required|string|min:6|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $tableUsers = config('airtable.tables.users');
+        $tableStudents = config('airtable.tables.students');
+        $tableTeachers = config('airtable.tables.teachers');
+
+        // Find user across all tables
+        $record = $this->airtable->findAcrossTables([
+            $tableUsers,
+            $tableStudents,
+            $tableTeachers,
+        ], $request->email);
+
+        if (!$record) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $fields = $record['fields'] ?? [];
+        $recordId = $record['id'];
+        $tableName = $record['__table'] ?? $tableUsers;
+
+        // Verify current password
+        $storedHash = $fields['password_hash'] ?? null;
+        $storedPlain = $fields['password'] ?? null;
+
+        $valid = false;
+        if ($storedHash) {
+            $valid = Hash::check($request->currentPassword, $storedHash);
+        } elseif ($storedPlain) {
+            $valid = hash_equals($storedPlain, $request->currentPassword);
+        }
+
+        if (!$valid) {
+            return response()->json([
+                'message' => 'Current password is incorrect'
+            ], 401);
+        }
+
+        // Update password
+        try {
+            $newPasswordHash = Hash::make($request->newPassword);
+            
+            // Try to update password_hash first (preferred), fall back to password field
+            try {
+                $this->airtable->updateRecord($tableName, $recordId, [
+                    'password_hash' => $newPasswordHash,
+                ]);
+                
+                \Log::info('Password changed successfully (using password_hash)', [
+                    'email' => $request->email,
+                    'recordId' => $recordId,
+                    'table' => $tableName
+                ]);
+            } catch (\Exception $hashError) {
+                // If password_hash field doesn't exist, try password field
+                if (str_contains($hashError->getMessage(), 'UNKNOWN_FIELD_NAME')) {
+                    \Log::warning('password_hash field not found, using password field instead');
+                    
+                    $this->airtable->updateRecord($tableName, $recordId, [
+                        'password' => $newPasswordHash,
+                    ]);
+                    
+                    \Log::info('Password changed successfully (using password field)', [
+                        'email' => $request->email,
+                        'recordId' => $recordId,
+                        'table' => $tableName
+                    ]);
+                } else {
+                    throw $hashError;
+                }
+            }
+
+            return response()->json([
+                'message' => 'Password changed successfully',
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to change password: ' . $e->getMessage());
+            
+            return response()->json([
+                'message' => 'Failed to change password. Please try again.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
 
