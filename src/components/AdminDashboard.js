@@ -179,25 +179,25 @@ const AdminDashboard = () => {
 
       const newClassData = {
         ...response.data.class,
-        enrolledStudents: [],
-        attendance: []
-      };
+      enrolledStudents: [],
+      attendance: []
+    };
 
       setClasses([...classes, newClassData]);
       // Get today's date for the next class
       const nextClassDate = new Date().toISOString().split('T')[0];
-      setNewClass({
-        code: '',
-        name: '',
+    setNewClass({
+      code: '',
+      name: '',
         date: nextClassDate,
-        startTime: '',
-        endTime: '',
-        maxStudents: 30,
-        lateThreshold: 15,
-        isManualControl: false
-      });
-      setShowAddClassModal(false);
-      showToastMessage('Class added successfully', 'success');
+      startTime: '',
+      endTime: '',
+      maxStudents: 30,
+      lateThreshold: 15,
+      isManualControl: false
+    });
+    setShowAddClassModal(false);
+    showToastMessage('Class added successfully', 'success');
     } catch (error) {
       console.error('Error adding class:', error);
       const errorMsg = error.response?.data?.message || 'Failed to add class';
@@ -251,7 +251,7 @@ const AdminDashboard = () => {
           longitude: longitude
         });
 
-        setClasses(classes.map(c => 
+    setClasses(classes.map(c => 
           c.id === classId ? { ...c, isOpen: true } : c
         ));
 
@@ -430,34 +430,34 @@ const AdminDashboard = () => {
       });
 
       // Get the student names for display
-      const selectedStudentNames = students
-        .filter(student => selectedStudents.includes(student.id))
-        .map(student => student.name);
+    const selectedStudentNames = students
+      .filter(student => selectedStudents.includes(student.id))
+      .map(student => student.name);
 
       // Update local state with enrolled students
-      const updatedClasses = classes.map(classItem => 
-        classItem.id === selectedClass.id 
-          ? { 
-              ...classItem, 
+    const updatedClasses = classes.map(classItem => 
+      classItem.id === selectedClass.id 
+        ? { 
+            ...classItem, 
               enrolledStudents: response.data.enrolledStudents || [...(classItem.enrolledStudents || []), ...selectedStudents],
-              attendance: [
+            attendance: [
                 ...(classItem.attendance || []),
-                ...selectedStudentNames.map(name => ({
-                  name,
-                  signedIn: false,
-                  time: null,
-                  isLate: false
-                }))
-              ]
-            }
-          : classItem
-      );
+              ...selectedStudentNames.map(name => ({
+                name,
+                signedIn: false,
+                time: null,
+                isLate: false
+              }))
+            ]
+          }
+        : classItem
+    );
 
-      setClasses(updatedClasses);
-      setShowManageStudentsModal(false);
-      setSelectedStudents([]);
-      setSearchTerm('');
-      showToastMessage(`${selectedStudentNames.length} student(s) added successfully`, 'success');
+    setClasses(updatedClasses);
+    setShowManageStudentsModal(false);
+    setSelectedStudents([]);
+    setSearchTerm('');
+    showToastMessage(`${selectedStudentNames.length} student(s) added successfully`, 'success');
     } catch (error) {
       console.error('Error adding students:', error);
       showToastMessage('Failed to add students. Please try again.', 'error');
@@ -479,17 +479,17 @@ const AdminDashboard = () => {
       });
 
       // Update local state
-      const updatedClasses = classes.map(classItem => 
-        classItem.id === selectedClass.id 
-          ? { 
-              ...classItem, 
+    const updatedClasses = classes.map(classItem => 
+      classItem.id === selectedClass.id 
+        ? { 
+            ...classItem, 
               enrolledStudents: (classItem.enrolledStudents || []).filter(id => id !== studentId),
               attendance: (classItem.attendance || []).filter(att => att.name !== studentName)
-            }
-          : classItem
-      );
+          }
+        : classItem
+    );
 
-      setClasses(updatedClasses);
+    setClasses(updatedClasses);
       
       // Update selectedClass if the modal is still open
       if (selectedClass && selectedClass.id === selectedClass.id) {
@@ -499,7 +499,7 @@ const AdminDashboard = () => {
         });
       }
       
-      showToastMessage(`${studentName} removed from class`, 'success');
+    showToastMessage(`${studentName} removed from class`, 'success');
     } catch (error) {
       console.error('Error removing student:', error);
       showToastMessage('Failed to remove student. Please try again.', 'error');
@@ -649,7 +649,7 @@ const AdminDashboard = () => {
             {/* Action Buttons - Above Separator */}
             <div className="action-buttons-section">
               <button 
-                className="add-class-btn"
+                className="add-class-btn" 
                 onClick={() => setShowAddClassModal(true)}
               >
                 Add New Class
@@ -967,26 +967,26 @@ const AdminDashboard = () => {
                       }}>
                         {attendanceRecords.length} student{attendanceRecords.length !== 1 ? 's' : ''} signed in on {formatDate(selectedDate)}
                       </p>
-                      <div className="attendance-list">
+                  <div className="attendance-list">
                         {attendanceRecords.map((record, index) => (
                           <div key={record.id || index} className={`attendance-item ${record.isLate ? 'late' : ''}`}>
-                            <div className="student-info">
+                        <div className="student-info">
                               <span className="student-name">{record.studentName}</span>
                               <span className={record.isLate ? 'late-status' : 'on-time-status'}>
                                 {record.isLate ? 'Late' : 'On Time'}
-                              </span>
-                            </div>
-                            <div className="sign-in-info">
+                          </span>
+                        </div>
+                          <div className="sign-in-info">
                               <span className="sign-in-time">
                                 {record.signInTime}
                               </span>
                               <span className="distance-info">
                                 {record.distance}m
                               </span>
-                            </div>
                           </div>
-                        ))}
                       </div>
+                    ))}
+                  </div>
                     </div>
                   )}
                 </div>
@@ -1061,18 +1061,18 @@ const AdminDashboard = () => {
                       const student = getStudentById(studentId);
                       return student ? (
                         <div key={studentId || index} className="enrolled-student-item">
-                          <div className="student-info">
+                      <div className="student-info">
                             <span className="student-name">{student.name}</span>
                             <span className="student-email">{student.email}</span>
-                            <span className="student-status">Enrolled</span>
-                          </div>
-                          <button 
-                            className="remove-student-btn"
+                        <span className="student-status">Enrolled</span>
+                      </div>
+                      <button 
+                        className="remove-student-btn"
                             onClick={() => handleRemoveStudent(studentId)}
-                          >
-                            ❌ Remove
-                          </button>
-                        </div>
+                      >
+                        ❌ Remove
+                      </button>
+                    </div>
                       ) : null;
                     })
                   ) : (

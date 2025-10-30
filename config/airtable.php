@@ -9,7 +9,6 @@ return [
     // Logical table names used by the app
     'tables' => [
         'classes' => env('AIRTABLE_TABLE_CLASSES', 'Classes'),
-        'users' => env('AIRTABLE_TABLE_USERS', 'Users'),
         'students' => env('AIRTABLE_TABLE_STUDENTS', null),
         'teachers' => env('AIRTABLE_TABLE_TEACHERS', null),
         'attendance' => env('AIRTABLE_TABLE_ATTENDANCE', 'Attendance Entries'),

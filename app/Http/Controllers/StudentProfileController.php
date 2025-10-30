@@ -27,27 +27,41 @@ class StudentProfileController extends Controller
 
     public function get(Request $request)
     {
+        \Log::info('===== STUDENT PROFILE GET REQUEST =====');
+        
         $email = $request->query('email');
+        \Log::info('Profile request received', ['email' => $email]);
+        
         if (!$email) {
+            \Log::warning('No email provided in profile request');
             return response()->json(['message' => 'Email is required'], 422);
         }
 
         $rec = $this->findUserRecord($email);
         if (!$rec) {
+            \Log::warning('User not found for profile', ['email' => $email]);
             return response()->json(['message' => 'User not found'], 404);
         }
 
         $fields = $rec['fields'] ?? [];
+        
+        // DEBUG: Log all available fields to see what Airtable is returning
+        \Log::info('Student profile fields from Airtable', [
+            'email' => $email,
+            'available_fields' => array_keys($fields),
+            'all_field_values' => $fields
+        ]);
+        
         $profile = [
-            'name' => $fields['name'] ?? trim(($fields['first_name'] ?? '') . ' ' . ($fields['last_name'] ?? '')),
-            'email' => $fields['email'] ?? $email,
-            'department' => $fields['department'] ?? null,
-            'age' => $fields['age'] ?? null,
-            'course' => $fields['course'] ?? null,
-            'address' => $fields['address'] ?? null,
-            'guardianName' => $fields['guardianName'] ?? ($fields['guardian_name'] ?? null),
-            'relationship' => $fields['relationship'] ?? null,
-            'guardianPhone' => $fields['guardianPhone'] ?? ($fields['guardian_phone'] ?? null),
+            'name' => $fields['Name'] ?? $fields['name'] ?? trim(($fields['first_name'] ?? $fields['First_name'] ?? '') . ' ' . ($fields['last_name'] ?? $fields['Last_name'] ?? '')),
+            'email' => $fields['Email'] ?? $fields['email'] ?? $email,
+            'department' => $fields['department'] ?? $fields['Department'] ?? null,
+            'age' => $fields['Age'] ?? $fields['age'] ?? null,
+            'course' => $fields['Course Year & Section'] ?? $fields['Course'] ?? $fields['course'] ?? null,
+            'address' => $fields['Address'] ?? $fields['address'] ?? null,
+            'guardianName' => $fields['Name of Guardian'] ?? $fields['GuardianName'] ?? $fields['guardianName'] ?? ($fields['guardian_name'] ?? null),
+            'relationship' => $fields['Relationship'] ?? $fields['relationship'] ?? null,
+            'guardianPhone' => $fields['Phone Number'] ?? $fields['GuardianPhone'] ?? $fields['guardianPhone'] ?? ($fields['guardian_phone'] ?? null),
         ];
 
         return response()->json([
@@ -78,15 +92,18 @@ class StudentProfileController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
+        // Determine which field names to use based on what exists in the record
+        $existingFields = $rec['fields'] ?? [];
+        
         $fields = [];
         $map = [
-            'name' => 'name',
-            'age' => 'age',
-            'course' => 'course',
-            'address' => 'address',
-            'guardianName' => 'guardianName',
-            'relationship' => 'relationship',
-            'guardianPhone' => 'guardianPhone',
+            'name' => isset($existingFields['Name']) ? 'Name' : 'name',
+            'age' => isset($existingFields['Age']) ? 'Age' : 'age',
+            'course' => isset($existingFields['Course Year & Section']) ? 'Course Year & Section' : (isset($existingFields['Course']) ? 'Course' : 'course'),
+            'address' => isset($existingFields['Address']) ? 'Address' : 'address',
+            'guardianName' => isset($existingFields['Name of Guardian']) ? 'Name of Guardian' : (isset($existingFields['GuardianName']) ? 'GuardianName' : 'guardianName'),
+            'relationship' => isset($existingFields['Relationship']) ? 'Relationship' : 'relationship',
+            'guardianPhone' => isset($existingFields['Phone Number']) ? 'Phone Number' : (isset($existingFields['GuardianPhone']) ? 'GuardianPhone' : 'guardianPhone'),
         ];
         foreach ($map as $inputKey => $fieldName) {
             if ($request->filled($inputKey)) {

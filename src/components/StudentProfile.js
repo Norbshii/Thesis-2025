@@ -224,12 +224,38 @@ const StudentProfile = () => {
 
       try {
         // Get student's current location
+        console.log('Requesting geolocation...');
+        showToastMessage('Getting your location...', 'info');
+        
         const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          });
+          let resolved = false;
+          
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (!resolved) {
+                resolved = true;
+                console.log('Geolocation success:', pos);
+                resolve(pos);
+              }
+            },
+            (err) => {
+              if (!resolved) {
+                console.error('Geolocation error (will retry):', err);
+                // Don't reject immediately, wait for potential success
+                setTimeout(() => {
+                  if (!resolved) {
+                    resolved = true;
+                    reject(err);
+                  }
+                }, 2000);
+              }
+            },
+            {
+              enableHighAccuracy: false, // Changed to false for better compatibility
+              timeout: 20000,
+              maximumAge: 5000 // Allow cached location
+            }
+          );
         });
 
         const { latitude, longitude } = position.coords;
