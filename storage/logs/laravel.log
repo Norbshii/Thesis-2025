@@ -8356,3 +8356,401 @@
 [2025-11-03 14:36:42] local.INFO: Airtable listRecords response {"recordCount":4} 
 [2025-11-03 14:36:42] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
 [2025-11-03 14:36:43] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:50:21] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:50:22] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:50:22] local.INFO: Update profile - existing fields {"existing_field_names":["Email","Password","Name","Classes"],"request_data":{"email":"student@example.com","name":"Sample Name","age":17,"course":"BSCS 3B","address":"Sa puso mo","guardianName":"Si mama","relationship":"Father","guardianPhone":"09060644301"}} 
+[2025-11-03 14:50:22] local.INFO: Field mapping determined {"map":{"name":"Name","age":"age","course":"course","address":"address","guardianName":"guardianName","relationship":"relationship","guardianPhone":"guardianPhone"}} 
+[2025-11-03 14:50:22] local.INFO: Fields to update {"fields":{"Name":"Sample Name","age":17,"course":"BSCS 3B","address":"Sa puso mo","guardianName":"Si mama","relationship":"Father","guardianPhone":"09060644301"}} 
+[2025-11-03 14:50:23] local.ERROR: Airtable updateRecord failed: {"error":{"type":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"age\""}} {"exception":"[object] (RuntimeException(code: 0): Airtable updateRecord failed: {\"error\":{\"type\":\"UNKNOWN_FIELD_NAME\",\"message\":\"Unknown field name: \\\"age\\\"\"}} at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Services\\AirtableService.php:90)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Http\\Controllers\\StudentProfileController.php(129): App\\Services\\AirtableService->updateRecord()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Controller.php(54): App\\Http\\Controllers\\StudentProfileController->update()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php(43): Illuminate\\Routing\\Controller->callAction()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(259): Illuminate\\Routing\\ControllerDispatcher->dispatch()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(205): Illuminate\\Routing\\Route->runController()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(798): Illuminate\\Routing\\Route->run()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Routing\\Router->Illuminate\\Routing\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#32 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#33 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#34 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#35 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#36 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#37 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#38 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#39 {main}
+"} 
+[2025-11-03 14:50:55] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:50:58] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:50:58] local.INFO: Update profile - existing fields {"existing_field_names":["Email","Password","Name","Classes"],"request_data":{"email":"student@example.com","name":"Sample Name","age":17,"course":"BSCS 3B","address":"Sa puso mo","guardianName":"Si mama","relationship":"Father","guardianPhone":"09060644301"}} 
+[2025-11-03 14:50:58] local.INFO: Field mapping determined {"map":{"name":"Name","age":"age","course":"course","address":"address","guardianName":"guardianName","relationship":"relationship","guardianPhone":"guardianPhone"}} 
+[2025-11-03 14:50:58] local.INFO: Fields to update {"fields":{"Name":"Sample Name","age":17,"course":"BSCS 3B","address":"Sa puso mo","guardianName":"Si mama","relationship":"Father","guardianPhone":"09060644301"}} 
+[2025-11-03 14:50:59] local.ERROR: Airtable updateRecord failed: {"error":{"type":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"age\""}} {"exception":"[object] (RuntimeException(code: 0): Airtable updateRecord failed: {\"error\":{\"type\":\"UNKNOWN_FIELD_NAME\",\"message\":\"Unknown field name: \\\"age\\\"\"}} at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Services\\AirtableService.php:90)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Http\\Controllers\\StudentProfileController.php(129): App\\Services\\AirtableService->updateRecord()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Controller.php(54): App\\Http\\Controllers\\StudentProfileController->update()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php(43): Illuminate\\Routing\\Controller->callAction()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(259): Illuminate\\Routing\\ControllerDispatcher->dispatch()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(205): Illuminate\\Routing\\Route->runController()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(798): Illuminate\\Routing\\Route->run()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Routing\\Router->Illuminate\\Routing\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#32 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#33 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#34 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#35 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#36 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#37 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#38 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#39 {main}
+"} 
+[2025-11-03 14:51:36] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:51:37] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:51:37] local.INFO: Update profile - existing fields {"existing_field_names":["Email","Password","Name","Classes"],"request_data":{"email":"student@example.com","name":"Sample Name","age":17,"course":"BSCS 3B","address":"Sa puso mo","guardianName":"Si mama","relationship":"Father","guardianPhone":"09060644301"}} 
+[2025-11-03 14:51:37] local.INFO: Fields to update {"fields":{"Name":"Sample Name","Age":17,"Course Year & Section":"BSCS 3B","Address":"Sa puso mo","Name of Guardian":"Si mama","Relationship":"Father","Phone Number":"09060644301"}} 
+[2025-11-03 14:51:38] local.ERROR: Airtable updateRecord failed: {"error":{"type":"INVALID_MULTIPLE_CHOICE_OPTIONS","message":"Insufficient permissions to create new select option \"\"BSCS 3B\"\""}} {"exception":"[object] (RuntimeException(code: 0): Airtable updateRecord failed: {\"error\":{\"type\":\"INVALID_MULTIPLE_CHOICE_OPTIONS\",\"message\":\"Insufficient permissions to create new select option \\\"\\\"BSCS 3B\\\"\\\"\"}} at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Services\\AirtableService.php:90)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Http\\Controllers\\StudentProfileController.php(146): App\\Services\\AirtableService->updateRecord()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Controller.php(54): App\\Http\\Controllers\\StudentProfileController->update()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php(43): Illuminate\\Routing\\Controller->callAction()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(259): Illuminate\\Routing\\ControllerDispatcher->dispatch()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(205): Illuminate\\Routing\\Route->runController()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(798): Illuminate\\Routing\\Route->run()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Routing\\Router->Illuminate\\Routing\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#32 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#33 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#34 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#35 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#36 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#37 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#38 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#39 {main}
+"} 
+[2025-11-03 14:51:43] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:51:44] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:51:44] local.INFO: Update profile - existing fields {"existing_field_names":["Email","Password","Name","Classes"],"request_data":{"email":"student@example.com","name":"Sample Name","age":17,"course":"BSCS 3B","address":"Sa puso mo","guardianName":"Si mama","relationship":"Father","guardianPhone":"09060644301"}} 
+[2025-11-03 14:51:44] local.INFO: Fields to update {"fields":{"Name":"Sample Name","Age":17,"Course Year & Section":"BSCS 3B","Address":"Sa puso mo","Name of Guardian":"Si mama","Relationship":"Father","Phone Number":"09060644301"}} 
+[2025-11-03 14:51:45] local.ERROR: Airtable updateRecord failed: {"error":{"type":"INVALID_MULTIPLE_CHOICE_OPTIONS","message":"Insufficient permissions to create new select option \"\"BSCS 3B\"\""}} {"exception":"[object] (RuntimeException(code: 0): Airtable updateRecord failed: {\"error\":{\"type\":\"INVALID_MULTIPLE_CHOICE_OPTIONS\",\"message\":\"Insufficient permissions to create new select option \\\"\\\"BSCS 3B\\\"\\\"\"}} at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Services\\AirtableService.php:90)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Http\\Controllers\\StudentProfileController.php(146): App\\Services\\AirtableService->updateRecord()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Controller.php(54): App\\Http\\Controllers\\StudentProfileController->update()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php(43): Illuminate\\Routing\\Controller->callAction()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(259): Illuminate\\Routing\\ControllerDispatcher->dispatch()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(205): Illuminate\\Routing\\Route->runController()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(798): Illuminate\\Routing\\Route->run()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Routing\\Router->Illuminate\\Routing\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#32 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#33 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#34 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#35 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#36 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#37 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#38 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#39 {main}
+"} 
+[2025-11-03 14:55:22] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 14:55:22] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 14:55:22] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:55:26] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:55:26] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 14:55:27] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 14:55:27] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 14:55:27] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:55:30] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:55:30] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 14:55:30] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 14:55:32] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:55:32] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 14:55:40] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:55:40] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-11-03 14:55:42] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:55:42] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 14:55:42] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 14:55:42] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:55:44] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:55:44] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 14:55:44] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-11-03 14:55:47] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:55:47] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 14:55:57] local.ERROR: cURL error 28: SSL connection timeout (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr?pageSize=100&sort%5B0%5D%5Bfield%5D=Class%20Code&sort%5B0%5D%5Bdirection%5D=asc {"exception":"[object] (Illuminate\\Http\\Client\\ConnectionException(code: 0): cURL error 28: SSL connection timeout (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr?pageSize=100&sort%5B0%5D%5Bfield%5D=Class%20Code&sort%5B0%5D%5Bdirection%5D=asc at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php:855)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php(260): Illuminate\\Http\\Client\\PendingRequest->Illuminate\\Http\\Client\\{closure}()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(821): retry()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(699): Illuminate\\Http\\Client\\PendingRequest->send()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Services\\AirtableService.php(59): Illuminate\\Http\\Client\\PendingRequest->get()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Http\\Controllers\\ClassesController.php(35): App\\Services\\AirtableService->listRecords()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Controller.php(54): App\\Http\\Controllers\\ClassesController->index()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php(43): Illuminate\\Routing\\Controller->callAction()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(259): Illuminate\\Routing\\ControllerDispatcher->dispatch()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(205): Illuminate\\Routing\\Route->runController()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(798): Illuminate\\Routing\\Route->run()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Routing\\Router->Illuminate\\Routing\\{closure}()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#32 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#33 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#34 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#35 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#36 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#37 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#38 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#39 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#40 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#41 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#42 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#43 {main}
+
+[previous exception] [object] (GuzzleHttp\\Exception\\ConnectException(code: 0): cURL error 28: SSL connection timeout (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr?pageSize=100&sort%5B0%5D%5Bfield%5D=Class%20Code&sort%5B0%5D%5Bdirection%5D=asc at C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Handler\\CurlFactory.php:277)
+[stacktrace]
+#0 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Handler\\CurlFactory.php(207): GuzzleHttp\\Handler\\CurlFactory::createRejection()
+#1 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Handler\\CurlFactory.php(159): GuzzleHttp\\Handler\\CurlFactory::finishError()
+#2 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Handler\\CurlHandler.php(47): GuzzleHttp\\Handler\\CurlFactory::finish()
+#3 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Handler\\Proxy.php(28): GuzzleHttp\\Handler\\CurlHandler->__invoke()
+#4 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Handler\\Proxy.php(48): GuzzleHttp\\Handler\\Proxy::GuzzleHttp\\Handler\\{closure}()
+#5 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(1150): GuzzleHttp\\Handler\\Proxy::GuzzleHttp\\Handler\\{closure}()
+#6 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(1116): Illuminate\\Http\\Client\\PendingRequest->Illuminate\\Http\\Client\\{closure}()
+#7 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(1102): Illuminate\\Http\\Client\\PendingRequest->Illuminate\\Http\\Client\\{closure}()
+#8 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\PrepareBodyMiddleware.php(35): Illuminate\\Http\\Client\\PendingRequest->Illuminate\\Http\\Client\\{closure}()
+#9 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Middleware.php(38): GuzzleHttp\\PrepareBodyMiddleware->__invoke()
+#10 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\RedirectMiddleware.php(71): GuzzleHttp\\Middleware::GuzzleHttp\\{closure}()
+#11 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Middleware.php(63): GuzzleHttp\\RedirectMiddleware->__invoke()
+#12 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\HandlerStack.php(75): GuzzleHttp\\Middleware::GuzzleHttp\\{closure}()
+#13 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Client.php(333): GuzzleHttp\\HandlerStack->__invoke()
+#14 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Client.php(169): GuzzleHttp\\Client->transfer()
+#15 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\guzzlehttp\\guzzle\\src\\Client.php(189): GuzzleHttp\\Client->requestAsync()
+#16 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(961): GuzzleHttp\\Client->request()
+#17 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(823): Illuminate\\Http\\Client\\PendingRequest->sendRequest()
+#18 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Support\\helpers.php(260): Illuminate\\Http\\Client\\PendingRequest->Illuminate\\Http\\Client\\{closure}()
+#19 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(821): retry()
+#20 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Client\\PendingRequest.php(699): Illuminate\\Http\\Client\\PendingRequest->send()
+#21 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Services\\AirtableService.php(59): Illuminate\\Http\\Client\\PendingRequest->get()
+#22 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\app\\Http\\Controllers\\ClassesController.php(35): App\\Services\\AirtableService->listRecords()
+#23 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Controller.php(54): App\\Http\\Controllers\\ClassesController->index()
+#24 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\ControllerDispatcher.php(43): Illuminate\\Routing\\Controller->callAction()
+#25 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(259): Illuminate\\Routing\\ControllerDispatcher->dispatch()
+#26 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Route.php(205): Illuminate\\Routing\\Route->runController()
+#27 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(798): Illuminate\\Routing\\Route->run()
+#28 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Routing\\Router->Illuminate\\Routing\\{closure}()
+#29 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#30 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle()
+#31 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(126): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#32 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(92): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequest()
+#33 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Middleware\\ThrottleRequests.php(54): Illuminate\\Routing\\Middleware\\ThrottleRequests->handleRequestUsingNamedLimiter()
+#34 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Routing\\Middleware\\ThrottleRequests->handle()
+#35 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#36 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(797): Illuminate\\Pipeline\\Pipeline->then()
+#37 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(776): Illuminate\\Routing\\Router->runRouteWithinStack()
+#38 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(740): Illuminate\\Routing\\Router->runRoute()
+#39 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Routing\\Router.php(729): Illuminate\\Routing\\Router->dispatchToRoute()
+#40 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(190): Illuminate\\Routing\\Router->dispatch()
+#41 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(141): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}()
+#42 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#43 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#44 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle()
+#45 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#46 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\TrimStrings.php(40): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle()
+#47 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle()
+#48 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#49 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\ValidatePostSize->handle()
+#50 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance.php(86): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#51 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle()
+#52 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\HandleCors.php(62): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#53 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\HandleCors->handle()
+#54 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Http\\Middleware\\TrustProxies.php(39): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#55 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(180): Illuminate\\Http\\Middleware\\TrustProxies->handle()
+#56 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Pipeline\\Pipeline.php(116): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}()
+#57 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(165): Illuminate\\Pipeline\\Pipeline->then()
+#58 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Http\\Kernel.php(134): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter()
+#59 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\public\\index.php(51): Illuminate\\Foundation\\Http\\Kernel->handle()
+#60 C:\\Users\\Evren\\Documents\\GitHub\\Thesis-2025\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\resources\\server.php(16): require_once('...')
+#61 {main}
+"} 
+[2025-11-03 14:55:59] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"fields":["Course Year & Section","Course"],"pageSize":100}} 
+[2025-11-03 14:56:01] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"UNKNOWN_FIELD_NAME\",\"message\":\"Unknown field name: \\\"Course\\\"\"}}"} 
+[2025-11-03 14:56:01] local.ERROR: Failed to fetch course options: Airtable listRecords failed: {"error":{"type":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"Course\""}}  
+[2025-11-03 14:56:01] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 14:56:01] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 14:56:01] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:56:06] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:56:06] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 14:56:07] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 14:56:09] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:56:10] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-11-03 14:56:14] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:56:22] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"fields":["Course Year & Section","Course"],"pageSize":100}} 
+[2025-11-03 14:56:26] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"UNKNOWN_FIELD_NAME\",\"message\":\"Unknown field name: \\\"Course\\\"\"}}"} 
+[2025-11-03 14:56:26] local.ERROR: Failed to fetch course options: Airtable listRecords failed: {"error":{"type":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"Course\""}}  
+[2025-11-03 14:56:26] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 14:56:26] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 14:56:26] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:56:31] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:56:31] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 14:56:31] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 14:56:39] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:56:40] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"fields":["Course Year & Section","Course"],"pageSize":100}} 
+[2025-11-03 14:56:42] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"UNKNOWN_FIELD_NAME\",\"message\":\"Unknown field name: \\\"Course\\\"\"}}"} 
+[2025-11-03 14:56:42] local.ERROR: Failed to fetch course options: Airtable listRecords failed: {"error":{"type":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"Course\""}}  
+[2025-11-03 14:56:42] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 14:56:42] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 14:56:42] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:56:44] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:56:44] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 14:56:44] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"fields":["Course Year & Section","Course"],"pageSize":100}} 
+[2025-11-03 14:56:45] local.ERROR: Airtable listRecords failed {"body":"{\"error\":{\"type\":\"UNKNOWN_FIELD_NAME\",\"message\":\"Unknown field name: \\\"Course\\\"\"}}"} 
+[2025-11-03 14:56:45] local.ERROR: Failed to fetch course options: Airtable listRecords failed: {"error":{"type":"UNKNOWN_FIELD_NAME","message":"Unknown field name: \"Course\""}}  
+[2025-11-03 14:56:46] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 14:56:46] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 14:56:46] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 14:56:47] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 14:56:47] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 14:56:47] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 14:56:48] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:56:48] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 14:56:50] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:56:50] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-11-03 14:56:52] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 14:56:52] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-11-03 14:56:53] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 15:00:38] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"fields":["Course Year & Section"],"pageSize":100}} 
+[2025-11-03 15:00:48] local.ERROR: Failed to fetch course options: cURL error 28: SSL connection timeout (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN?fields%5B0%5D=Course%20Year%20%26%20Section&pageSize=100  
+[2025-11-03 15:00:48] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 15:00:48] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 15:00:48] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 15:01:01] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 15:01:01] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 15:01:01] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"fields":["Course Year & Section"],"pageSize":100}} 
+[2025-11-03 15:01:05] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 15:01:05] local.INFO: ===== STUDENT PROFILE GET REQUEST =====  
+[2025-11-03 15:01:05] local.INFO: Profile request received {"email":"student@example.com"} 
+[2025-11-03 15:01:05] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 15:01:07] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 15:01:07] local.INFO: Student profile fields from Airtable {"email":"student@example.com","available_fields":["Email","Password","Name","Classes"],"all_field_values":{"Email":"student@example.com","Password":"sample123","Name":"Sample ko","Classes":["recfMK8zgEUsphdN8"]}} 
+[2025-11-03 15:01:07] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 15:01:09] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 15:01:09] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbl6kzsJkbyl5Cqqr","params":{"pageSize":100,"sort[0][field]":"Class Code","sort[0][direction]":"asc"}} 
+[2025-11-03 15:01:20] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 15:01:20] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-11-03 15:01:22] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 15:01:22] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":[]} 
+[2025-11-03 15:01:25] local.INFO: Airtable listRecords response {"recordCount":4} 
+[2025-11-03 15:02:24] local.INFO: Airtable listRecords {"endpoint":"https://api.airtable.com/v0/appT96N6jX4ZWDYUy/tbldCCRCR0hLNv5BN","params":{"filterByFormula":"{email}='student@example.com'","maxRecords":1}} 
+[2025-11-03 15:02:31] local.INFO: Airtable listRecords response {"recordCount":1} 
+[2025-11-03 15:02:31] local.INFO: Update profile - existing fields {"existing_field_names":["Email","Password","Name","Classes"],"request_data":{"email":"student@example.com","name":"Sample Name","age":17,"course":"BTLED ICT 1A","address":"Sa Puso mo","guardianName":"Si mama","relationship":"Father","guardianPhone":"090909090909"}} 
+[2025-11-03 15:02:31] local.INFO: Fields to update {"fields":{"Name":"Sample Name","Age":17,"Course Year & Section":"BTLED ICT 1A","Address":"Sa Puso mo","Name of Guardian":"Si mama","Relationship":"Father","Phone Number":"090909090909"}} 

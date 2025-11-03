@@ -54,6 +54,7 @@ Route::get('/classes/{classId}/attendance', [ClassesController::class, 'getAtten
 // Student profile (public for simplicity; consider adding auth later)
 Route::get('/student/profile', [StudentProfileController::class, 'get']);
 Route::post('/student/profile', [StudentProfileController::class, 'update']);
+Route::get('/student/course-options', [StudentProfileController::class, 'getCourseOptions']);
 
 // Students list (for adding students to classes)
 Route::get('/students', [StudentsController::class, 'index']);
