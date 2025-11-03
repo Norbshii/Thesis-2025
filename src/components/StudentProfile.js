@@ -48,11 +48,23 @@ const StudentProfile = () => {
     relationship: '',
     guardianPhone: ''
   });
+  const [courseOptions, setCourseOptions] = useState([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+
+    // Load course options
+    const loadCourseOptions = async () => {
+      try {
+        const response = await api.get('/student/course-options');
+        setCourseOptions(response.data.courses || []);
+      } catch (error) {
+        console.error('Failed to load course options:', error);
+        setCourseOptions([]);
+      }
+    };
 
     // Load classes + profile
     const loadData = async () => {
@@ -140,6 +152,7 @@ const StudentProfile = () => {
         setLoading(false);
     };
 
+    loadCourseOptions();
     loadData();
 
     return () => clearInterval(timer);
@@ -671,12 +684,17 @@ const StudentProfile = () => {
               </div>
               <div className="form-group">
                 <label>Course Yr & Section:</label>
-                <input
-                  type="text"
+                <select
                   value={editForm.course}
                   onChange={(e) => setEditForm({...editForm, course: e.target.value})}
-                  placeholder="e.g., BSCS 4B"
-                />
+                >
+                  <option value="">Select Course & Section</option>
+                  {courseOptions.map((course, index) => (
+                    <option key={index} value={course}>
+                      {course}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Address:</label>

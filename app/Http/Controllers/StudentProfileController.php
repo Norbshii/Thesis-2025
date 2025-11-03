@@ -95,21 +95,48 @@ class StudentProfileController extends Controller
         // Determine which field names to use based on what exists in the record
         $existingFields = $rec['fields'] ?? [];
         
-        $fields = [];
-        $map = [
-            'name' => isset($existingFields['Name']) ? 'Name' : 'name',
-            'age' => isset($existingFields['Age']) ? 'Age' : 'age',
-            'course' => isset($existingFields['Course Year & Section']) ? 'Course Year & Section' : (isset($existingFields['Course']) ? 'Course' : 'course'),
-            'address' => isset($existingFields['Address']) ? 'Address' : 'address',
-            'guardianName' => isset($existingFields['Name of Guardian']) ? 'Name of Guardian' : (isset($existingFields['GuardianName']) ? 'GuardianName' : 'guardianName'),
-            'relationship' => isset($existingFields['Relationship']) ? 'Relationship' : 'relationship',
-            'guardianPhone' => isset($existingFields['Phone Number']) ? 'Phone Number' : (isset($existingFields['GuardianPhone']) ? 'GuardianPhone' : 'guardianPhone'),
-        ];
-        foreach ($map as $inputKey => $fieldName) {
-            if ($request->filled($inputKey)) {
-                $fields[$fieldName] = $request->input($inputKey);
+        \Log::info('Update profile - existing fields', [
+            'existing_field_names' => array_keys($existingFields),
+            'request_data' => $request->all()
+        ]);
+        
+        // Helper function to find the correct field name (case-insensitive)
+        $findFieldName = function($possibleNames) use ($existingFields) {
+            foreach ($possibleNames as $name) {
+                if (array_key_exists($name, $existingFields)) {
+                    return $name;
+                }
             }
+            // Default to the first option (capitalized) even if not found
+            return $possibleNames[0];
+        };
+        
+        $fields = [];
+        
+        // Map input fields to Airtable field names
+        if ($request->filled('name')) {
+            $fields[$findFieldName(['Name', 'name'])] = $request->input('name');
         }
+        if ($request->filled('age')) {
+            $fields[$findFieldName(['Age', 'age'])] = $request->input('age');
+        }
+        if ($request->filled('course')) {
+            $fields[$findFieldName(['Course Year & Section', 'Course', 'course'])] = $request->input('course');
+        }
+        if ($request->filled('address')) {
+            $fields[$findFieldName(['Address', 'address'])] = $request->input('address');
+        }
+        if ($request->filled('guardianName')) {
+            $fields[$findFieldName(['Name of Guardian', 'GuardianName', 'guardianName', 'guardian_name'])] = $request->input('guardianName');
+        }
+        if ($request->filled('relationship')) {
+            $fields[$findFieldName(['Relationship', 'relationship'])] = $request->input('relationship');
+        }
+        if ($request->filled('guardianPhone')) {
+            $fields[$findFieldName(['Phone Number', 'GuardianPhone', 'guardianPhone', 'guardian_phone'])] = $request->input('guardianPhone');
+        }
+        
+        \Log::info('Fields to update', ['fields' => $fields]);
 
         if (empty($fields)) {
             return response()->json(['message' => 'No fields to update'], 400);
@@ -119,6 +146,51 @@ class StudentProfileController extends Controller
         $updated = $this->airtable->updateRecord($table, $rec['id'], $fields);
 
         return response()->json(['message' => 'Profile updated', 'record' => $updated]);
+    }
+
+    /**
+     * Get available course options from Airtable
+     * This fetches all unique course values from existing student records
+     */
+    public function getCourseOptions(Request $request)
+    {
+        try {
+            $tableStudents = config('airtable.tables.students');
+            
+            // Fetch all student records to get unique course values
+            $response = $this->airtable->listRecords($tableStudents, [
+                'fields' => ['Course Year & Section'],
+                'pageSize' => 100
+            ]);
+            
+            $records = $response['records'] ?? [];
+            $courses = [];
+            
+            // Extract unique course values
+            foreach ($records as $rec) {
+                $fields = $rec['fields'] ?? [];
+                $course = $fields['Course Year & Section'] ?? null;
+                
+                if ($course && !in_array($course, $courses)) {
+                    $courses[] = $course;
+                }
+            }
+            
+            // Sort alphabetically
+            sort($courses);
+            
+            return response()->json([
+                'courses' => $courses
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch course options: ' . $e->getMessage());
+            
+            // Return empty array on error so the UI doesn't break
+            return response()->json([
+                'courses' => []
+            ]);
+        }
     }
 }
 
