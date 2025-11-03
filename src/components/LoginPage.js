@@ -114,7 +114,7 @@ const LoginPage = () => {
                   <rect className="grad-cap" x="38" y="32" width="24" height="2"/>
                   <line className="pin-outline" x1="58" y1="32" x2="62" y2="28"/>
                   <circle className="grad-cap" cx="62" cy="28" r="1.5"/>
-                  <path className="checkmark" d="M35 50 L42 57 L52 47" stroke="#1a365d" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path className="checkmark" d="M35 50 L42 57 L52 47" stroke="#1a365d" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle className="ripple" cx="50" cy="75" r="8"/>
                   <circle className="ripple" cx="50" cy="75" r="12"/>
                 </svg>
