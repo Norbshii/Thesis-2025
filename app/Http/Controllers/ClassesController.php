@@ -37,6 +37,22 @@ class ClassesController extends Controller
 
         $classes = array_map(function ($rec) {
             $f = $rec['fields'] ?? [];
+            
+            // Handle teacher name - check multiple possible field names
+            $instructorName = $f['Name'] ?? $f['teacher_name'] ?? $f['Instructor Name'] ?? null;
+            
+            // If no dedicated name field, try to use the Teacher field
+            // (it might be email or name depending on Airtable setup)
+            if (!$instructorName) {
+                $teacherField = $f['Teacher'] ?? $f['Instructor'] ?? $f['instructor'] ?? null;
+                // If it's an array (linked record), get the first value
+                if (is_array($teacherField) && !empty($teacherField)) {
+                    $instructorName = $teacherField[0];
+                } else {
+                    $instructorName = $teacherField;
+                }
+            }
+            
             return [
                 'id' => $rec['id'],
                 'code' => $f['Class Code'] ?? $f['code'] ?? null,
@@ -46,7 +62,7 @@ class ClassesController extends Controller
                 'startTime' => $f['Start Time'] ?? null,
                 'endTime' => $f['End Time'] ?? null,
                 'teacher' => $f['Teacher'] ?? null,
-                'instructor' => $f['instructor'] ?? null,
+                'instructor' => $instructorName ?? 'N/A',
                 'time_slot' => $f['time_slot'] ?? 'Always Available',
                 'is_signed_in' => (bool)($f['is_signed_in'] ?? false),
                 'always_available' => (bool)($f['always_available'] ?? false),
