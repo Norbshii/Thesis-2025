@@ -70,6 +70,10 @@ class ClassesController extends Controller
                 'isManualControl' => (bool)($f['isManualControl'] ?? false),
                 'lateThreshold' => $f['Late Threshold'] ?? $f['Late Threshold (minutes)'] ?? 15,
                 'enrolledStudents' => $f['Enrolled Students'] ?? [],
+                'currentSessionLat' => $f['Current Session Lat'] ?? null,
+                'currentSessionLon' => $f['Current Session Lon'] ?? null,
+                'currentSessionOpened' => $f['Current Session Opened'] ?? null,
+                'autoCloseTime' => $f['Auto Close Time'] ?? null,
             ];
         }, $records);
 
@@ -699,7 +703,7 @@ class ClassesController extends Controller
             // Store attendance record in Attendance Entries table
             $attendanceTable = config('airtable.tables.attendance');
             try {
-                // Build basic attendance record
+                // Build basic attendance record with GPS coordinates
                 $attendanceRecord = [
                     'Class Code' => $fields['Class Code'] ?? $fields['code'] ?? '',
                     'Class Name' => $fields['Class Name'] ?? $fields['name'] ?? '',
@@ -711,9 +715,11 @@ class ClassesController extends Controller
                     'Status' => $isLate ? 'Late' : 'On Time',
                     'Distance' => round($distance, 2),
                     'Timestamp' => $currentDateTime->toIso8601String(),
+                    'Student Latitude' => (float)$studentLat,
+                    'Student Longitude' => (float)$studentLon,
                 ];
 
-                \Log::info('Creating attendance record with basic fields', $attendanceRecord);
+                \Log::info('Creating attendance record with GPS coordinates', $attendanceRecord);
 
                 // Try to create the record
                 $createdRecord = $this->airtable->createRecord($attendanceTable, $attendanceRecord);
@@ -723,7 +729,6 @@ class ClassesController extends Controller
                 // Log detailed error
                 \Log::error('Failed to save attendance record: ' . $attendanceError->getMessage());
                 \Log::error('Attempted to save to table: ' . $attendanceTable);
-                \Log::error('Record data: ' . json_encode($attendanceRecord));
             }
 
             // Send SMS to guardian (if phone number exists and SMS is configured)
@@ -859,6 +864,8 @@ class ClassesController extends Controller
                     'distance' => $f['Distance'] ?? 0,
                     'timestamp' => $f['Timestamp'] ?? '',
                     'isLate' => ($f['Status'] ?? '') === 'Late',
+                    'latitude' => $f['Student Latitude'] ?? null,
+                    'longitude' => $f['Student Longitude'] ?? null,
                 ];
             }, $records);
             
