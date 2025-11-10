@@ -68,16 +68,16 @@ const LoginPage = () => {
       // REMOVED: login_type selection logic
       // CHANGED: Remove login_type from login
       const resp = await authAPI.login({ username, password });
-
-      // Store remember me preference
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      } else {
-        localStorage.removeItem('rememberMe');
-      }
-
-      setError('');
-      setValidationErrors({});
+    
+    // Store remember me preference
+    if (rememberMe) {
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      localStorage.removeItem('rememberMe');
+    }
+    
+    setError('');
+    setValidationErrors({});
       const role = String(resp?.user?.role || '').toLowerCase();
       const isStaff = role === 'admin' || role === 'teacher';
       navigate(isStaff ? '/admin' : '/dashboard', { replace: true });
@@ -121,9 +121,9 @@ const LoginPage = () => {
               </div>
               <h1 className="login-title">PinPoint</h1>
             </div>
-
+            
             {/* REMOVED: Tab Navigation for student/admin */}
-
+            
             <form onSubmit={handleSubmit} className="login-form">
               <div className="input-group">
                 <label htmlFor="email" className="input-label">Email</label>

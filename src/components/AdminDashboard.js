@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api, { authAPI } from '../services/api';
+import AttendanceMap from './AttendanceMap';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -24,6 +25,9 @@ const AdminDashboard = () => {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  
+  // Live attendance for all classes (for map display)
+  const [liveAttendance, setLiveAttendance] = useState({});
   
   // Toast states
   const [showToast, setShowToast] = useState(false);
@@ -140,8 +144,44 @@ const AdminDashboard = () => {
     };
 
     loadData();
-    return () => clearInterval(timer);
-  }, []);
+    
+    // Fetch live attendance for open classes every 10 seconds
+    const fetchLiveAttendance = async () => {
+      try {
+        const openClasses = classes.filter(c => c.isOpen);
+        const today = new Date().toISOString().split('T')[0];
+        
+        for (const classItem of openClasses) {
+          try {
+            const response = await api.get(`/classes/${classItem.id}/attendance`, {
+              params: { date: today }
+            });
+            
+            if (response.data.success) {
+              const attendance = response.data.attendance || [];
+              setLiveAttendance(prev => ({
+                ...prev,
+                [classItem.id]: attendance
+              }));
+            }
+          } catch (error) {
+            console.error(`Error fetching attendance for class ${classItem.id}:`, error);
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchLiveAttendance:', error);
+      }
+    };
+    
+    // Fetch live attendance immediately and then every 10 seconds
+    fetchLiveAttendance();
+    const attendanceTimer = setInterval(fetchLiveAttendance, 10000);
+    
+    return () => {
+      clearInterval(timer);
+      clearInterval(attendanceTimer);
+    };
+  }, [classes]);
 
   const showToastMessage = (message, type) => {
     setToastMessage(message);
@@ -219,30 +259,123 @@ const AdminDashboard = () => {
       }
 
       // Show loading message
-      showToastMessage('Requesting your location... Please allow location access when prompted.', 'info');
+      showToastMessage('📍 Getting your location... This may take 20-30 seconds indoors.', 'info');
 
       try {
-        console.log('Requesting geolocation...');
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              console.log('Location obtained:', pos.coords);
-              resolve(pos);
-            },
-            (err) => {
-              console.error('Geolocation error:', err);
-              reject(err);
-            },
-            {
-              enableHighAccuracy: true,
-              timeout: 15000, // Increased timeout to 15 seconds
-              maximumAge: 0
+        console.log('Requesting geolocation (indoor-friendly mode)...');
+        
+        // Check if permission is granted first
+        if (navigator.permissions) {
+          try {
+            const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+            console.log('Geolocation permission status:', permissionStatus.state);
+            
+            if (permissionStatus.state === 'denied') {
+              showToastMessage('Location permission denied. Please enable location access in your browser settings and reload the page.', 'error');
+              return;
             }
-          );
-        });
+          } catch (permError) {
+            console.warn('Could not check permission status:', permError);
+          }
+        }
+        
+        // Indoor-friendly location strategy: Watch for improvements over time
+        let bestPosition = null;
+        let watchId = null;
+        
+        const getLocationWithWatch = () => {
+          return new Promise((resolve, reject) => {
+            let positionCount = 0;
+            const maxWaitTime = 30000; // 30 seconds total wait
+            const minPositions = 3; // Collect at least 3 readings
+            const startTime = Date.now();
+            
+            const timeoutId = setTimeout(() => {
+              if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+              }
+              if (bestPosition) {
+                console.log(`⏱️ Timeout reached, using best position: ${bestPosition.coords.accuracy}m`);
+                resolve(bestPosition);
+              } else {
+                reject(new Error('Location timeout - no position obtained'));
+              }
+            }, maxWaitTime);
+            
+            watchId = navigator.geolocation.watchPosition(
+              (position) => {
+                positionCount++;
+                const accuracy = position.coords.accuracy;
+                const elapsed = Date.now() - startTime;
+                
+                console.log(`📍 Position ${positionCount}: Accuracy ${accuracy.toFixed(1)}m (${(elapsed/1000).toFixed(1)}s elapsed)`);
+                
+                // Keep the best (most accurate) position
+                if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
+                  bestPosition = position;
+                  console.log(`✨ New best accuracy: ${accuracy.toFixed(1)}m`);
+                }
+                
+                // Success conditions:
+                // 1. Very good accuracy (< 50m)
+                // 2. Good accuracy (< 100m) after 15 seconds
+                // 3. Acceptable accuracy (< 300m) after 20 seconds
+                // 4. Any accuracy after collecting enough readings
+                const goodEnough = (
+                  (accuracy < 50) ||
+                  (accuracy < 100 && elapsed > 15000) ||
+                  (accuracy < 300 && elapsed > 20000) ||
+                  (positionCount >= minPositions && elapsed > 10000)
+                );
+                
+                if (goodEnough) {
+                  clearTimeout(timeoutId);
+                  navigator.geolocation.clearWatch(watchId);
+                  console.log(`✅ Acceptable location found: ${accuracy.toFixed(1)}m after ${(elapsed/1000).toFixed(1)}s`);
+                  resolve(bestPosition);
+                }
+              },
+              (error) => {
+                clearTimeout(timeoutId);
+                if (watchId !== null) {
+                  navigator.geolocation.clearWatch(watchId);
+                }
+                console.error('Geolocation error:', error);
+                
+                // If we have at least one position, use it
+                if (bestPosition) {
+                  console.log(`⚠️ Error occurred, but using best position: ${bestPosition.coords.accuracy}m`);
+                  resolve(bestPosition);
+                } else {
+                  reject(error);
+                }
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 10000, // Timeout for each individual reading
+                maximumAge: 0
+              }
+            );
+          });
+        };
+        
+        const position = await getLocationWithWatch();
 
         const { latitude, longitude, accuracy } = position.coords;
-        console.log(`Location: ${latitude}, ${longitude}, Accuracy: ${accuracy}m`);
+        console.log(`✅ Final Location: ${latitude}, ${longitude}, Accuracy: ${accuracy}m`);
+        
+        // Show accuracy info to teacher
+        let accuracyMessage = '';
+        if (accuracy < 50) {
+          accuracyMessage = `📍 Excellent accuracy: ${Math.round(accuracy)}m`;
+        } else if (accuracy < 100) {
+          accuracyMessage = `📍 Good accuracy: ${Math.round(accuracy)}m`;
+        } else if (accuracy < 300) {
+          accuracyMessage = `📍 Acceptable accuracy: ${Math.round(accuracy)}m (Good for indoor use)`;
+        } else {
+          accuracyMessage = `📍 Low accuracy: ${Math.round(accuracy)}m (Location may be approximate)`;
+        }
+        console.log(accuracyMessage);
 
         // Call API to open class with geolocation
         const response = await api.post('/classes/open', {
@@ -251,30 +384,39 @@ const AdminDashboard = () => {
           longitude: longitude
         });
 
-    setClasses(classes.map(c => 
-          c.id === classId ? { ...c, isOpen: true } : c
+        // Update the class with GPS coordinates
+        setClasses(classes.map(c => 
+          c.id === classId ? { 
+            ...c, 
+            isOpen: true,
+            currentSessionLat: latitude,
+            currentSessionLon: longitude,
+            currentSessionOpened: new Date().toISOString()
+          } : c
         ));
 
         // Check if geofencing is active
         if (response.data.geofence_active === false) {
           showToastMessage(`${response.data.message}\n\n${response.data.warning}`, 'info');
         } else {
-          showToastMessage(`Class opened successfully! Geofence set (50m radius, accuracy: ${Math.round(accuracy)}m)`, 'success');
+          showToastMessage(`✅ Class opened successfully!\n\n${accuracyMessage}\nGeofence: 100m radius`, 'success');
         }
       } catch (error) {
         console.error('Geolocation error:', error);
         if (error.code) {
-          // Geolocation error
+          // Geolocation API error codes
           const errorMessages = {
-            1: 'Location permission denied. Please click "Allow" when your browser asks for location access. You may need to check your browser settings.',
-            2: 'Location unavailable. Please ensure location services are enabled on your device and try again.',
-            3: 'Location request timed out. This may happen if GPS signal is weak. Try moving closer to a window or outside, then try again.'
+            1: '📍 Location Access Denied\n\nPlease:\n1. Tap the "🔒" or "ⓘ" icon in your browser\'s address bar\n2. Enable "Location" permission\n3. Reload the page and try again',
+            2: '📡 Location Unavailable\n\nPlease:\n1. Enable Location Services in your phone settings\n2. Make sure GPS is turned on\n3. Try again',
+            3: '⏱️ Location Timeout\n\nGPS is taking too long. Please:\n1. Go outdoors or near a window\n2. Wait 10 seconds\n3. Try opening the class again'
           };
           showToastMessage(errorMessages[error.code] || 'Failed to get location. Please try again.', 'error');
+        } else if (error.message && error.message.includes('timeout')) {
+          showToastMessage('⏱️ Location request timed out. Please go outdoors or near a window and try again.', 'error');
         } else if (error.response) {
           showToastMessage(error.response?.data?.message || 'Failed to open class. Please try again.', 'error');
         } else {
-          showToastMessage('Failed to open class. Please check your internet connection and try again.', 'error');
+          showToastMessage('❌ Failed to get location. Please:\n1. Check if location services are enabled\n2. Ensure you have internet connection\n3. Try again', 'error');
         }
       }
     } else {
@@ -285,7 +427,13 @@ const AdminDashboard = () => {
         });
 
         setClasses(classes.map(c => 
-          c.id === classId ? { ...c, isOpen: false } : c
+          c.id === classId ? { 
+            ...c, 
+            isOpen: false,
+            currentSessionLat: null,
+            currentSessionLon: null,
+            currentSessionOpened: null
+          } : c
         ));
         showToastMessage('Class closed successfully', 'success');
       } catch (error) {
@@ -742,6 +890,54 @@ const AdminDashboard = () => {
                       Manage Students
                     </button>
                   </div>
+
+                  {/* Live Attendance Map - Shows below class card */}
+                  <div style={{ marginTop: '20px' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '12px'
+                    }}>
+                      <h4 style={{ margin: 0, fontSize: '16px', color: '#2c3e50' }}>
+                        📍 Class Location
+                      </h4>
+                      {classItem.isOpen && classItem.currentSessionLat && classItem.currentSessionLon && (
+                        <span style={{
+                          fontSize: '12px',
+                          color: '#28a745',
+                          fontWeight: 'bold',
+                          padding: '4px 8px',
+                          background: '#d4edda',
+                          borderRadius: '12px'
+                        }}>
+                          🟢 LIVE
+                        </span>
+                      )}
+                    </div>
+                    <AttendanceMap
+                      teacherLocation={
+                        classItem.isOpen && classItem.currentSessionLat && classItem.currentSessionLon
+                          ? {
+                              lat: classItem.currentSessionLat,
+                              lng: classItem.currentSessionLon
+                            }
+                          : null
+                      }
+                      students={
+                        (liveAttendance[classItem.id] || [])
+                          .filter(r => r.latitude && r.longitude)
+                          .map(r => ({
+                            name: r.studentName,
+                            email: r.studentEmail || '',
+                            latitude: r.latitude,
+                            longitude: r.longitude,
+                            signed_in_at: r.signInTime
+                          }))
+                      }
+                      geofenceRadius={100}
+                    />
+                  </div>
                 </div>
               ))
             ) : (
@@ -921,7 +1117,40 @@ const AdminDashboard = () => {
                   <p><strong>Time:</strong> {selectedClass.startTime} - {selectedClass.endTime}</p>
                   <p><strong>Late Threshold:</strong> {selectedClass.lateThreshold} minutes</p>
                   <p><strong>Control Type:</strong> {selectedClass.isManualControl ? 'Manual' : 'Time-based'}</p>
+                  {selectedClass.isOpen && selectedClass.currentSessionLat && selectedClass.currentSessionLon && (
+                    <p>
+                      <strong>Class Status:</strong> 
+                      <span style={{ 
+                        color: '#28a745', 
+                        fontWeight: 'bold',
+                        marginLeft: '8px'
+                      }}>
+                        🟢 LIVE - Geofence Active
+                      </span>
+                    </p>
+                  )}
                 </div>
+
+                {/* Live Attendance Map - Only shown when class is open */}
+                {selectedClass.isOpen && selectedClass.currentSessionLat && selectedClass.currentSessionLon && (
+                  <div className="detail-section">
+                    <h4>📍 Live Attendance Map</h4>
+                    <AttendanceMap
+                      teacherLocation={{
+                        lat: selectedClass.currentSessionLat,
+                        lng: selectedClass.currentSessionLon
+                      }}
+                      students={attendanceRecords.filter(r => r.latitude && r.longitude).map(r => ({
+                        name: r.studentName,
+                        email: r.studentEmail || '',
+                        latitude: r.latitude,
+                        longitude: r.longitude,
+                        signed_in_at: r.signInTime
+                      }))}
+                      geofenceRadius={100}
+                    />
+                  </div>
+                )}
 
                 <div className="detail-section">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
