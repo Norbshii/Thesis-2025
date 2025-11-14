@@ -47,10 +47,12 @@ RUN php artisan cache:clear || true
 RUN php artisan route:clear || true
 RUN php artisan view:clear || true
 
-# Expose port
+# Expose ports
 EXPOSE 8000
+EXPOSE 6001
 
-# Start Laravel server
-# Don't use --env flag, it causes issues. Environment is set via env vars.
-CMD php artisan config:cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+# Start Laravel server with scheduler and optional WebSocket server
+# Scheduler runs auto-open/close for classes
+# WebSocket server (optional, runs in background)
+CMD sh -c 'php artisan config:cache && php artisan route:cache && php artisan schedule:work & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}'
 
