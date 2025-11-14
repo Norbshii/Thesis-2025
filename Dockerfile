@@ -51,6 +51,6 @@ RUN php artisan view:clear || true
 EXPOSE 8000
 
 # Start Laravel server with scheduler (WebSockets handled by Pusher.com)
-# Scheduler runs auto-open/close for classes
-CMD sh -c 'php artisan config:cache && php artisan route:cache && php artisan schedule:work & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}'
+# Run migrations on startup, then start scheduler and server
+CMD sh -c 'php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan schedule:work & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}'
 
