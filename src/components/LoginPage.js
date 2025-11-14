@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
+import LoadingScreen from './LoadingScreen';
 import './LoginPage.css';
 
 const LoginPage = () => {
@@ -79,8 +80,15 @@ const LoginPage = () => {
     setError('');
     setValidationErrors({});
       const role = String(resp?.user?.role || '').toLowerCase();
-      const isStaff = role === 'admin' || role === 'teacher';
-      navigate(isStaff ? '/admin' : '/dashboard', { replace: true });
+      
+      // Route based on role
+      if (role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (role === 'teacher') {
+        navigate('/teacher', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true }); // students
+      }
     } catch (e) {
       const message = typeof e === 'string' ? e : (e?.message || 'Login failed');
       setError(message);
@@ -88,6 +96,11 @@ const LoginPage = () => {
     
     setIsLoading(false);
   };
+
+  // Show loading screen during login
+  if (isLoading) {
+    return <LoadingScreen message="Logging you in..." />;
+  }
 
   return (
     <div className="login-container">

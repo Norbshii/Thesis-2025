@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import StudentProfile from './components/StudentProfile';
+import TeacherDashboard from './components/TeacherDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import { authAPI } from './services/api';
 import './App.css';
@@ -44,9 +45,11 @@ function App() {
               <Navigate
                 to={
                   isAuthed
-                    ? ((user?.role || '').toLowerCase() === 'admin' || (user?.role || '').toLowerCase() === 'teacher')
+                    ? ((user?.role || '').toLowerCase() === 'admin')
                       ? '/admin'
-                      : '/dashboard'
+                      : ((user?.role || '').toLowerCase() === 'teacher')
+                        ? '/teacher'
+                        : '/dashboard'
                     : '/login'
                 }
                 replace
@@ -65,9 +68,18 @@ function App() {
           />
 
           <Route
+            path="/teacher"
+            element={
+              <RequireRole role="teacher">
+                <TeacherDashboard />
+              </RequireRole>
+            }
+          />
+
+          <Route
             path="/admin"
             element={
-              <RequireRole role={["admin", "teacher"]}>
+              <RequireRole role="admin">
                 <AdminDashboard />
               </RequireRole>
             }

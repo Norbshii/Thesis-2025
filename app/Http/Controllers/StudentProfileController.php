@@ -3,26 +3,36 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\AirtableService;
+use App\Models\Student;
+use App\Models\Teacher;
 use Illuminate\Support\Facades\Validator;
 
 class StudentProfileController extends Controller
 {
-    public function __construct(private AirtableService $airtable)
+    /**
+     * Find user record (student or teacher) by email
+     */
+    private function findUserRecord(string $email): ?array
     {
-    }
-
-    private function findUserRecord(string $usernameOrEmail): ?array
-    {
-        $tableUsers = config('airtable.tables.users');
-        $tableStudents = config('airtable.tables.students');
-        $tableTeachers = config('airtable.tables.teachers');
-
-        return $this->airtable->findAcrossTables([
-            $tableUsers,
-            $tableStudents,
-            $tableTeachers,
-        ], $usernameOrEmail);
+        // Try to find as student first
+        $student = Student::where('email', $email)->first();
+        if ($student) {
+            return [
+                'type' => 'student',
+                'model' => $student,
+            ];
+        }
+        
+        // Try to find as teacher
+        $teacher = Teacher::where('email', $email)->first();
+        if ($teacher) {
+            return [
+                'type' => 'teacher',
+                'model' => $teacher,
+            ];
+        }
+        
+        return null;
     }
 
     public function get(Request $request)
@@ -37,37 +47,54 @@ class StudentProfileController extends Controller
             return response()->json(['message' => 'Email is required'], 422);
         }
 
-        $rec = $this->findUserRecord($email);
-        if (!$rec) {
+        $userRecord = $this->findUserRecord($email);
+        
+        if (!$userRecord) {
             \Log::warning('User not found for profile', ['email' => $email]);
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        $fields = $rec['fields'] ?? [];
+        $user = $userRecord['model'];
+        $type = $userRecord['type'];
         
-        // DEBUG: Log all available fields to see what Airtable is returning
-        \Log::info('Student profile fields from Airtable', [
+        // DEBUG: Log user data
+        \Log::info('User profile data', [
             'email' => $email,
-            'available_fields' => array_keys($fields),
-            'all_field_values' => $fields
+            'type' => $type,
+            'user_data' => $user->toArray()
         ]);
         
-        $profile = [
-            'name' => $fields['Name'] ?? $fields['name'] ?? trim(($fields['first_name'] ?? $fields['First_name'] ?? '') . ' ' . ($fields['last_name'] ?? $fields['Last_name'] ?? '')),
-            'email' => $fields['Email'] ?? $fields['email'] ?? $email,
-            'department' => $fields['department'] ?? $fields['Department'] ?? null,
-            'age' => $fields['Age'] ?? $fields['age'] ?? null,
-            'course' => $fields['Course Year & Section'] ?? $fields['Course'] ?? $fields['course'] ?? null,
-            'address' => $fields['Address'] ?? $fields['address'] ?? null,
-            'guardianName' => $fields['Name of Guardian'] ?? $fields['GuardianName'] ?? $fields['guardianName'] ?? ($fields['guardian_name'] ?? null),
-            'relationship' => $fields['Relationship'] ?? $fields['relationship'] ?? null,
-            'guardianPhone' => $fields['Phone Number'] ?? $fields['GuardianPhone'] ?? $fields['guardianPhone'] ?? ($fields['guardian_phone'] ?? null),
-        ];
+        if ($type === 'student') {
+            $profile = [
+                'name' => $user->name,
+                'email' => $user->email,
+                'department' => $user->department ?? null,
+                'age' => $user->age,
+                'course' => $user->course,
+                'address' => $user->address,
+                'guardianName' => $user->guardian_name,
+                'relationship' => $user->relationship,
+                'guardianEmail' => $user->guardian_email,
+            ];
+        } else {
+            // Teacher profile (limited fields)
+            $profile = [
+                'name' => $user->name,
+                'email' => $user->email,
+                'department' => $user->department ?? null,
+                'age' => null,
+                'course' => null,
+                'address' => null,
+                'guardianName' => null,
+                'relationship' => null,
+                'guardianEmail' => null,
+            ];
+        }
 
         return response()->json([
             'profile' => $profile,
-            'record_id' => $rec['id'],
-            'table' => $rec['__table'] ?? null,
+            'record_id' => $user->id,
+            'table' => $type,
         ]);
     }
 
@@ -81,103 +108,87 @@ class StudentProfileController extends Controller
             'address' => 'nullable|string|max:200',
             'guardianName' => 'nullable|string|max:100',
             'relationship' => 'nullable|string|max:100',
-            'guardianPhone' => 'nullable|string|max:50',
+            'guardianEmail' => 'nullable|email|max:100',
         ]);
+        
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $rec = $this->findUserRecord($request->input('email'));
-        if (!$rec) {
+        $userRecord = $this->findUserRecord($request->input('email'));
+        
+        if (!$userRecord) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        // Determine which field names to use based on what exists in the record
-        $existingFields = $rec['fields'] ?? [];
+        $user = $userRecord['model'];
+        $type = $userRecord['type'];
         
-        \Log::info('Update profile - existing fields', [
-            'existing_field_names' => array_keys($existingFields),
+        \Log::info('Update profile request', [
+            'type' => $type,
+            'email' => $request->input('email'),
             'request_data' => $request->all()
         ]);
         
-        // Helper function to find the correct field name (case-insensitive)
-        $findFieldName = function($possibleNames) use ($existingFields) {
-            foreach ($possibleNames as $name) {
-                if (array_key_exists($name, $existingFields)) {
-                    return $name;
-                }
-            }
-            // Default to the first option (capitalized) even if not found
-            return $possibleNames[0];
-        };
+        // Build update data
+        $updateData = [];
         
-        $fields = [];
-        
-        // Map input fields to Airtable field names
         if ($request->filled('name')) {
-            $fields[$findFieldName(['Name', 'name'])] = $request->input('name');
-        }
-        if ($request->filled('age')) {
-            $fields[$findFieldName(['Age', 'age'])] = $request->input('age');
-        }
-        if ($request->filled('course')) {
-            $fields[$findFieldName(['Course Year & Section', 'Course', 'course'])] = $request->input('course');
-        }
-        if ($request->filled('address')) {
-            $fields[$findFieldName(['Address', 'address'])] = $request->input('address');
-        }
-        if ($request->filled('guardianName')) {
-            $fields[$findFieldName(['Name of Guardian', 'GuardianName', 'guardianName', 'guardian_name'])] = $request->input('guardianName');
-        }
-        if ($request->filled('relationship')) {
-            $fields[$findFieldName(['Relationship', 'relationship'])] = $request->input('relationship');
-        }
-        if ($request->filled('guardianPhone')) {
-            $fields[$findFieldName(['Phone Number', 'GuardianPhone', 'guardianPhone', 'guardian_phone'])] = $request->input('guardianPhone');
+            $updateData['name'] = $request->input('name');
         }
         
-        \Log::info('Fields to update', ['fields' => $fields]);
+        // Only update student-specific fields for students
+        if ($type === 'student') {
+            if ($request->filled('age')) {
+                $updateData['age'] = $request->input('age');
+            }
+            if ($request->filled('course')) {
+                $updateData['course'] = $request->input('course');
+            }
+            if ($request->filled('address')) {
+                $updateData['address'] = $request->input('address');
+            }
+            if ($request->filled('guardianName')) {
+                $updateData['guardian_name'] = $request->input('guardianName');
+            }
+            if ($request->filled('relationship')) {
+                $updateData['relationship'] = $request->input('relationship');
+            }
+            if ($request->filled('guardianEmail')) {
+                $updateData['guardian_email'] = $request->input('guardianEmail');
+            }
+        }
+        
+        \Log::info('Fields to update', ['fields' => $updateData]);
 
-        if (empty($fields)) {
+        if (empty($updateData)) {
             return response()->json(['message' => 'No fields to update'], 400);
         }
 
-        $table = $rec['__table'] ?? config('airtable.tables.users');
-        $updated = $this->airtable->updateRecord($table, $rec['id'], $fields);
+        // Update the user
+        $user->update($updateData);
 
-        return response()->json(['message' => 'Profile updated', 'record' => $updated]);
+        return response()->json([
+            'message' => 'Profile updated',
+            'record' => $user->fresh()
+        ]);
     }
 
     /**
-     * Get available course options from Airtable
+     * Get available course options from MySQL
      * This fetches all unique course values from existing student records
      */
     public function getCourseOptions(Request $request)
     {
         try {
-            $tableStudents = config('airtable.tables.students');
-            
-            // Fetch all student records to get unique course values
-            $response = $this->airtable->listRecords($tableStudents, [
-                'fields' => ['Course Year & Section'],
-                'pageSize' => 100
-            ]);
-            
-            $records = $response['records'] ?? [];
-            $courses = [];
-            
-            // Extract unique course values
-            foreach ($records as $rec) {
-                $fields = $rec['fields'] ?? [];
-                $course = $fields['Course Year & Section'] ?? null;
-                
-                if ($course && !in_array($course, $courses)) {
-                    $courses[] = $course;
-                }
-            }
-            
-            // Sort alphabetically
-            sort($courses);
+            // Fetch all unique course values from students table
+            $courses = Student::whereNotNull('course')
+                ->where('course', '!=', '')
+                ->distinct()
+                ->pluck('course')
+                ->sort()
+                ->values()
+                ->toArray();
             
             return response()->json([
                 'courses' => $courses
@@ -193,5 +204,3 @@ class StudentProfileController extends Controller
         }
     }
 }
-
-
