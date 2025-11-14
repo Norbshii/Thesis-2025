@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api, { authAPI } from '../services/api';
+import LoadingScreen from './LoadingScreen';
+import echo from '../services/echo';
 import './StudentProfile.css';
 
 const StudentProfile = () => {
@@ -10,7 +12,7 @@ const StudentProfile = () => {
     address: '',
     guardianName: '',
     relationship: '',
-    guardianPhone: '',
+    guardianEmail: '',
     profilePicture: null
   });
   
@@ -20,6 +22,7 @@ const StudentProfile = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showTimeRestrictionModal, setShowTimeRestrictionModal] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -27,6 +30,17 @@ const StudentProfile = () => {
   const [restrictedClassInfo, setRestrictedClassInfo] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    newPassword_confirmation: ''
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
   const [editForm, setEditForm] = useState({
     name: '',
     age: '',
@@ -34,13 +48,25 @@ const StudentProfile = () => {
     address: '',
     guardianName: '',
     relationship: '',
-    guardianPhone: ''
+    guardianEmail: ''
   });
+  const [courseOptions, setCourseOptions] = useState([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+
+    // Load course options
+    const loadCourseOptions = async () => {
+      try {
+        const response = await api.get('/student/course-options');
+        setCourseOptions(response.data.courses || []);
+      } catch (error) {
+        console.error('Failed to load course options:', error);
+        setCourseOptions([]);
+      }
+    };
 
     // Load classes + profile
     const loadData = async () => {
@@ -59,7 +85,7 @@ const StudentProfile = () => {
             address: p.address || '',
             guardianName: p.guardianName || '',
             relationship: p.relationship || '',
-            guardianPhone: p.guardianPhone || '',
+            guardianEmail: p.guardianEmail || '',
             profilePicture: null
           };
           setStudent(merged);
@@ -75,7 +101,7 @@ const StudentProfile = () => {
             address: '',
             guardianName: '',
             relationship: '',
-            guardianPhone: '',
+            guardianEmail: '',
             profilePicture: null
           };
           setStudent(fallback);
@@ -85,27 +111,11 @@ const StudentProfile = () => {
 
       // Load classes (separate try/catch so profile still loads if classes fail)
       try {
-        const response = await api.get('/classes');
-        const allClasses = response?.data?.classes || [];
-        
-        // Get student's record ID from students API
-        let studentRecordId = null;
-        try {
-          const studentsResponse = await api.get('/students');
-          const allStudents = studentsResponse.data.students || [];
-          const studentRecord = allStudents.find(s => s.email === currentUser?.email);
-          studentRecordId = studentRecord?.id;
-        } catch (e) {
-          console.error('Error fetching student ID:', e);
-        }
-        
-        // Filter to only show classes where student is enrolled
-        const enrolledClasses = studentRecordId 
-          ? allClasses.filter(classItem => {
-              const enrolledStudents = classItem.enrolledStudents || [];
-              return enrolledStudents.includes(studentRecordId);
-            })
-          : []; // If no student ID found, show no classes
+        // NEW: Use studentEmail parameter to fetch only enrolled classes
+        const response = await api.get('/classes', {
+          params: { studentEmail: currentUser?.email }
+        });
+        const enrolledClasses = response?.data?.classes || [];
         
         const mapped = enrolledClasses.map(r => ({
           id: r.id,
@@ -128,9 +138,45 @@ const StudentProfile = () => {
         setLoading(false);
     };
 
+    loadCourseOptions();
     loadData();
 
-    return () => clearInterval(timer);
+    // 🔥 WEBSOCKET LISTENERS - REAL-TIME CLASS UPDATES!
+    
+    // Listen for class updates (opened/closed)
+    const classChannel = echo.channel('classes')
+      .listen('.class.updated', (event) => {
+        console.log('🔄 Class updated via WebSocket (Student):', event);
+        const updatedClass = event.class;
+        
+        // Update the class in state if it's in the student's enrolled classes
+        setClasses(prevClasses => {
+          return prevClasses.map(c => {
+            if (c.id === updatedClass.id) {
+              return {
+                ...c,
+                isOpen: updatedClass.is_open,
+                startTime: updatedClass.start_time,
+                endTime: updatedClass.end_time
+              };
+            }
+            return c;
+          });
+        });
+        
+        // Show toast notification
+        if (event.action === 'opened') {
+          showToastMessage(`📍 ${updatedClass.class_name} is now OPEN!`, 'success');
+        } else if (event.action === 'closed') {
+          showToastMessage(`🔒 ${updatedClass.class_name} is now closed`, 'info');
+        }
+      });
+
+    return () => {
+      clearInterval(timer);
+      // Disconnect WebSocket channels
+      echo.leave('classes');
+    };
   }, []);
 
   // Check if class sign-in is available based on current time
@@ -212,12 +258,38 @@ const StudentProfile = () => {
 
       try {
         // Get student's current location
+        console.log('Requesting geolocation...');
+        showToastMessage('Getting your location...', 'info');
+        
         const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          });
+          let resolved = false;
+          
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              if (!resolved) {
+                resolved = true;
+                console.log('Geolocation success:', pos);
+                resolve(pos);
+              }
+            },
+            (err) => {
+              if (!resolved) {
+                console.error('Geolocation error (will retry):', err);
+                // Don't reject immediately, wait for potential success
+                setTimeout(() => {
+                  if (!resolved) {
+                    resolved = true;
+                    reject(err);
+                  }
+                }, 2000);
+              }
+            },
+            {
+              enableHighAccuracy: false, // Changed to false for better compatibility
+              timeout: 20000,
+              maximumAge: 5000 // Allow cached location
+            }
+          );
         });
 
         const { latitude, longitude } = position.coords;
@@ -252,7 +324,24 @@ const StudentProfile = () => {
         console.error('Error signing in:', error);
         
         // Better error messages
-        if (error.response?.status === 403) {
+        if (error.response?.status === 400 && error.response?.data?.alreadySignedIn) {
+          // Duplicate sign-in attempt
+          const signInTime = error.response.data.signInTime || 'earlier';
+          showToastMessage(
+            `✅ Already signed in! You signed in to this class at ${signInTime}. Your attendance has been recorded.`,
+            'info'
+          );
+          
+          // Update UI to show as signed in
+          setClasses(classes.map(c => 
+            c.id === selectedClass.id 
+              ? { ...c, isSignedIn: true }
+              : c
+          ));
+          
+          setShowSignInModal(false);
+          setSelectedClass(null);
+        } else if (error.response?.status === 403) {
           const errorMsg = error.response?.data?.message || '';
           console.log('403 Error Message:', errorMsg);
           
@@ -324,7 +413,7 @@ const StudentProfile = () => {
       address: student.address || '',
       guardianName: student.guardianName || '',
       relationship: student.relationship || '',
-      guardianPhone: student.guardianPhone || ''
+      guardianEmail: student.guardianEmail || ''
     });
     setShowEditModal(true);
   };
@@ -341,7 +430,7 @@ const StudentProfile = () => {
         address: editForm.address,
         guardianName: editForm.guardianName,
         relationship: editForm.relationship,
-        guardianPhone: editForm.guardianPhone
+        guardianEmail: editForm.guardianEmail
       });
       console.log('Profile save response:', response.data);
     setStudent({
@@ -352,7 +441,7 @@ const StudentProfile = () => {
       address: editForm.address,
       guardianName: editForm.guardianName,
       relationship: editForm.relationship,
-      guardianPhone: editForm.guardianPhone
+      guardianEmail: editForm.guardianEmail
     });
     setShowEditModal(false);
     showToastMessage('Profile updated successfully', 'success');
@@ -362,6 +451,56 @@ const StudentProfile = () => {
       showToastMessage(errorMsg, 'error');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    // Validation
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.newPassword_confirmation) {
+      showToastMessage('Please fill in all password fields', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      showToastMessage('New password must be at least 6 characters', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.newPassword_confirmation) {
+      showToastMessage('New passwords do not match', 'error');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const currentUser = authAPI.getStoredUser();
+      const response = await api.post('/change-password', {
+        email: currentUser?.email,
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        newPassword_confirmation: passwordForm.newPassword_confirmation
+      });
+
+      if (response.data.success) {
+        showToastMessage('Password changed successfully! Please use your new password next time you log in.', 'success');
+        setShowChangePasswordModal(false);
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+          newPassword_confirmation: ''
+        });
+        setShowPasswords({
+          current: false,
+          new: false,
+          confirm: false
+        });
+      }
+    } catch (err) {
+      console.error('Password change failed:', err);
+      const errorMsg = err?.response?.data?.message || err?.message || 'Failed to change password';
+      showToastMessage(errorMsg, 'error');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -394,14 +533,7 @@ const StudentProfile = () => {
   const displayName = (student.name && String(student.name).trim()) || storedUser?.name || emailDerived || '';
 
   if (loading) {
-    return (
-      <div className="student-profile">
-        <div className="profile-container">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading your profile..." />;
   }
 
   return (
@@ -430,15 +562,32 @@ const StudentProfile = () => {
             <p><strong>Address:</strong> {student.address}</p>
             <p><strong>Guardian:</strong> {student.guardianName}</p>
             <p><strong>Relationship:</strong> {student.relationship}</p>
-            <p><strong>Guardian Phone:</strong> {student.guardianPhone}</p>
+            <p><strong>Guardian Email:</strong> {student.guardianEmail}</p>
             <div className="current-time">
               Current Time: {formatTime(currentTime)}
             </div>
             
-            {/* Edit Profile Button - Above Separator */}
+            {/* Edit Profile & Change Password Buttons - Above Separator */}
             <div className="edit-profile-section">
               <button className="edit-profile-btn" onClick={handleEditProfile}>
-                Edit Profile
+                📝 Edit Profile
+              </button>
+              <button 
+                className="change-password-btn" 
+                onClick={() => setShowChangePasswordModal(true)}
+                style={{
+                  marginLeft: '10px',
+                  backgroundColor: '#2196F3',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}
+              >
+                🔒 Change Password
               </button>
             </div>
           </div>
@@ -452,24 +601,24 @@ const StudentProfile = () => {
               classes.map((classItem) => (
               <div 
                 key={classItem.id}
-                className={`class-item ${!isClassAvailable(classItem) ? 'unavailable' : ''} ${classItem.isSignedIn ? 'signed-in' : ''}`}
+                className={`class-item ${!classItem.isOpen ? 'unavailable' : ''} ${classItem.isSignedIn ? 'signed-in' : ''}`}
                 onClick={() => handleClassClick(classItem.id)}
               >
                 <div className="class-info">
                   <span className="class-code">{classItem.code || 'N/A'}</span>
                   <span className="class-name">{classItem.name || 'N/A'}</span>
-                  <span className="class-time">{classItem.timeSlot || classItem.time_slot || 'Always Available'}</span>
+                  <span className="class-time" style={{
+                    color: classItem.isOpen ? '#28a745' : '#6c757d',
+                    fontWeight: '600',
+                    fontSize: '14px'
+                  }}>
+                    {classItem.isOpen ? '🟢 OPEN' : '🔴 CLOSED'}
+                  </span>
                   <span className="class-instructor">Instructor: {classItem.instructor || 'N/A'}</span>
                 </div>
                 <div className="class-status">
-                  {!isClassAvailable(classItem) ? (
-                    <span className="status unavailable">Not Available</span>
-                  ) : classItem.alwaysAvailable ? (
-                    classItem.isSignedIn ? (
-                      <span className="status signed-in">Signed In</span>
-                    ) : (
-                      <span className="status always-available">Always Open</span>
-                    )
+                  {!classItem.isOpen ? (
+                    <span className="status unavailable">Class Closed</span>
                   ) : classItem.isSignedIn ? (
                     <span className="status signed-in">Signed In</span>
                   ) : (
@@ -549,12 +698,17 @@ const StudentProfile = () => {
               </div>
               <div className="form-group">
                 <label>Course Yr & Section:</label>
-                <input
-                  type="text"
+                <select
                   value={editForm.course}
                   onChange={(e) => setEditForm({...editForm, course: e.target.value})}
-                  placeholder="e.g., BSCS 4B"
-                />
+                >
+                  <option value="">Select Course & Section</option>
+                  {courseOptions.map((course, index) => (
+                    <option key={index} value={course}>
+                      {course}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Address:</label>
@@ -593,12 +747,12 @@ const StudentProfile = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label>Guardian's Phone Number:</label>
+                <label>Guardian's Email Address:</label>
                 <input
-                  type="tel"
-                  value={editForm.guardianPhone}
-                  onChange={(e) => setEditForm({...editForm, guardianPhone: e.target.value})}
-                  placeholder="+63 912 345 6789"
+                  type="email"
+                  value={editForm.guardianEmail}
+                  onChange={(e) => setEditForm({...editForm, guardianEmail: e.target.value})}
+                  placeholder="guardian@example.com"
                 />
               </div>
             </div>
@@ -702,15 +856,222 @@ const StudentProfile = () => {
         </div>
       )}
 
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>🔒 Change Password</h3>
+              <button className="close-btn" onClick={() => {
+                setShowChangePasswordModal(false);
+                setPasswordForm({
+                  currentPassword: '',
+                  newPassword: '',
+                  newPassword_confirmation: ''
+                });
+                setShowPasswords({
+                  current: false,
+                  new: false,
+                  confirm: false
+                });
+              }}>×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '20px', color: '#666' }}>
+                Enter your current password and choose a new password (minimum 6 characters).
+              </p>
+              <div className="form-group">
+                <label>Current Password:</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.current ? "text" : "password"}
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                    placeholder="Enter current password"
+                    disabled={isChangingPassword}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#666'
+                    }}
+                    disabled={isChangingPassword}
+                  >
+                    {showPasswords.current ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>New Password:</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.new ? "text" : "password"}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                    placeholder="Enter new password (min 6 characters)"
+                    disabled={isChangingPassword}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#666'
+                    }}
+                    disabled={isChangingPassword}
+                  >
+                    {showPasswords.new ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Confirm New Password:</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.confirm ? "text" : "password"}
+                    value={passwordForm.newPassword_confirmation}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword_confirmation: e.target.value})}
+                    placeholder="Confirm new password"
+                    disabled={isChangingPassword}
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '18px',
+                      color: '#666'
+                    }}
+                    disabled={isChangingPassword}
+                  >
+                    {showPasswords.confirm ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setShowChangePasswordModal(false);
+                  setPasswordForm({
+                    currentPassword: '',
+                    newPassword: '',
+                    newPassword_confirmation: ''
+                  });
+                  setShowPasswords({
+                    current: false,
+                    new: false,
+                    confirm: false
+                  });
+                }}
+                disabled={isChangingPassword}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleChangePassword}
+                disabled={isChangingPassword}
+              >
+                {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {showToast && (
-        <div className={`toast ${toastType}`}>
-          <div className="toast-content">
-            <div className="toast-icon">
-              {toastType === 'success' ? '✅' : '❌'}
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            bottom: 'auto',
+            left: window.innerWidth <= 768 ? '50%' : 'auto',
+            right: window.innerWidth <= 768 ? 'auto' : '20px',
+            transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
+            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
+            minWidth: '280px',
+            maxHeight: '80px',
+            width: 'auto',
+            height: 'auto',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            zIndex: 99999,
+            overflow: 'hidden',
+            border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
+            display: 'inline-block',
+            pointerEvents: 'auto',
+            margin: '0'
+          }}
+        >
+          <div 
+            style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 16px',
+              background: toastType === 'success' ? '#d4edda' : '#f8d7da'
+            }}
+          >
+            <div style={{ fontSize: '20px', flexShrink: 0 }}>
+              {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
             </div>
-            <div className="toast-message">{toastMessage}</div>
-            <button className="toast-close" onClick={() => setShowToast(false)}>
+            <div style={{ 
+              flex: 1,
+              fontSize: '14px',
+              lineHeight: '1.4',
+              color: toastType === 'success' ? '#155724' : '#721c24',
+              fontWeight: '500',
+              wordBreak: 'break-word'
+            }}>
+              {toastMessage}
+            </div>
+            <button 
+              onClick={() => setShowToast(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: toastType === 'success' ? '#155724' : '#721c24',
+                padding: '0',
+                lineHeight: '1',
+                flexShrink: 0,
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               ×
             </button>
           </div>

@@ -2,131 +2,125 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Teacher;
+use App\Models\Student;
 
 class AuthController extends Controller
 {
-    /**
-     * Handle user login
-     */
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string|min:6',
         ]);
-
+        
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        // Check if user exists with username or email
-        $user = User::where('username', $request->username)
-                    ->orWhere('email', $request->username)
-                    ->first();
+        $username = $request->username;
+        $password = $request->password;
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+        // Try to find user in Teachers table first (includes both teachers and admins)
+        $user = Teacher::where('email', $username)
+                      ->orWhere('username', $username)
+                      ->first();
+        
+        $role = $user ? $user->role : null;
+        
+        // If not found in teachers, try students
+        if (!$user) {
+            $user = Student::where('email', $username)
+                          ->orWhere('username', $username)
+                          ->first();
+            $role = 'student';
         }
 
-        // Create token
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        // Get user's classes if they are a student
-        $classes = [];
-        if ($user->role === 'student') {
-            $classes = [
-                [
-                    'id' => 1,
-                    'code' => 'CC 201',
-                    'name' => 'Introduction to Computing 2',
-                    'instructor' => 'Prof. Smith',
-                    'time_slot' => '8:00 AM - 10:00 AM',
-                    'is_signed_in' => false
-                ],
-                [
-                    'id' => 2,
-                    'code' => 'CS 301',
-                    'name' => 'Data Structures',
-                    'instructor' => 'Prof. Johnson',
-                    'time_slot' => '10:00 AM - 12:00 PM',
-                    'is_signed_in' => false
-                ],
-                [
-                    'id' => 3,
-                    'code' => 'CS 401',
-                    'name' => 'Algorithm Design',
-                    'instructor' => 'Prof. Williams',
-                    'time_slot' => '1:00 PM - 3:00 PM',
-                    'is_signed_in' => false
-                ],
-                [
-                    'id' => 4,
-                    'code' => 'CS 501',
-                    'name' => 'Software Engineering',
-                    'instructor' => 'Prof. Brown',
-                    'time_slot' => '3:00 PM - 5:00 PM',
-                    'is_signed_in' => false
-                ]
-            ];
+        if (!$user) {
+            return response()->json(['message' => 'Invalid email or password'], 401);
         }
+
+        // Verify password
+        if (!Hash::check($password, $user->password)) {
+            return response()->json(['message' => 'Invalid email or password'], 401);
+        }
+
+        // Generate token (you can use Laravel Sanctum for production)
+        $token = base64_encode('mysql|' . $user->id . '|' . $role . '|' . now()->timestamp);
 
         return response()->json([
             'message' => 'Login successful',
             'user' => [
                 'id' => $user->id,
-                'username' => $user->username,
+                'username' => $user->username ?? $user->email,
                 'email' => $user->email,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
-                'role' => $user->role,
+                'role' => $role,
             ],
             'token' => $token,
-            'classes' => $classes
-        ], 200);
+        ]);
     }
 
-    /**
-     * Handle user registration
-     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'required|string|unique:users,username|min:3|max:20',
-            'email' => 'required|email|unique:users,email',
+            'username' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:6|confirmed',
-            'first_name' => 'required|string|max:50',
-            'last_name' => 'required|string|max:50',
-            'role' => 'required|string|in:student,teacher,admin',
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'role' => 'required|in:student,teacher,admin',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $user = User::create([
-            'username' => $request->username,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'role' => $request->role,
-        ]);
+        $role = $request->role;
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        // Check if user already exists
+        if ($role === 'teacher' || $role === 'admin') {
+            $exists = Teacher::where('email', $request->email)
+                            ->orWhere('username', $request->username)
+                            ->exists();
+            if ($exists) {
+                return response()->json(['message' => 'Teacher with this email or username already exists'], 409);
+            }
+
+            $user = Teacher::create([
+                'username' => $request->username,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'name' => trim(($request->first_name ?? '') . ' ' . ($request->last_name ?? '')),
+                'role' => $role,
+            ]);
+        } else {
+            $exists = Student::where('email', $request->email)
+                            ->orWhere('username', $request->username)
+                            ->exists();
+            if ($exists) {
+                return response()->json(['message' => 'Student with this email or username already exists'], 409);
+            }
+
+            $user = Student::create([
+                'username' => $request->username,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'name' => trim(($request->first_name ?? '') . ' ' . ($request->last_name ?? '')),
+                'role' => 'student',
+            ]);
+        }
+
+        $token = base64_encode('mysql|' . $user->id . '|' . $role . '|' . now()->timestamp);
 
         return response()->json([
             'message' => 'Registration successful',
@@ -136,120 +130,78 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
-                'role' => $user->role,
+                'role' => $role,
             ],
-            'token' => $token
+            'token' => $token,
         ], 201);
     }
 
-    /**
-     * Handle user logout
-     */
-    public function logout(Request $request)
+    public function changePassword(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Accept both camelCase (from frontend) and snake_case
+        $currentPassword = $request->input('currentPassword') ?? $request->input('current_password');
+        $newPassword = $request->input('newPassword') ?? $request->input('new_password');
+        $newPasswordConfirmation = $request->input('newPassword_confirmation') ?? $request->input('new_password_confirmation');
 
-        return response()->json([
-            'message' => 'Logout successful'
-        ], 200);
-    }
-
-    /**
-     * Get authenticated user
-     */
-    public function me(Request $request)
-    {
-        return response()->json([
-            'user' => $request->user()
-        ], 200);
-    }
-
-    /**
-     * Get student classes
-     */
-    public function getClasses(Request $request)
-    {
-        $user = $request->user();
-        
-        if ($user->role !== 'student') {
-            return response()->json([
-                'message' => 'Access denied. Student role required.'
-            ], 403);
-        }
-
-        $classes = [
-            [
-                'id' => 1,
-                'code' => 'CC 201',
-                'name' => 'Introduction to Computing 2',
-                'instructor' => 'Prof. Smith',
-                'time_slot' => '8:00 AM - 10:00 AM',
-                'is_signed_in' => false
-            ],
-            [
-                'id' => 2,
-                'code' => 'CS 301',
-                'name' => 'Data Structures',
-                'instructor' => 'Prof. Johnson',
-                'time_slot' => '10:00 AM - 12:00 PM',
-                'is_signed_in' => false
-            ],
-            [
-                'id' => 3,
-                'code' => 'CS 401',
-                'name' => 'Algorithm Design',
-                'instructor' => 'Prof. Williams',
-                'time_slot' => '1:00 PM - 3:00 PM',
-                'is_signed_in' => false
-            ],
-            [
-                'id' => 4,
-                'code' => 'CS 501',
-                'name' => 'Software Engineering',
-                'instructor' => 'Prof. Brown',
-                'time_slot' => '3:00 PM - 5:00 PM',
-                'is_signed_in' => false
-            ]
-        ];
-
-        return response()->json([
-            'classes' => $classes
-        ], 200);
-    }
-
-    /**
-     * Toggle class sign-in status
-     */
-    public function toggleClassSignIn(Request $request)
-    {
-        $user = $request->user();
-        
-        if ($user->role !== 'student') {
-            return response()->json([
-                'message' => 'Access denied. Student role required.'
-            ], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'class_id' => 'required|integer',
-            'action' => 'required|string|in:sign_in,sign_out'
+        $validator = Validator::make([
+            'email' => $request->email,
+            'currentPassword' => $currentPassword,
+            'newPassword' => $newPassword,
+            'newPassword_confirmation' => $newPasswordConfirmation,
+        ], [
+            'email' => 'required|email',
+            'currentPassword' => 'required|string|min:6',
+            'newPassword' => 'required|string|min:6',
+            'newPassword_confirmation' => 'required|same:newPassword',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'success' => false,
+                'message' => 'Validation failed', 
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        // In a real application, you would check time restrictions here
-        // and update the database with sign-in/sign-out records
-        
+        $email = $request->email;
+
+        // Find user in teachers or students
+        $user = Teacher::where('email', $email)->first();
+        $role = 'teacher';
+
+        if (!$user) {
+            $user = Student::where('email', $email)->first();
+            $role = 'student';
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        // Verify current password
+        if (!Hash::check($currentPassword, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect'
+            ], 401);
+        }
+
+        // Update password
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
         return response()->json([
-            'message' => 'Class status updated successfully',
-            'class_id' => $request->class_id,
-            'action' => $request->action,
-            'timestamp' => now()->toISOString()
-        ], 200);
+            'success' => true,
+            'message' => 'Password changed successfully'
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        // For token-based auth, frontend will just remove the token
+        return response()->json(['message' => 'Logged out successfully']);
     }
 }

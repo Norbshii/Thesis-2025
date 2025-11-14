@@ -3,44 +3,32 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\AirtableService;
+use App\Models\Student;
 
 class StudentsController extends Controller
 {
-    public function __construct(private AirtableService $airtable)
-    {
-    }
-
     /**
-     * Get all students from Airtable Students table
+     * Get all students from MySQL students table
      */
     public function index(Request $request)
     {
         try {
-            $table = config('airtable.tables.students');
-            $response = $this->airtable->listRecords($table);
-            $records = $response['records'] ?? [];
+            $students = Student::orderBy('name', 'asc')->get();
 
-            $students = [];
-            foreach ($records as $rec) {
-                $fields = $rec['fields'] ?? [];
-                
-                // Only include records that have at least an email or name
-                if (!empty($fields['email']) || !empty($fields['name'])) {
-                    $students[] = [
-                        'id' => $rec['id'],
-                        'name' => $fields['name'] ?? '',
-                        'email' => $fields['email'] ?? '',
-                        'course' => $fields['course'] ?? '',
-                        'age' => $fields['age'] ?? null,
-                        'address' => $fields['address'] ?? '',
-                    ];
-                }
-            }
+            $formattedStudents = $students->map(function ($student) {
+                return [
+                    'id' => (string) $student->id,  // Frontend might expect string ID
+                    'name' => $student->name,
+                    'email' => $student->email,
+                    'course' => $student->course ?? '',
+                    'age' => $student->age,
+                    'address' => $student->address ?? '',
+                ];
+            });
 
             return response()->json([
-                'students' => $students,
-                'count' => count($students)
+                'students' => $formattedStudents,
+                'count' => $formattedStudents->count()
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to fetch students: ' . $e->getMessage());
@@ -51,7 +39,3 @@ class StudentsController extends Controller
         }
     }
 }
-
-
-
-

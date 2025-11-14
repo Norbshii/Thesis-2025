@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Student Portal</title>
+        <title>PinPoint API</title>
         <style>
             body {
                 font-family: 'Nunito', sans-serif;
@@ -47,8 +47,8 @@
     </head>
     <body>
         <div class="container">
-            <h1>Student Portal</h1>
-            <p>Welcome to the Student Portal API</p>
+            <h1>PinPoint</h1>
+            <p>Welcome to the PinPoint API</p>
             <p>Laravel backend is running successfully!</p>
             <a href="/api/login" class="api-link">API Endpoints</a>
         </div>

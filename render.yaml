@@ -1,57 +1,6 @@
 services:
-  # Backend - Laravel API
   - type: web
-    name: student-attendance-backend
-    env: php
-    runtime: php-8.1
-    buildCommand: |
-      composer install --no-dev --optimize-autoloader
-      php artisan config:cache
-      php artisan route:cache
-      php artisan view:cache
-    startCommand: |
-      php artisan serve --host=0.0.0.0 --port=$PORT
-    envVars:
-      - key: APP_NAME
-        value: StudentAttendance
-      - key: APP_ENV
-        value: production
-      - key: APP_DEBUG
-        value: false
-      - key: APP_KEY
-        generateValue: true
-      - key: APP_URL
-        sync: false
-      - key: LOG_CHANNEL
-        value: stack
-      - key: LOG_LEVEL
-        value: error
-      - key: DB_CONNECTION
-        value: mysql
-      - key: CACHE_DRIVER
-        value: file
-      - key: SESSION_DRIVER
-        value: file
-      - key: SESSION_LIFETIME
-        value: 120
-      - key: AIRTABLE_API_KEY
-        sync: false
-      - key: AIRTABLE_BASE_ID
-        sync: false
-      - key: AIRTABLE_TABLE_STUDENTS
-        sync: false
-      - key: AIRTABLE_TABLE_TEACHERS
-        sync: false
-      - key: AIRTABLE_TABLE_CLASSES
-        sync: false
-      - key: AIRTABLE_TABLE_ATTENDANCE
-        sync: false
-      - key: GEOFENCE_RADIUS
-        value: 100
-
-  # Frontend - React App
-  - type: web
-    name: student-attendance-frontend
+    name: pinpointfe
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./build
@@ -59,7 +8,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-    envVars:
-      - key: REACT_APP_API_URL
-        sync: false
-

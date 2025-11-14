@@ -3,58 +3,95 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\AirtableService;
+use App\Models\ClassModel;
+use App\Models\Teacher;
+use App\Models\Student;
+use App\Models\AttendanceEntry;
+use App\Services\SmsService;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
+use App\Mail\StudentSignInNotification;
+use App\Events\ClassUpdated;
+use App\Events\AttendanceUpdated;
 
 class ClassesController extends Controller
 {
-    public function __construct(private AirtableService $airtable)
-    {
+    public function __construct(
+        private SmsService $sms
+    ) {
     }
 
     public function index(Request $request)
     {
-        $tableName = config('airtable.tables.classes');
         $teacherEmail = $request->query('teacherEmail');
+        $studentEmail = $request->query('studentEmail');
         
-        $params = [
-            'pageSize' => 100,
-            'sort[0][field]' => 'Class Code',
-            'sort[0][direction]' => 'asc',
-        ];
+        $query = ClassModel::with(['teacher', 'building', 'students']);
         
         // Filter by teacher email if provided
         if ($teacherEmail) {
-            $escapedEmail = addslashes($teacherEmail);
-            $params['filterByFormula'] = "{Teacher}='{$escapedEmail}'";
+            $query->where('teacher_email', $teacherEmail);
         }
         
-        $response = $this->airtable->listRecords($tableName, $params);
-        $records = $response['records'] ?? [];
+        // Filter by student enrollment if provided
+        if ($studentEmail) {
+            $query->whereHas('students', function ($q) use ($studentEmail) {
+                $q->where('email', $studentEmail);
+            });
+        }
+        
+        $classes = $query->orderBy('class_code', 'asc')->get();
 
-        $classes = array_map(function ($rec) {
-            $f = $rec['fields'] ?? [];
+        $formattedClasses = $classes->map(function ($class) {
+            $building = null;
+            if ($class->building) {
+                $building = [
+                    'id' => $class->building->id,
+                    'name' => $class->building->name,
+                    'latitude' => (float) $class->building->latitude,
+                    'longitude' => (float) $class->building->longitude,
+                ];
+            }
+            
+            // Get enrolled students
+            $enrolledStudents = $class->students->map(function ($student) {
+                return [
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'email' => $student->email,
+                    'enrolled_at' => $student->pivot->enrolled_at ?? null
+                ];
+            })->toArray();
+            
             return [
-                'id' => $rec['id'],
-                'code' => $f['Class Code'] ?? $f['code'] ?? null,
-                'name' => $f['Class Name'] ?? $f['name'] ?? null,
-                'date' => $f['Date'] ?? null,
-                'maxStudents' => $f['Max Students'] ?? 30,
-                'startTime' => $f['Start Time'] ?? null,
-                'endTime' => $f['End Time'] ?? null,
-                'teacher' => $f['Teacher'] ?? null,
-                'instructor' => $f['instructor'] ?? null,
-                'time_slot' => $f['time_slot'] ?? 'Always Available',
-                'is_signed_in' => (bool)($f['is_signed_in'] ?? false),
-                'always_available' => (bool)($f['always_available'] ?? false),
-                'isOpen' => (bool)($f['isOpen'] ?? false),
-                'isManualControl' => (bool)($f['isManualControl'] ?? false),
-                'lateThreshold' => $f['Late Threshold'] ?? $f['Late Threshold (minutes)'] ?? 15,
-                'enrolledStudents' => $f['Enrolled Students'] ?? [],
+                'id' => (string) $class->id, // Frontend expects string ID
+                'code' => $class->class_code,
+                'name' => $class->class_name,
+                'date' => $class->days, // "days" field maps to "Date" in frontend
+                'maxStudents' => 30, // Default value (not stored in current schema)
+                'startTime' => $class->start_time ? Carbon::parse($class->start_time)->format('H:i') : null,
+                'endTime' => $class->end_time ? Carbon::parse($class->end_time)->format('H:i') : null,
+                'teacher' => $class->teacher_email,
+                'instructor' => $class->teacher_name ?? 'N/A',
+                'time_slot' => 'Always Available', // Default value
+                'is_signed_in' => false, // Legacy field
+                'always_available' => false, // Legacy field
+                'isOpen' => (bool) $class->is_open,
+                'isManualControl' => false, // Not implemented in MySQL yet
+                'lateThreshold' => $class->late_threshold ?? 15,
+                'enrolledStudents' => $enrolledStudents, // Now returns actual enrolled students
+                'currentSessionLat' => $class->current_session_lat,
+                'currentSessionLon' => $class->current_session_lon,
+                'currentSessionOpened' => $class->current_session_opened ? $class->current_session_opened->toIso8601String() : null,
+                'autoCloseTime' => $class->auto_close_time ? $class->auto_close_time->toIso8601String() : null,
+                'building' => $building, // Include building data
+                'building_id' => $class->building_id, // Include building ID
             ];
-        }, $records);
+        });
 
-        return response()->json(['classes' => $classes]);
+        return response()->json(['classes' => $formattedClasses]);
     }
 
     public function store(Request $request)
@@ -62,51 +99,55 @@ class ClassesController extends Controller
         $validator = Validator::make($request->all(), [
             'code' => 'required|string|max:50',
             'name' => 'required|string|max:200',
-            'date' => 'required|date',
+            'date' => 'required|string', // days of week
             'startTime' => 'required|string',
             'endTime' => 'required|string',
             'maxStudents' => 'required|integer|min:1',
             'lateThreshold' => 'required|integer|min:1',
             'isManualControl' => 'boolean',
             'teacherEmail' => 'required|email',
+            'building_id' => 'nullable|integer|exists:buildings,id', // Optional building reference
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableName = config('airtable.tables.classes');
-        $fields = [
-            'Class Code' => $request->input('code'),
-            'Class Name' => $request->input('name'),
-            'Date' => $request->input('date'),
-            'Start Time' => $request->input('startTime'),
-            'End Time' => $request->input('endTime'),
-            'Max Students' => (int)$request->input('maxStudents'),
-            'Late Threshold' => (int)$request->input('lateThreshold'),
-            'Teacher' => $request->input('teacherEmail'),
-        ];
+        // Find teacher by email
+        $teacher = Teacher::where('email', $request->input('teacherEmail'))->first();
         
-        // Only include optional fields if they might exist in Airtable
-        // These can be added to Airtable later: isManualControl (Checkbox), isOpen (Checkbox)
-        // For now, we'll skip them to avoid UNKNOWN_FIELD_NAME errors
+        // Create class
+        $class = ClassModel::create([
+            'class_code' => $request->input('code'),
+            'class_name' => $request->input('name'),
+            'teacher_id' => $teacher ? $teacher->id : null,
+            'teacher_email' => $request->input('teacherEmail'),
+            'teacher_name' => $teacher ? $teacher->name : null,
+            'start_time' => $request->input('startTime'),
+            'end_time' => $request->input('endTime'),
+            'days' => $request->input('date'),
+            'late_threshold' => (int)$request->input('lateThreshold'),
+            'geofence_radius' => env('GEOFENCE_RADIUS', 100),
+            'building_id' => $request->input('building_id'), // Store building reference
+        ]);
 
-        $created = $this->airtable->createRecord($tableName, $fields);
+        // Broadcast class created event
+        broadcast(new ClassUpdated($class, 'created'));
 
         return response()->json([
             'message' => 'Class created successfully',
             'class' => [
-                'id' => $created['id'],
-                'code' => $fields['Class Code'],
-                'name' => $fields['Class Name'],
-                'date' => $fields['Date'],
-                'startTime' => $fields['Start Time'],
-                'endTime' => $fields['End Time'],
-                'maxStudents' => $fields['Max Students'],
-                'lateThreshold' => $fields['Late Threshold'],
+                'id' => (string) $class->id,
+                'code' => $class->class_code,
+                'name' => $class->class_name,
+                'date' => $class->days,
+                'startTime' => $class->start_time,
+                'endTime' => $class->end_time,
+                'maxStudents' => 30,
+                'lateThreshold' => $class->late_threshold,
                 'isManualControl' => false,
                 'isOpen' => false,
-                'teacher' => $fields['Teacher'],
+                'teacher' => $class->teacher_email,
             ],
         ], 201);
     }
@@ -121,62 +162,51 @@ class ClassesController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableName = config('airtable.tables.classes');
-        $recordId = $request->input('record_id');
+        $classId = $request->input('record_id');
         $action = $request->input('action');
 
-        $fields = [
-            'is_signed_in' => $action === 'sign_in',
-        ];
-
-        $updated = $this->airtable->updateRecord($tableName, $recordId, $fields);
+        $class = ClassModel::findOrFail($classId);
+        // This was a legacy endpoint - not actively used
+        // Could be removed or repurposed
 
         return response()->json([
             'message' => 'Class status updated successfully',
-            'record' => $updated,
+            'record' => $class,
         ]);
     }
 
     /**
-     * Add students to a class
+     * Add students to a class (requires pivot table implementation)
      */
     public function addStudents(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'classId' => 'required|string',
+            'classId' => 'required|integer',
             'studentIds' => 'required|array',
-            'studentIds.*' => 'required|string',
+            'studentIds.*' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableName = config('airtable.tables.classes');
-        $classId = $request->input('classId');
-        $studentIds = $request->input('studentIds');
-
-        // Get current class record to fetch existing enrolled students
         try {
-            $classRecord = $this->airtable->getRecord($tableName, $classId);
-            $existingStudents = $classRecord['fields']['Enrolled Students'] ?? [];
+            $class = ClassModel::findOrFail($request->input('classId'));
+            $studentIds = $request->input('studentIds');
             
-            // Merge with new student IDs (avoiding duplicates)
-            $allStudents = array_unique(array_merge($existingStudents, $studentIds));
-
-            // Update the class with new enrolled students
-            $fields = [
-                'Enrolled Students' => $allStudents,
-            ];
-
-            $updated = $this->airtable->updateRecord($tableName, $classId, $fields);
-
+            // Attach students (sync will prevent duplicates)
+            $class->students()->syncWithoutDetaching($studentIds);
+            
+            // Get enrolled students count
+            $enrolledCount = $class->students()->count();
+            
             return response()->json([
                 'message' => 'Students added successfully',
-                'enrolledStudents' => $allStudents,
+                'enrolledStudents' => $studentIds,
+                'totalEnrolled' => $enrolledCount
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to add students to class: ' . $e->getMessage());
+            \Log::error('Error adding students to class: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Failed to add students',
                 'error' => $e->getMessage()
@@ -190,40 +220,30 @@ class ClassesController extends Controller
     public function removeStudent(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'classId' => 'required|string',
-            'studentId' => 'required|string',
+            'classId' => 'required|integer',
+            'studentId' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableName = config('airtable.tables.classes');
-        $classId = $request->input('classId');
-        $studentId = $request->input('studentId');
-
         try {
-            $classRecord = $this->airtable->getRecord($tableName, $classId);
-            $existingStudents = $classRecord['fields']['Enrolled Students'] ?? [];
+            $class = ClassModel::findOrFail($request->input('classId'));
+            $studentId = $request->input('studentId');
             
-            // Remove the student ID
-            $updatedStudents = array_values(array_filter($existingStudents, function($id) use ($studentId) {
-                return $id !== $studentId;
-            }));
-
-            // Update the class
-            $fields = [
-                'Enrolled Students' => $updatedStudents,
-            ];
-
-            $updated = $this->airtable->updateRecord($tableName, $classId, $fields);
-
+            // Detach the student
+            $class->students()->detach($studentId);
+            
+            // Get remaining enrolled students count
+            $enrolledCount = $class->students()->count();
+            
             return response()->json([
                 'message' => 'Student removed successfully',
-                'enrolledStudents' => $updatedStudents,
+                'totalEnrolled' => $enrolledCount
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to remove student from class: ' . $e->getMessage());
+            \Log::error('Error removing student from class: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Failed to remove student',
                 'error' => $e->getMessage()
@@ -246,40 +266,64 @@ class ClassesController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableName = config('airtable.tables.classes');
         $classId = $request->input('classId');
         $latitude = $request->input('latitude');
         $longitude = $request->input('longitude');
 
         try {
-            // Try to open with session fields first
-            try {
-                $fields = [
-                    'isOpen' => true,
-                    'Current Session Lat' => (float)$latitude,
-                    'Current Session Lon' => (float)$longitude,
-                    'Current Session Opened' => now()->toIso8601String(),
-                ];
-                
-                $updated = $this->airtable->updateRecord($tableName, $classId, $fields);
-                
-                return response()->json([
-                    'message' => 'Class opened successfully with geofence',
-                    'class' => $updated,
-                    'geofence_active' => true,
-                ]);
-            } catch (\Exception $innerException) {
-                \Log::warning('Could not save session fields, opening without geofence: ' . $innerException->getMessage());
-                
-                // Session fields don't exist, just open without them
-                $updated = $this->airtable->updateRecord($tableName, $classId, ['isOpen' => true]);
-                
-                return response()->json([
-                    'message' => 'Class opened (Geofence not available - add Current Session fields to Classes table)',
-                    'class' => $updated,
-                    'geofence_active' => false,
-                ]);
+            $class = ClassModel::findOrFail($classId);
+            
+            // Calculate auto-close time based on class duration
+            $autoCloseTime = null;
+            if ($class->start_time && $class->end_time) {
+                try {
+                    // Parse start and end times
+                    $start = Carbon::createFromFormat('H:i:s', $class->start_time);
+                    $end = Carbon::createFromFormat('H:i:s', $class->end_time);
+                    
+                    // Calculate duration in minutes
+                    $durationMinutes = $end->diffInMinutes($start);
+                    
+                    // Set auto-close time = current time + duration
+                    $autoCloseTime = now()->addMinutes($durationMinutes);
+                    
+                    \Log::info('Auto-close time calculated', [
+                        'scheduledStart' => $class->start_time,
+                        'scheduledEnd' => $class->end_time,
+                        'duration' => $durationMinutes . ' minutes',
+                        'actualOpen' => now()->format('H:i'),
+                        'autoClose' => $autoCloseTime->format('H:i')
+                    ]);
+                } catch (\Exception $timeError) {
+                    \Log::warning('Could not calculate auto-close time: ' . $timeError->getMessage());
+                }
             }
+            
+            // Update class with session data
+            $class->update([
+                'is_open' => true,
+                'current_session_lat' => (float)$latitude,
+                'current_session_lon' => (float)$longitude,
+                'current_session_opened' => now(),
+                'auto_close_time' => $autoCloseTime,
+            ]);
+            
+            $message = 'Class opened successfully with geofence';
+            if ($autoCloseTime) {
+                $closeAt = $autoCloseTime->format('h:i A');
+                $message .= " (will auto-close at {$closeAt})";
+            }
+            
+            // Broadcast class opened event
+            broadcast(new ClassUpdated($class->fresh(['teacher', 'building', 'students']), 'opened'));
+            
+            return response()->json([
+                'message' => $message,
+                'class' => $class,
+                'geofence_active' => true,
+                'auto_close_time' => $autoCloseTime ? $autoCloseTime->toIso8601String() : null,
+            ]);
+            
         } catch (\Exception $e) {
             \Log::error('Failed to open class: ' . $e->getMessage());
             return response()->json([
@@ -302,16 +346,20 @@ class ClassesController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableName = config('airtable.tables.classes');
         $classId = $request->input('classId');
 
         try {
-            // Mark class as closed (session data stays in Classes table for history)
-            $updated = $this->airtable->updateRecord($tableName, $classId, ['isOpen' => false]);
+            $class = ClassModel::findOrFail($classId);
+            
+            // Mark class as closed (session data stays for history)
+            $class->update(['is_open' => false]);
+            
+            // Broadcast class closed event
+            broadcast(new ClassUpdated($class->fresh(['teacher', 'building', 'students']), 'closed'));
 
             return response()->json([
                 'message' => 'Class closed successfully',
-                'class' => $updated,
+                'class' => $class,
             ]);
         } catch (\Exception $e) {
             \Log::error('Failed to close class: ' . $e->getMessage());
@@ -320,6 +368,100 @@ class ClassesController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Extend class time (emergency extension for late classes or extra time needed)
+     */
+    public function extendClass(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'classId' => 'required|string',
+            'additionalMinutes' => 'required|integer|min:5|max:180', // 5 minutes to 3 hours
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        $classId = $request->input('classId');
+        $additionalMinutes = $request->input('additionalMinutes');
+
+        try {
+            $class = ClassModel::findOrFail($classId);
+            
+            if (!$class->end_time) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Class has no end time set'
+                ], 400);
+            }
+
+            // Calculate new end time
+            try {
+                $endDateTime = Carbon::createFromFormat('H:i:s', $class->end_time);
+                $newEndDateTime = $endDateTime->addMinutes($additionalMinutes);
+                $newEndTime = $newEndDateTime->format('H:i:s');
+                
+                // Update class with new end time and ensure it stays open
+                $class->update([
+                    'end_time' => $newEndTime,
+                    'is_open' => true,
+                ]);
+
+                \Log::info('Class extended', [
+                    'classId' => $classId,
+                    'oldEndTime' => $class->end_time,
+                    'newEndTime' => $newEndTime,
+                    'additionalMinutes' => $additionalMinutes
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Class extended by {$additionalMinutes} minutes",
+                    'oldEndTime' => $class->end_time,
+                    'newEndTime' => $newEndTime,
+                    'class' => $class,
+                ]);
+            } catch (\Exception $timeError) {
+                \Log::error('Failed to parse time: ' . $timeError->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid time format'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to extend class: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to extend class',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle manual control mode for a class
+     */
+    public function toggleManualControl(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'classId' => 'required|string',
+            'isManualControl' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        // Manual control not implemented in MySQL schema yet
+        // Would need to add is_manual_control column to classes table
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Manual control not yet implemented in MySQL',
+            'requiresMigration' => true
+        ], 400);
     }
 
     /**
@@ -360,7 +502,6 @@ class ClassesController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $tableName = config('airtable.tables.classes');
         $classId = $request->input('classId');
         $studentEmail = $request->input('studentEmail');
         $studentName = $request->input('studentName');
@@ -369,11 +510,10 @@ class ClassesController extends Controller
 
         try {
             // Get class record to check if open and get current session geofence
-            $classRecord = $this->airtable->getRecord($tableName, $classId);
-            $fields = $classRecord['fields'] ?? [];
+            $class = ClassModel::findOrFail($classId);
 
             // Check if class is open
-            if (!($fields['isOpen'] ?? false)) {
+            if (!$class->is_open) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Class is not open for sign-in yet'
@@ -381,9 +521,9 @@ class ClassesController extends Controller
             }
 
             // Get current session geofence data
-            $teacherLat = $fields['Current Session Lat'] ?? null;
-            $teacherLon = $fields['Current Session Lon'] ?? null;
-            $sessionOpened = $fields['Current Session Opened'] ?? null;
+            $teacherLat = $class->current_session_lat;
+            $teacherLon = $class->current_session_lon;
+            $sessionOpened = $class->current_session_opened;
 
             if ($teacherLat === null || $teacherLon === null) {
                 return response()->json([
@@ -395,10 +535,8 @@ class ClassesController extends Controller
             // Calculate distance between student and teacher
             $distance = $this->calculateDistance($teacherLat, $teacherLon, $studentLat, $studentLon);
             
-            // Geofence radius (100 meters - suitable for classroom + GPS accuracy margin)
-            // Set to a very large number (50km) for development/testing
-            // In production, change this to 100 for real classroom validation
-            $geofenceRadius = env('GEOFENCE_RADIUS', 50000); // 50km for testing
+            // Geofence radius
+            $geofenceRadius = $class->geofence_radius ?? env('GEOFENCE_RADIUS', 100);
 
             \Log::info('Geofence validation', [
                 'teacherLat' => $teacherLat,
@@ -419,21 +557,54 @@ class ClassesController extends Controller
                 ], 403);
             }
 
-            // Student is within geofence, record attendance
+            // Get current time for duplicate check and attendance recording
             $currentDateTime = now();
-            $lateThreshold = $fields['Late Threshold'] ?? 15;
+            $todayDate = $currentDateTime->format('Y-m-d');
+            
+            // Check for duplicate sign-in (same student, same class, same day)
+            $existingAttendance = AttendanceEntry::where('class_code', $class->class_code)
+                ->where('student_email', $studentEmail)
+                ->whereDate('date', $todayDate)
+                ->first();
+            
+            if ($existingAttendance) {
+                $signInTime = Carbon::parse($existingAttendance->sign_in_time)->format('H:i:s');
+                
+                \Log::info('Duplicate sign-in attempt blocked', [
+                    'student' => $studentEmail,
+                    'class' => $class->class_code,
+                    'date' => $todayDate,
+                    'originalSignIn' => $signInTime
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => "You have already signed in to this class today at {$signInTime}. Attendance has been recorded.",
+                    'alreadySignedIn' => true,
+                    'signInTime' => $signInTime,
+                    'date' => $todayDate
+                ], 400);
+            }
+
+            // Get student record for guardian info (for SMS and email)
+            $student = Student::where('email', $studentEmail)->first();
+            $guardianPhone = $student ? $student->guardian_phone : null;
+            $guardianEmail = $student ? $student->guardian_email : null;
+            $guardianName = $student ? $student->guardian_name : 'Guardian';
 
             // Calculate if late based on when teacher ACTUALLY opened the class
+            $lateThreshold = $class->late_threshold ?? 15;
             $isLate = false;
+            
             if ($sessionOpened) {
-                // Use the actual time teacher opened the class (not the scheduled start time)
-                $classOpenedTime = strtotime($sessionOpened);
+                // Use the actual time teacher opened the class
+                $classOpenedTime = $sessionOpened->timestamp;
                 $signInTime = $currentDateTime->timestamp;
                 $thresholdTime = $classOpenedTime + ($lateThreshold * 60);
                 $isLate = $signInTime > $thresholdTime;
                 
                 \Log::info('Late threshold calculation', [
-                    'classOpenedAt' => $sessionOpened,
+                    'classOpenedAt' => $sessionOpened->toIso8601String(),
                     'signInAt' => $currentDateTime->toIso8601String(),
                     'lateThreshold' => $lateThreshold,
                     'thresholdTime' => date('Y-m-d H:i:s', $thresholdTime),
@@ -441,42 +612,128 @@ class ClassesController extends Controller
                 ]);
             }
 
-            // Store attendance record in Attendance Entries table
-            $attendanceTable = config('airtable.tables.attendance');
-            try {
-                // Build basic attendance record
-                $attendanceRecord = [
-                    'Class Code' => $fields['Class Code'] ?? $fields['code'] ?? '',
-                    'Class Name' => $fields['Class Name'] ?? $fields['name'] ?? '',
-                    'Date' => $currentDateTime->format('Y-m-d'),
-                    'Teacher Email' => $fields['Teacher'] ?? '',
-                    'Student Email' => $studentEmail,
-                    'Student Name' => $studentName,
-                    'Sign In Time' => $currentDateTime->format('H:i:s'),
-                    'Status' => $isLate ? 'Late' : 'On Time',
-                    'Distance' => round($distance, 2),
-                    'Timestamp' => $currentDateTime->toIso8601String(),
-                ];
+            // Store attendance record in attendance_entries table
+            $attendanceRecord = AttendanceEntry::create([
+                'class_id' => $class->id,
+                'student_id' => $student ? $student->id : null,
+                'class_code' => $class->class_code,
+                'class_name' => $class->class_name,
+                'teacher_email' => $class->teacher_email,
+                'student_email' => $studentEmail,
+                'student_name' => $studentName,
+                'date' => $todayDate,
+                'sign_in_time' => $currentDateTime->format('H:i:s'),
+                'status' => $isLate ? 'Late' : 'On Time',
+                'distance' => round($distance, 2),
+                'student_latitude' => (float)$studentLat,
+                'student_longitude' => (float)$studentLon,
+                'timestamp' => $currentDateTime,
+                'geofence_entry_time' => $currentDateTime,
+                'currently_inside' => true,
+                'time_inside_geofence' => 0,
+                'time_outside_geofence' => 0,
+                'last_location_update' => $currentDateTime,
+            ]);
 
-                \Log::info('Creating attendance record with basic fields', $attendanceRecord);
+            \Log::info('Attendance record created successfully', ['id' => $attendanceRecord->id]);
 
-                // Try to create the record
-                $createdRecord = $this->airtable->createRecord($attendanceTable, $attendanceRecord);
-                \Log::info('Attendance record created successfully', ['recordId' => $createdRecord['id'] ?? 'unknown']);
-
-            } catch (\Exception $attendanceError) {
-                // Log detailed error
-                \Log::error('Failed to save attendance record: ' . $attendanceError->getMessage());
-                \Log::error('Attempted to save to table: ' . $attendanceTable);
-                \Log::error('Record data: ' . json_encode($attendanceRecord));
+            // Send SMS to guardian (if phone number exists and SMS is configured)
+            $smsResult = null;
+            if ($guardianPhone && !empty(env('SEMAPHORE_API_KEY'))) {
+                try {
+                    $signInTimeFormatted = $currentDateTime->format('g:i A'); // 12-hour format
+                    
+                    $message = $this->sms->generateAttendanceMessage(
+                        $studentName,
+                        $class->class_name,
+                        $class->teacher_name ?? $class->teacher_email,
+                        $signInTimeFormatted,
+                        $isLate
+                    );
+                    
+                    $smsResult = $this->sms->sendSMS($guardianPhone, $message);
+                    
+                    if ($smsResult['success']) {
+                        \Log::info('SMS sent to guardian', [
+                            'phone' => $guardianPhone,
+                            'student' => $studentName,
+                            'class' => $class->class_name
+                        ]);
+                    } else {
+                        \Log::warning('SMS failed to send', [
+                            'phone' => $guardianPhone,
+                            'error' => $smsResult['message']
+                        ]);
+                    }
+                } catch (\Exception $smsError) {
+                    \Log::error('SMS exception: ' . $smsError->getMessage());
+                }
+            } elseif (!$guardianPhone) {
+                \Log::info('SMS not sent: No guardian phone number for student', ['student' => $studentName]);
+            } else {
+                \Log::info('SMS not sent: SEMAPHORE_API_KEY not configured');
             }
 
+            // Send email notification to guardian (if email address exists and Resend is configured)
+            $emailSent = false;
+            if ($guardianEmail && !empty(env('RESEND_API_KEY'))) {
+                try {
+                    $emailData = [
+                        'studentName' => $studentName,
+                        'guardianName' => $guardianName,
+                        'className' => $class->class_name,
+                        'signInTime' => $currentDateTime->format('g:i A'),
+                        'signInDate' => $currentDateTime->format('l, F j, Y'),
+                        'status' => $isLate ? 'Late' : 'On Time',
+                        'distance' => round($distance, 2),
+                        'isWithinGeofence' => $distance <= $geofenceRadius,
+                        'teacherName' => $class->teacher_name ?? 'Teacher',
+                    ];
+
+                    Mail::to($guardianEmail)->send(new StudentSignInNotification($emailData));
+                    $emailSent = true;
+
+                    \Log::info('Email sent to guardian', [
+                        'email' => $guardianEmail,
+                        'student' => $studentName,
+                        'class' => $class->class_name
+                    ]);
+                } catch (\Exception $emailError) {
+                    \Log::error('Email failed to send', [
+                        'email' => $guardianEmail,
+                        'error' => $emailError->getMessage()
+                    ]);
+                }
+            } elseif (!$guardianEmail) {
+                \Log::info('Email not sent: No guardian email for student', ['student' => $studentName]);
+            } else {
+                \Log::info('Email not sent: RESEND_API_KEY not configured');
+            }
+
+            // Broadcast attendance update event
+            $attendanceData = [
+                'id' => $attendanceRecord->id,
+                'student_name' => $studentName,
+                'student_email' => $studentEmail,
+                'sign_in_time' => $currentDateTime->format('H:i:s'),
+                'status' => $isLate ? 'Late' : 'On Time',
+                'distance' => round($distance, 2),
+                'latitude' => (float)$studentLat,
+                'longitude' => (float)$studentLon,
+                'timestamp' => $currentDateTime->toIso8601String(),
+            ];
+            broadcast(new AttendanceUpdated($classId, $attendanceData));
+            
             return response()->json([
                 'success' => true,
                 'message' => $isLate ? 'Signed in successfully (Late)' : 'Signed in successfully (On time)',
                 'isLate' => $isLate,
                 'signInTime' => $currentDateTime->format('H:i:s'),
-                'distance' => round($distance, 2)
+                'distance' => round($distance, 2),
+                'smsSent' => isset($smsResult) && $smsResult['success'],
+                'emailSent' => $emailSent,
+                'smsNote' => !$guardianPhone ? 'Add guardian phone to receive SMS alerts' : ($smsResult ? null : 'SMS service not configured'),
+                'emailNote' => !$guardianEmail ? 'Add guardian email to receive email notifications' : (!$emailSent && env('RESEND_API_KEY') ? 'Email service error' : null)
             ]);
 
         } catch (\Exception $e) {
@@ -495,82 +752,53 @@ class ClassesController extends Controller
     public function getAttendance(Request $request, $classId)
     {
         try {
-            $attendanceTable = config('airtable.tables.attendance');
-            $classesTable = config('airtable.tables.classes');
-            
-            // Get the class details first
-            $classRecord = $this->airtable->getRecord($classesTable, $classId);
-            $classFields = $classRecord['fields'] ?? [];
-            $classCode = $classFields['Class Code'] ?? '';
+            $class = ClassModel::findOrFail($classId);
             
             \Log::info('Fetching attendance', [
                 'classId' => $classId,
-                'classCode' => $classCode,
+                'classCode' => $class->class_code,
                 'requestedDate' => $request->query('date')
             ]);
             
             // Get date filter if provided
             $date = $request->query('date');
             
-            // Build filter formula
-            $filters = [];
-            if ($classCode) {
-                $filters[] = "{Class Code}='{$classCode}'";
-            }
+            // Build query
+            $query = AttendanceEntry::where('class_code', $class->class_code)
+                ->orderBy('sign_in_time', 'asc');
+            
             if ($date) {
-                // Use DATESTR for Date field type comparison
-                $filters[] = "DATESTR({Date})='{$date}'";
+                $query->whereDate('date', $date);
             }
             
-            $params = [
-                'pageSize' => 100,
-                'sort[0][field]' => 'Sign In Time',
-                'sort[0][direction]' => 'asc',
-            ];
-            
-            if (!empty($filters)) {
-                $params['filterByFormula'] = 'AND(' . implode(',', $filters) . ')';
-            }
-            
-            \Log::info('Airtable filter formula', ['formula' => $params['filterByFormula'] ?? 'none']);
-            
-            // Debug: Also fetch without filter to see all records
-            $allRecords = $this->airtable->listRecords($attendanceTable, ['pageSize' => 10]);
-            \Log::info('Total records in attendance table (unfiltered)', [
-                'count' => count($allRecords['records'] ?? []),
-                'sample' => !empty($allRecords['records']) ? $allRecords['records'][0]['fields'] ?? [] : 'none'
-            ]);
-            
-            $response = $this->airtable->listRecords($attendanceTable, $params);
-            $records = $response['records'] ?? [];
-            
-            \Log::info('Attendance records found', ['count' => count($records)]);
-            
-            // Debug: Log first record to see actual field values
-            if (!empty($records)) {
-                \Log::info('Sample attendance record', ['fields' => $records[0]['fields'] ?? []]);
-            }
-            
-            $attendanceRecords = array_map(function ($rec) {
-                $f = $rec['fields'] ?? [];
+            $attendanceRecords = $query->get()->map(function ($record) {
                 return [
-                    'id' => $rec['id'],
-                    'studentName' => $f['Student Name'] ?? 'Unknown',
-                    'studentEmail' => $f['Student Email'] ?? '',
-                    'date' => $f['Date'] ?? '',
-                    'signInTime' => $f['Sign In Time'] ?? '',
-                    'status' => $f['Status'] ?? 'Unknown',
-                    'distance' => $f['Distance'] ?? 0,
-                    'timestamp' => $f['Timestamp'] ?? '',
-                    'isLate' => ($f['Status'] ?? '') === 'Late',
+                    'id' => $record->id,
+                    'studentName' => $record->student_name,
+                    'studentEmail' => $record->student_email,
+                    'date' => $record->date->format('Y-m-d'),
+                    'signInTime' => $record->sign_in_time,
+                    'status' => $record->status,
+                    'distance' => $record->distance,
+                    'timestamp' => $record->timestamp ? $record->timestamp->toIso8601String() : null,
+                    'isLate' => $record->status === 'Late',
+                    'latitude' => $record->student_latitude,
+                    'longitude' => $record->student_longitude,
+                    'timeInsideGeofence' => $record->time_inside_geofence ?? 0,
+                    'timeOutsideGeofence' => $record->time_outside_geofence ?? 0,
+                    'currentlyInside' => $record->currently_inside ?? false,
+                    'geofenceEntryTime' => $record->geofence_entry_time ? $record->geofence_entry_time->toIso8601String() : null,
+                    'geofenceExitTime' => $record->geofence_exit_time ? $record->geofence_exit_time->toIso8601String() : null,
                 ];
-            }, $records);
+            });
+            
+            \Log::info('Attendance records found', ['count' => $attendanceRecords->count()]);
             
             return response()->json([
                 'success' => true,
                 'attendance' => $attendanceRecords,
-                'classCode' => $classCode,
-                'className' => $classFields['Class Name'] ?? '',
+                'classCode' => $class->class_code,
+                'className' => $class->class_name,
             ]);
             
         } catch (\Exception $e) {
@@ -583,12 +811,3 @@ class ClassesController extends Controller
         }
     }
 }
-
-
-
-
-
-
-
-
-

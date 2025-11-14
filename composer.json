@@ -6,10 +6,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.0.2",
-        "guzzlehttp/guzzle": "^7.2",
+        "beyondcode/laravel-websockets": "^1.14",
+        "guzzlehttp/guzzle": "^7.10",
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
-        "laravel/tinker": "^2.7"
+        "laravel/tinker": "^2.7",
+        "resend/resend-php": "^1.0"
     },
     "require-dev": {
         "nunomaduro/collision": "^6.0",
