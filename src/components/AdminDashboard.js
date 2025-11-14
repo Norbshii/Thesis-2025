@@ -1,1495 +1,878 @@
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import api, { authAPI } from '../services/api';
-import AttendanceMap from './AttendanceMap';
+import LoadingScreen from './LoadingScreen';
+import echo from '../services/echo';
+import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import './AdminDashboard.css';
 
-const AdminDashboard = () => {
-  const [professor, setProfessor] = useState({
-    name: '',
-    department: '',
-    email: '',
-    profilePicture: null
-  });
+// Fix Leaflet marker icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
-  const [classes, setClasses] = useState([]);
-  const [students, setStudents] = useState([]);
+const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'buildings' | 'stats'
   const [loading, setLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [teachers, setTeachers] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [buildings, setBuildings] = useState([]);
+  const [stats, setStats] = useState({});
   
   // Modal states
-  const [showAddClassModal, setShowAddClassModal] = useState(false);
-  const [showClassDetailsModal, setShowClassDetailsModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showManageStudentsModal, setShowManageStudentsModal] = useState(false);
-  const [selectedClass, setSelectedClass] = useState(null);
-  const [attendanceRecords, setAttendanceRecords] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loadingAttendance, setLoadingAttendance] = useState(false);
-  
-  // Live attendance for all classes (for map display)
-  const [liveAttendance, setLiveAttendance] = useState({});
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false);
+  const [showCreateBuildingModal, setShowCreateBuildingModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editingBuilding, setEditingBuilding] = useState(null);
   
   // Toast states
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
-
-  // Form states
-  const [newClass, setNewClass] = useState({
-    code: '',
-    name: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    maxStudents: 30,
-    lateThreshold: 15, // minutes
-    isManualControl: false
-  });
-
-  const [enrolledStudents, setEnrolledStudents] = useState([]);
   
-  // Manage Students Modal states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStudents, setSelectedStudents] = useState([]);
-  const [availableStudents, setAvailableStudents] = useState([]);
+  // Form hooks
+  const { register: registerUser, handleSubmit: handleSubmitUser, formState: { errors: userErrors }, reset: resetUserForm, watch: watchUser } = useForm();
+  const { register: registerBuilding, handleSubmit: handleSubmitBuilding, formState: { errors: buildingErrors }, reset: resetBuildingForm } = useForm();
   
-  // Loading states
-  const [isCreatingClass, setIsCreatingClass] = useState(false);
-  const [isAddingStudents, setIsAddingStudents] = useState(false);
-
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    newPassword_confirmation: ''
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
+  const selectedRole = watchUser('role');
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    const loadData = async () => {
-      try {
-        const currentUser = authAPI.getStoredUser();
-        
-        // Load teacher profile from Airtable
-        if (currentUser?.email) {
-          try {
-            const prof = await api.get('/student/profile', { params: { email: currentUser.email } });
-            const p = prof?.data?.profile || {};
-            const emailDerived = String(currentUser.email).split('@')[0].replace(/\./g, ' ').trim();
-            setProfessor({
-              name: p.name || currentUser?.name || emailDerived || 'Teacher',
-              department: p.department || 'Computer Science',
-              email: p.email || currentUser.email || '',
-              profilePicture: null
-            });
-          } catch (e) {
-            // Fallback if profile not found
-            const emailDerived = String(currentUser.email).split('@')[0].replace(/\./g, ' ').trim();
-            setProfessor({
-              name: currentUser?.name || emailDerived || 'Teacher',
-              department: 'Computer Science',
-              email: currentUser.email || '',
-              profilePicture: null
-            });
-          }
-        }
-        
-        // Load classes from Airtable (filtered by teacher email)
-        try {
-          const classesResponse = await api.get('/classes', {
-            params: { teacherEmail: currentUser?.email }
-          });
-          const loadedClasses = classesResponse.data.classes || [];
-          
-          // Filter out empty classes (rows with no code or name)
-          const validClasses = loadedClasses.filter(cls => cls.code && cls.name);
-          
-          // Classes already have enrolledStudents from Airtable
-          const classesWithAttendance = validClasses.map(cls => ({
-            ...cls,
-            enrolledStudents: cls.enrolledStudents || [],
-            attendance: []
-          }));
-          
-          setClasses(classesWithAttendance);
-        } catch (error) {
-          console.error('Error loading classes:', error);
-          showToastMessage('Failed to load classes', 'error');
-        }
-
-        // Load students from Airtable Students table
-        try {
-          const studentsResponse = await api.get('/students');
-          const loadedStudents = studentsResponse.data.students || [];
-          setStudents(loadedStudents);
-        } catch (error) {
-          console.error('Error loading students:', error);
-          showToastMessage('Failed to load students', 'error');
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    fetchInitialData();
     
-    // Fetch live attendance for open classes every 10 seconds
-    const fetchLiveAttendance = async () => {
-      try {
-        const openClasses = classes.filter(c => c.isOpen);
-        const today = new Date().toISOString().split('T')[0];
-        
-        for (const classItem of openClasses) {
-          try {
-            const response = await api.get(`/classes/${classItem.id}/attendance`, {
-              params: { date: today }
-            });
-            
-            if (response.data.success) {
-              const attendance = response.data.attendance || [];
-              setLiveAttendance(prev => ({
-                ...prev,
-                [classItem.id]: attendance
-              }));
-            }
-          } catch (error) {
-            console.error(`Error fetching attendance for class ${classItem.id}:`, error);
-          }
-        }
-      } catch (error) {
-        console.error('Error in fetchLiveAttendance:', error);
-      }
-    };
+    // 🔥 WEBSOCKET LISTENERS - REAL-TIME UPDATES!
     
-    // Fetch live attendance immediately and then every 10 seconds
-    fetchLiveAttendance();
-    const attendanceTimer = setInterval(fetchLiveAttendance, 10000);
+    // Listen for student list updates
+    const studentChannel = echo.channel('students')
+      .listen('.student.updated', (event) => {
+        console.log('📚 Students updated via WebSocket (Admin):', event);
+        // Refresh users to get updated list
+        fetchUsers();
+        showToastMessage('Student list updated', 'info');
+      });
+    
+    // Listen for building updates
+    const buildingChannel = echo.channel('buildings')
+      .listen('.building.updated', (event) => {
+        console.log('🏢 Buildings updated via WebSocket (Admin):', event);
+        setBuildings(event.buildings);
+        showToastMessage('Building list updated', 'info');
+      });
     
     return () => {
-      clearInterval(timer);
-      clearInterval(attendanceTimer);
+      // Disconnect WebSocket channels
+      echo.leave('students');
+      echo.leave('buildings');
     };
-  }, [classes]);
+  }, []);
 
-  const showToastMessage = (message, type) => {
+  const fetchInitialData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchUsers(),
+        fetchBuildings(),
+        fetchStats()
+      ]);
+    } catch (error) {
+      console.error('Error fetching initial data:', error);
+      showToastMessage('Error loading dashboard data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await api.get('/admin/users');
+      if (response.data.success) {
+        setTeachers(response.data.teachers || []);
+        setStudents(response.data.students || []);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  };
+
+  const fetchBuildings = async () => {
+    try {
+      const response = await api.get('/admin/buildings');
+      if (response.data.success) {
+        setBuildings(response.data.buildings || []);
+      }
+    } catch (error) {
+      console.error('Error fetching buildings:', error);
+      throw error;
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await api.get('/admin/stats');
+      if (response.data.success) {
+        setStats(response.data.stats || {});
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      throw error;
+    }
+  };
+
+  const showToastMessage = (message, type = 'success') => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-    }, 3000);
+    setTimeout(() => setShowToast(false), 3000);
   };
 
-  const handleAddClass = async () => {
-    if (!newClass.code || !newClass.name || !newClass.startTime || !newClass.endTime) {
-      showToastMessage('Please fill in all required fields', 'error');
-      return;
-    }
-
-    setIsCreatingClass(true);
+  // User Management Functions
+  const onSubmitUser = async (data) => {
     try {
-      const currentUser = authAPI.getStoredUser();
-      // Always use today's date
-      const today = new Date().toISOString().split('T')[0];
-      const payload = {
-        code: newClass.code,
-        name: newClass.name,
-        date: today,
-        startTime: newClass.startTime,
-        endTime: newClass.endTime,
-        maxStudents: parseInt(newClass.maxStudents, 10) || 30,
-        lateThreshold: parseInt(newClass.lateThreshold, 10) || 15,
-        isManualControl: newClass.isManualControl,
-        teacherEmail: currentUser?.email
-      };
-      console.log('Creating class with payload:', payload);
-      const response = await api.post('/classes', payload);
-
-      const newClassData = {
-        ...response.data.class,
-      enrolledStudents: [],
-      attendance: []
-    };
-
-      setClasses([...classes, newClassData]);
-      // Get today's date for the next class
-      const nextClassDate = new Date().toISOString().split('T')[0];
-    setNewClass({
-      code: '',
-      name: '',
-        date: nextClassDate,
-      startTime: '',
-      endTime: '',
-      maxStudents: 30,
-      lateThreshold: 15,
-      isManualControl: false
-    });
-    setShowAddClassModal(false);
-    showToastMessage('Class added successfully', 'success');
-    } catch (error) {
-      console.error('Error adding class:', error);
-      const errorMsg = error.response?.data?.message || 'Failed to add class';
-      showToastMessage(errorMsg, 'error');
-    } finally {
-      setIsCreatingClass(false);
-    }
-  };
-
-  const handleToggleClassStatus = async (classId) => {
-    const classItem = classes.find(c => c.id === classId);
-    const isCurrentlyOpen = classItem.isOpen;
-
-    if (!isCurrentlyOpen) {
-      // Opening class - get teacher's location
-      if (!navigator.geolocation) {
-        showToastMessage('Geolocation is not supported by your browser. Please use a modern browser like Chrome, Firefox, or Safari.', 'error');
-        return;
-      }
-
-      // Show loading message
-      showToastMessage('📍 Getting your location... This may take 20-30 seconds indoors.', 'info');
-
-      try {
-        console.log('Requesting geolocation (indoor-friendly mode)...');
-        
-        // Check if permission is granted first
-        if (navigator.permissions) {
-          try {
-            const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-            console.log('Geolocation permission status:', permissionStatus.state);
-            
-            if (permissionStatus.state === 'denied') {
-              showToastMessage('Location permission denied. Please enable location access in your browser settings and reload the page.', 'error');
-              return;
-            }
-          } catch (permError) {
-            console.warn('Could not check permission status:', permError);
-          }
+      if (editingUser) {
+        // Update user
+        const response = await api.put(`/admin/users/${editingUser.type}/${editingUser.id}`, data);
+        if (response.data.success) {
+          showToastMessage('User updated successfully!');
+          await fetchUsers();
+          setShowCreateUserModal(false);
+          setEditingUser(null);
+          resetUserForm();
         }
-        
-        // Indoor-friendly location strategy: Watch for improvements over time
-        let bestPosition = null;
-        let watchId = null;
-        
-        const getLocationWithWatch = () => {
-          return new Promise((resolve, reject) => {
-            let positionCount = 0;
-            const maxWaitTime = 30000; // 30 seconds total wait
-            const minPositions = 3; // Collect at least 3 readings
-            const startTime = Date.now();
-            
-            const timeoutId = setTimeout(() => {
-              if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-              }
-              if (bestPosition) {
-                console.log(`⏱️ Timeout reached, using best position: ${bestPosition.coords.accuracy}m`);
-                resolve(bestPosition);
-              } else {
-                reject(new Error('Location timeout - no position obtained'));
-              }
-            }, maxWaitTime);
-            
-            watchId = navigator.geolocation.watchPosition(
-              (position) => {
-                positionCount++;
-                const accuracy = position.coords.accuracy;
-                const elapsed = Date.now() - startTime;
-                
-                console.log(`📍 Position ${positionCount}: Accuracy ${accuracy.toFixed(1)}m (${(elapsed/1000).toFixed(1)}s elapsed)`);
-                
-                // Keep the best (most accurate) position
-                if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
-                  bestPosition = position;
-                  console.log(`✨ New best accuracy: ${accuracy.toFixed(1)}m`);
-                }
-                
-                // Success conditions:
-                // 1. Very good accuracy (< 50m)
-                // 2. Good accuracy (< 100m) after 15 seconds
-                // 3. Acceptable accuracy (< 300m) after 20 seconds
-                // 4. Any accuracy after collecting enough readings
-                const goodEnough = (
-                  (accuracy < 50) ||
-                  (accuracy < 100 && elapsed > 15000) ||
-                  (accuracy < 300 && elapsed > 20000) ||
-                  (positionCount >= minPositions && elapsed > 10000)
-                );
-                
-                if (goodEnough) {
-                  clearTimeout(timeoutId);
-                  navigator.geolocation.clearWatch(watchId);
-                  console.log(`✅ Acceptable location found: ${accuracy.toFixed(1)}m after ${(elapsed/1000).toFixed(1)}s`);
-                  resolve(bestPosition);
-                }
-              },
-              (error) => {
-                clearTimeout(timeoutId);
-                if (watchId !== null) {
-                  navigator.geolocation.clearWatch(watchId);
-                }
-                console.error('Geolocation error:', error);
-                
-                // If we have at least one position, use it
-                if (bestPosition) {
-                  console.log(`⚠️ Error occurred, but using best position: ${bestPosition.coords.accuracy}m`);
-                  resolve(bestPosition);
-                } else {
-                  reject(error);
-                }
-              },
-              {
-                enableHighAccuracy: true,
-                timeout: 10000, // Timeout for each individual reading
-                maximumAge: 0
-              }
-            );
-          });
-        };
-        
-        const position = await getLocationWithWatch();
-
-        const { latitude, longitude, accuracy } = position.coords;
-        console.log(`✅ Final Location: ${latitude}, ${longitude}, Accuracy: ${accuracy}m`);
-        
-        // Show accuracy info to teacher
-        let accuracyMessage = '';
-        if (accuracy < 50) {
-          accuracyMessage = `📍 Excellent accuracy: ${Math.round(accuracy)}m`;
-        } else if (accuracy < 100) {
-          accuracyMessage = `📍 Good accuracy: ${Math.round(accuracy)}m`;
-        } else if (accuracy < 300) {
-          accuracyMessage = `📍 Acceptable accuracy: ${Math.round(accuracy)}m (Good for indoor use)`;
-        } else {
-          accuracyMessage = `📍 Low accuracy: ${Math.round(accuracy)}m (Location may be approximate)`;
-        }
-        console.log(accuracyMessage);
-
-        // Call API to open class with geolocation
-        const response = await api.post('/classes/open', {
-          classId: classId,
-          latitude: latitude,
-          longitude: longitude
-        });
-
-        // Update the class with GPS coordinates
-        setClasses(classes.map(c => 
-          c.id === classId ? { 
-            ...c, 
-            isOpen: true,
-            currentSessionLat: latitude,
-            currentSessionLon: longitude,
-            currentSessionOpened: new Date().toISOString()
-          } : c
-        ));
-
-        // Check if geofencing is active
-        if (response.data.geofence_active === false) {
-          showToastMessage(`${response.data.message}\n\n${response.data.warning}`, 'info');
-        } else {
-          showToastMessage(`✅ Class opened successfully!\n\n${accuracyMessage}\nGeofence: 100m radius`, 'success');
-        }
-      } catch (error) {
-        console.error('Geolocation error:', error);
-        if (error.code) {
-          // Geolocation API error codes
-          const errorMessages = {
-            1: '📍 Location Access Denied\n\nPlease:\n1. Tap the "🔒" or "ⓘ" icon in your browser\'s address bar\n2. Enable "Location" permission\n3. Reload the page and try again',
-            2: '📡 Location Unavailable\n\nPlease:\n1. Enable Location Services in your phone settings\n2. Make sure GPS is turned on\n3. Try again',
-            3: '⏱️ Location Timeout\n\nGPS is taking too long. Please:\n1. Go outdoors or near a window\n2. Wait 10 seconds\n3. Try opening the class again'
-          };
-          showToastMessage(errorMessages[error.code] || 'Failed to get location. Please try again.', 'error');
-        } else if (error.message && error.message.includes('timeout')) {
-          showToastMessage('⏱️ Location request timed out. Please go outdoors or near a window and try again.', 'error');
-        } else if (error.response) {
-          showToastMessage(error.response?.data?.message || 'Failed to open class. Please try again.', 'error');
-        } else {
-          showToastMessage('❌ Failed to get location. Please:\n1. Check if location services are enabled\n2. Ensure you have internet connection\n3. Try again', 'error');
-        }
-      }
-    } else {
-      // Closing class
-      try {
-        await api.post('/classes/close', {
-          classId: classId
-        });
-
-        setClasses(classes.map(c => 
-          c.id === classId ? { 
-            ...c, 
-            isOpen: false,
-            currentSessionLat: null,
-            currentSessionLon: null,
-            currentSessionOpened: null
-          } : c
-        ));
-        showToastMessage('Class closed successfully', 'success');
-      } catch (error) {
-        console.error('Error closing class:', error);
-        showToastMessage('Failed to close class. Please try again.', 'error');
-      }
-    }
-  };
-
-  const handleExtendClass = async (classId) => {
-    const classItem = classes.find(c => c.id === classId);
-    
-    // Show options for extending
-    const options = [
-      { label: '15 minutes', value: 15 },
-      { label: '30 minutes', value: 30 },
-      { label: '1 hour', value: 60 },
-      { label: '2 hours', value: 120 }
-    ];
-    
-    const choice = prompt(
-      `Extend "${classItem.name}" by how many minutes?\n\n` +
-      `Current end time: ${classItem.endTime}\n\n` +
-      `Enter minutes (5-180) or choose:\n` +
-      options.map(o => `- ${o.value} (${o.label})`).join('\n')
-    );
-    
-    if (!choice) return; // User cancelled
-    
-    const minutes = parseInt(choice);
-    if (isNaN(minutes) || minutes < 5 || minutes > 180) {
-      showToastMessage('Please enter a valid number between 5 and 180 minutes', 'error');
-      return;
-    }
-    
-    try {
-      const response = await api.post('/classes/extend', {
-        classId: classId,
-        additionalMinutes: minutes
-      });
-      
-      if (response.data.success) {
-        // Update local state
-        setClasses(classes.map(c => 
-          c.id === classId ? { 
-            ...c, 
-            endTime: response.data.newEndTime,
-            isOpen: true 
-          } : c
-        ));
-        
-        showToastMessage(
-          `Class extended by ${minutes} minutes! New end time: ${response.data.newEndTime}`,
-          'success'
-        );
-      }
-    } catch (error) {
-      console.error('Error extending class:', error);
-      showToastMessage(
-        error.response?.data?.message || 'Failed to extend class. Please try again.',
-        'error'
-      );
-    }
-  };
-
-  const handleViewClassDetails = async (classItem) => {
-    setSelectedClass(classItem);
-    setShowClassDetailsModal(true);
-    // Fetch attendance for today by default
-    await fetchAttendance(classItem.id, selectedDate);
-  };
-
-  const fetchAttendance = async (classId, date) => {
-    setLoadingAttendance(true);
-    try {
-      const response = await api.get(`/classes/${classId}/attendance`, {
-        params: { date }
-      });
-      
-      if (response.data.success) {
-        setAttendanceRecords(response.data.attendance || []);
       } else {
-        setAttendanceRecords([]);
-        showToastMessage('Failed to load attendance records', 'error');
+        // Create user
+        const response = await api.post('/admin/users', data);
+        if (response.data.success) {
+          showToastMessage(`${data.role.charAt(0).toUpperCase() + data.role.slice(1)} created successfully!`);
+          await fetchUsers();
+          await fetchStats();
+          setShowCreateUserModal(false);
+          resetUserForm();
+        }
       }
     } catch (error) {
-      console.error('Error fetching attendance:', error);
-      setAttendanceRecords([]);
-      showToastMessage('Error loading attendance', 'error');
-    } finally {
-      setLoadingAttendance(false);
-    }
-  };
-
-  const handleDateChange = async (newDate) => {
-    setSelectedDate(newDate);
-    if (selectedClass) {
-      await fetchAttendance(selectedClass.id, newDate);
-    }
-  };
-
-  const handleAddStudentsToClass = (classId) => {
-    const classItem = classes.find(c => c.id === classId);
-    setSelectedClass(classItem);
-    
-    // Filter out students who are already enrolled in this class (by student ID)
-    const enrolledStudentIds = classItem.enrolledStudents || [];
-    const availableStudentsList = students.filter(student => 
-      !enrolledStudentIds.includes(student.id)
-    );
-    
-    setAvailableStudents(availableStudentsList);
-    setSelectedStudents([]);
-    setSearchTerm('');
-    setShowManageStudentsModal(true);
-  };
-
-  const handleSearchStudents = (searchTerm) => {
-    setSearchTerm(searchTerm);
-  };
-
-  const handleStudentSelection = (studentId, isSelected) => {
-    if (isSelected) {
-      setSelectedStudents([...selectedStudents, studentId]);
-    } else {
-      setSelectedStudents(selectedStudents.filter(id => id !== studentId));
-    }
-  };
-
-  const handleAddSelectedStudents = async () => {
-    if (selectedStudents.length === 0) {
-      showToastMessage('Please select at least one student', 'error');
-      return;
-    }
-
-    setIsAddingStudents(true);
-    try {
-      // Send student IDs to backend to save in Airtable
-      const response = await api.post('/classes/add-students', {
-        classId: selectedClass.id,
-        studentIds: selectedStudents
-      });
-
-      // Get the student names for display
-    const selectedStudentNames = students
-      .filter(student => selectedStudents.includes(student.id))
-      .map(student => student.name);
-
-      // Update local state with enrolled students
-    const updatedClasses = classes.map(classItem => 
-      classItem.id === selectedClass.id 
-        ? { 
-            ...classItem, 
-              enrolledStudents: response.data.enrolledStudents || [...(classItem.enrolledStudents || []), ...selectedStudents],
-            attendance: [
-                ...(classItem.attendance || []),
-              ...selectedStudentNames.map(name => ({
-                name,
-                signedIn: false,
-                time: null,
-                isLate: false
-              }))
-            ]
-          }
-        : classItem
-    );
-
-    setClasses(updatedClasses);
-    setShowManageStudentsModal(false);
-    setSelectedStudents([]);
-    setSearchTerm('');
-    showToastMessage(`${selectedStudentNames.length} student(s) added successfully`, 'success');
-    } catch (error) {
-      console.error('Error adding students:', error);
-      showToastMessage('Failed to add students. Please try again.', 'error');
-    } finally {
-      setIsAddingStudents(false);
-    }
-  };
-
-  const handleRemoveStudent = async (studentId) => {
-    try {
-      // Get student name for display
-      const student = students.find(s => s.id === studentId);
-      const studentName = student ? student.name : 'Student';
-
-      // Send request to backend to remove student from Airtable
-      await api.post('/classes/remove-student', {
-        classId: selectedClass.id,
-        studentId: studentId
-      });
-
-      // Update local state
-    const updatedClasses = classes.map(classItem => 
-      classItem.id === selectedClass.id 
-        ? { 
-            ...classItem, 
-              enrolledStudents: (classItem.enrolledStudents || []).filter(id => id !== studentId),
-              attendance: (classItem.attendance || []).filter(att => att.name !== studentName)
-          }
-        : classItem
-    );
-
-    setClasses(updatedClasses);
-      
-      // Update selectedClass if the modal is still open
-      if (selectedClass && selectedClass.id === selectedClass.id) {
-        setSelectedClass({
-          ...selectedClass,
-          enrolledStudents: (selectedClass.enrolledStudents || []).filter(id => id !== studentId)
-        });
-      }
-      
-    showToastMessage(`${studentName} removed from class`, 'success');
-    } catch (error) {
-      console.error('Error removing student:', error);
-      showToastMessage('Failed to remove student. Please try again.', 'error');
-    }
-  };
-
-  const getFilteredStudents = () => {
-    if (!searchTerm) return availableStudents;
-    
-    return availableStudents.filter(student => 
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.course.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  };
-
-  // Helper function to get student details from ID
-  const getStudentById = (studentId) => {
-    return students.find(s => s.id === studentId);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await authAPI.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      // Clear all stored authentication data
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_data');
-      localStorage.removeItem('rememberMe');
-      // Redirect to login page
-      window.location.href = '/';
-    }
-  };
-
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    });
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const isLate = (signInTime, startTime, lateThreshold) => {
-    if (!signInTime) return false;
-    
-    const start = new Date(`2000-01-01 ${startTime}`);
-    const signIn = new Date(`2000-01-01 ${signInTime}`);
-    const threshold = new Date(start.getTime() + (lateThreshold * 60000));
-    
-    return signIn > threshold;
-  };
-
-  const handleChangePassword = async () => {
-    // Validation
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.newPassword_confirmation) {
-      showToastMessage('Please fill in all password fields', 'error');
-      return;
-    }
-    if (passwordForm.newPassword.length < 6) {
-      showToastMessage('New password must be at least 6 characters', 'error');
-      return;
-    }
-    if (passwordForm.newPassword !== passwordForm.newPassword_confirmation) {
-      showToastMessage('New passwords do not match', 'error');
-      return;
-    }
-    setIsChangingPassword(true);
-    try {
-      const currentUser = authAPI.getStoredUser();
-      const response = await api.post('/change-password', {
-        email: currentUser?.email,
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-        newPassword_confirmation: passwordForm.newPassword_confirmation
-      });
-      if (response.data.success) {
-        showToastMessage('Password changed successfully! Please use your new password next time you log in.', 'success');
-        setShowChangePasswordModal(false);
-        setPasswordForm({
-          currentPassword: '',
-          newPassword: '',
-          newPassword_confirmation: ''
-        });
-        setShowPasswords({
-          current: false,
-          new: false,
-          confirm: false
-        });
-      }
-    } catch (err) {
-      console.error('Password change failed:', err);
-      const errorMsg = err?.response?.data?.message || err?.message || 'Failed to change password';
+      const errorMsg = error.response?.data?.message || 'Error saving user';
       showToastMessage(errorMsg, 'error');
-    } finally {
-      setIsChangingPassword(false);
     }
+  };
+
+  const handleDeleteUser = async (type, id) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+      const response = await api.delete(`/admin/users/${type}/${id}`);
+      if (response.data.success) {
+        showToastMessage('User deleted successfully!');
+        await fetchUsers();
+        await fetchStats();
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Error deleting user';
+      showToastMessage(errorMsg, 'error');
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    resetUserForm({
+      email: user.email,
+      name: user.name,
+      username: user.username,
+      role: user.role,
+      course: user.course
+    });
+    setShowCreateUserModal(true);
+  };
+
+  // Building Management Functions
+  const onSubmitBuilding = async (data) => {
+    try {
+      if (editingBuilding) {
+        // Update building
+        const response = await api.put(`/admin/buildings/${editingBuilding.id}`, data);
+        if (response.data.success) {
+          showToastMessage('Building updated successfully!');
+          await fetchBuildings();
+          setShowCreateBuildingModal(false);
+          setEditingBuilding(null);
+          resetBuildingForm();
+        }
+      } else {
+        // Create building
+        const response = await api.post('/admin/buildings', data);
+        if (response.data.success) {
+          showToastMessage('Building created successfully!');
+          await fetchBuildings();
+          await fetchStats();
+          setShowCreateBuildingModal(false);
+          resetBuildingForm();
+        }
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Error saving building';
+      showToastMessage(errorMsg, 'error');
+    }
+  };
+
+  const handleDeleteBuilding = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this building?')) return;
+    
+    try {
+      const response = await api.delete(`/admin/buildings/${id}`);
+      if (response.data.success) {
+        showToastMessage('Building deleted successfully!');
+        await fetchBuildings();
+        await fetchStats();
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Error deleting building';
+      showToastMessage(errorMsg, 'error');
+    }
+  };
+
+  const handleEditBuilding = (building) => {
+    setEditingBuilding(building);
+    resetBuildingForm({
+      name: building.name,
+      latitude: building.latitude,
+      longitude: building.longitude,
+      description: building.description,
+      address: building.address,
+      is_active: building.is_active
+    });
+    setShowCreateBuildingModal(true);
+  };
+
+  const handleToggleBuildingActive = async (id) => {
+    try {
+      const response = await api.patch(`/admin/buildings/${id}/toggle-active`);
+      if (response.data.success) {
+        showToastMessage('Building status updated!');
+        await fetchBuildings();
+      }
+    } catch (error) {
+      showToastMessage('Error updating building status', 'error');
+    }
+  };
+
+  const handleLogout = () => {
+    authAPI.logout();
+    window.location.href = '/login';
   };
 
   if (loading) {
-    return (
-      <div className="admin-dashboard">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading your dashboard...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading Admin Dashboard..." />;
   }
 
   return (
     <div className="admin-dashboard">
-      <div className="profile-container">
-        {/* Dashboard Title - Separate Container */}
-        <div className="dashboard-title-container">
-          <h1 className="dashboard-title-text">Admin Dashboard</h1>
-        </div>
-
-        {/* Profile Header - Mobile Style for All Screens */}
-        <div className="profile-header">
-          <div className="profile-picture">
-            <div className="avatar">
-              {professor.name.split(' ').map(n => n[0]).join('')}
-            </div>
+      {/* Header */}
+      <div className="admin-header">
+        <div className="admin-header-content">
+          <div className="admin-logo">
+            <h1>📍 PinPoint Admin</h1>
           </div>
-          <div className="profile-info">
-            {/* Professor Name - Separate Container */}
-            <div className="professor-name-container">
-              <h2>{professor.name}</h2>
-            </div>
-            
-            <p><strong>Department:</strong> {professor.department}</p>
-            <p><strong>Email:</strong> {professor.email}</p>
-            <div className="current-time">
-              Current Time: {formatTime(currentTime)}
-            </div>
-            
-            {/* Action Buttons - Above Separator */}
-            <div className="action-buttons-section">
-              <button 
-                className="add-class-btn" 
-                onClick={() => setShowAddClassModal(true)}
-              >
-                Add New Class
-              </button>
-              <button
-                className="change-password-btn"
-                style={{
-                  backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, marginLeft: '10px', marginRight: '10px'
-                }}
-                onClick={() => setShowChangePasswordModal(true)}
-              >
-                🔒 Change Password
-              </button>
-              <button 
-                className="settings-btn" 
-                onClick={() => setShowSettingsModal(true)}
-              >
-                Settings
-              </button>
-            </div>
+          <div className="admin-user-info">
+            <span className="admin-user-name">{authAPI.getStoredUser()?.name || authAPI.getStoredUser()?.email}</span>
+            <button className="btn-logout" onClick={handleLogout}>Logout</button>
           </div>
-        </div>
-
-        {/* Separator Line */}
-        <div className="separator-line"></div>
-
-
-        {/* Classes Section */}
-        <div className="classes-section">
-          <h2 className="classes-title">My Classes</h2>
-          <div className="classes-list">
-            {classes.length > 0 ? (
-              classes.map((classItem) => (
-                <div key={classItem.id} className="class-card">
-                  <div className="class-header">
-                    <div className="class-info">
-                      <h3 className="class-code">{classItem.code}</h3>
-                      <h4 className="class-name">{classItem.name}</h4>
-                      <p className="class-schedule">
-                        📅 {formatDate(new Date().toISOString().split('T')[0])} | 🕒 {classItem.startTime || 'N/A'} - {classItem.endTime || 'N/A'}
-                      </p>
-                      <p className="class-stats">
-                        👥 {classItem.enrolledStudents?.length || 0}/{classItem.maxStudents || 0} students
-                      </p>
-                    </div>
-                    <div className="class-status">
-                      <span className={`status-badge ${classItem.isOpen ? 'open' : 'closed'}`}>
-                        {classItem.isOpen ? 'Open' : 'Closed'}
-                      </span>
-                      <span className={`control-badge ${classItem.isManualControl ? 'manual' : 'auto'}`}>
-                        {classItem.isManualControl ? 'Manual Control' : 'Time-based'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="class-actions">
-                    <button 
-                      className={`toggle-btn ${classItem.isOpen ? 'close' : 'open'}`}
-                      onClick={() => handleToggleClassStatus(classItem.id)}
-                    >
-                      {classItem.isOpen ? 'Close Class' : 'Open Class'}
-                    </button>
-                    {classItem.isOpen && (
-                      <button 
-                        className="extend-btn"
-                        onClick={() => handleExtendClass(classItem.id)}
-                        style={{
-                          backgroundColor: '#ff9800',
-                          color: 'white',
-                          border: 'none',
-                          padding: '8px 16px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        ⏱️ Extend Time
-                      </button>
-                    )}
-                    <button 
-                      className="details-btn"
-                      onClick={() => handleViewClassDetails(classItem)}
-                    >
-                      View Details
-                    </button>
-                    <button 
-                      className="students-btn"
-                      onClick={() => handleAddStudentsToClass(classItem.id)}
-                    >
-                      Manage Students
-                    </button>
-                  </div>
-
-                  {/* Live Attendance Map - Shows below class card */}
-                  <div style={{ marginTop: '20px' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      marginBottom: '12px'
-                    }}>
-                      <h4 style={{ margin: 0, fontSize: '16px', color: '#2c3e50' }}>
-                        📍 Class Location
-                      </h4>
-                      {classItem.isOpen && classItem.currentSessionLat && classItem.currentSessionLon && (
-                        <span style={{
-                          fontSize: '12px',
-                          color: '#28a745',
-                          fontWeight: 'bold',
-                          padding: '4px 8px',
-                          background: '#d4edda',
-                          borderRadius: '12px'
-                        }}>
-                          🟢 LIVE
-                        </span>
-                      )}
-                    </div>
-                    <AttendanceMap
-                      teacherLocation={
-                        classItem.isOpen && classItem.currentSessionLat && classItem.currentSessionLon
-                          ? {
-                              lat: classItem.currentSessionLat,
-                              lng: classItem.currentSessionLon
-                            }
-                          : null
-                      }
-                      students={
-                        (liveAttendance[classItem.id] || [])
-                          .filter(r => r.latitude && r.longitude)
-                          .map(r => ({
-                            name: r.studentName,
-                            email: r.studentEmail || '',
-                            latitude: r.latitude,
-                            longitude: r.longitude,
-                            signed_in_at: r.signInTime
-                          }))
-                      }
-                      geofenceRadius={100}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="no-classes">
-                <p>No classes created yet. Click "Add New Class" to get started.</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Logout Button - Bottom Section */}
-        <div 
-          className="logout-section"
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '40px',
-            paddingTop: '20px',
-            borderTop: '2px solid #e9ecef'
-          }}
-        >
-          <button 
-            className="logout-btn" 
-            onClick={handleLogout}
-            style={{
-              backgroundColor: '#dc3545',
-              color: 'white',
-              padding: '12px 24px',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              width: '160px',
-              height: '48px',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            Logout
-          </button>
         </div>
       </div>
 
-      {/* Add Class Modal */}
-      {showAddClassModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h3>Add New Class</h3>
-              <button className="close-btn" onClick={() => setShowAddClassModal(false)}>
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Class Code:</label>
-                  <input
-                    type="text"
-                    value={newClass.code}
-                    onChange={(e) => setNewClass({...newClass, code: e.target.value})}
-                    placeholder="e.g., CC 201"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Class Name:</label>
-                  <input
-                    type="text"
-                    value={newClass.name}
-                    onChange={(e) => setNewClass({...newClass, name: e.target.value})}
-                    placeholder="e.g., Introduction to Computing"
-                  />
-                </div>
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Max Students:</label>
-                  <input
-                    type="number"
-                    value={newClass.maxStudents}
-                    onChange={(e) => setNewClass({...newClass, maxStudents: parseInt(e.target.value)})}
-                    min="1"
-                    max="100"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Late Threshold (minutes):</label>
-                  <input
-                    type="number"
-                    value={newClass.lateThreshold}
-                    onChange={(e) => setNewClass({...newClass, lateThreshold: parseInt(e.target.value)})}
-                    min="0"
-                    max="60"
-                  />
-                </div>
-              </div>
+      {/* Navigation Tabs */}
+      <div className="admin-tabs">
+        <button 
+          className={`admin-tab ${activeTab === 'stats' ? 'active' : ''}`}
+          onClick={() => setActiveTab('stats')}
+        >
+          📊 Statistics
+        </button>
+        <button 
+          className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          👥 Users
+        </button>
+        <button 
+          className={`admin-tab ${activeTab === 'buildings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('buildings')}
+        >
+          🏢 Buildings
+        </button>
+      </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Start Time:</label>
-                  <input
-                    type="time"
-                    value={newClass.startTime}
-                    onChange={(e) => setNewClass({...newClass, startTime: e.target.value})}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>End Time:</label>
-                  <input
-                    type="time"
-                    value={newClass.endTime}
-                    onChange={(e) => setNewClass({...newClass, endTime: e.target.value})}
-                  />
+      {/* Main Content */}
+      <div className="admin-content">
+        {/* Statistics Tab */}
+        {activeTab === 'stats' && (
+          <div className="stats-container">
+            <h2>System Statistics</h2>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">👨‍🏫</div>
+                <div className="stat-info">
+                  <div className="stat-value">{stats.teachers || 0}</div>
+                  <div className="stat-label">Teachers</div>
                 </div>
               </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={newClass.isManualControl}
-                      onChange={(e) => setNewClass({...newClass, isManualControl: e.target.checked})}
-                    />
-                    Manual Control (Override time-based sign-in)
-                  </label>
+              <div className="stat-card">
+                <div className="stat-icon">👨‍💼</div>
+                <div className="stat-info">
+                  <div className="stat-value">{stats.admins || 0}</div>
+                  <div className="stat-label">Admins</div>
                 </div>
               </div>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn-secondary" 
-                onClick={() => setShowAddClassModal(false)}
-                disabled={isCreatingClass}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleAddClass}
-                disabled={isCreatingClass}
-              >
-                {isCreatingClass ? (
-                  <>
-                    <span className="spinner"></span>
-                    Creating...
-                  </>
-                ) : (
-                  'Add Class'
-                )}
-              </button>
+              <div className="stat-card">
+                <div className="stat-icon">👨‍🎓</div>
+                <div className="stat-info">
+                  <div className="stat-value">{stats.students || 0}</div>
+                  <div className="stat-label">Students</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">📚</div>
+                <div className="stat-info">
+                  <div className="stat-value">{stats.classes || 0}</div>
+                  <div className="stat-label">Classes</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">🏢</div>
+                <div className="stat-info">
+                  <div className="stat-value">{stats.buildings || 0}</div>
+                  <div className="stat-label">Buildings</div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Class Details Modal */}
-      {showClassDetailsModal && selectedClass && (
-        <div className="modal-overlay">
-          <div className="modal large-modal">
-            <div className="modal-header">
-              <h3>{selectedClass.code} - {selectedClass.name}</h3>
-              <button className="close-btn" onClick={() => setShowClassDetailsModal(false)}>
-                ×
+        {/* Users Tab */}
+        {activeTab === 'users' && (
+          <div className="users-container">
+            <div className="section-header">
+              <h2>User Management</h2>
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  setEditingUser(null);
+                  resetUserForm();
+                  setShowCreateUserModal(true);
+                }}
+              >
+                ➕ Create User
               </button>
             </div>
-            <div className="modal-body">
-              <div className="class-details-info">
-                <div className="detail-section">
-                  <h4>Class Information</h4>
-                  <p><strong>Date:</strong> {formatDate(selectedClass.date)}</p>
-                  <p><strong>Time:</strong> {selectedClass.startTime} - {selectedClass.endTime}</p>
-                  <p><strong>Late Threshold:</strong> {selectedClass.lateThreshold} minutes</p>
-                  <p><strong>Control Type:</strong> {selectedClass.isManualControl ? 'Manual' : 'Time-based'}</p>
-                  {selectedClass.isOpen && selectedClass.currentSessionLat && selectedClass.currentSessionLon && (
-                    <p>
-                      <strong>Class Status:</strong> 
-                      <span style={{ 
-                        color: '#28a745', 
-                        fontWeight: 'bold',
-                        marginLeft: '8px'
-                      }}>
-                        🟢 LIVE - Geofence Active
+
+            {/* Teachers Table */}
+            <div className="table-section">
+              <h3>Teachers & Admins</h3>
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Username</th>
+                      <th>Role</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teachers.length === 0 ? (
+                      <tr><td colSpan="6" className="no-data">No teachers found</td></tr>
+                    ) : (
+                      teachers.map(teacher => (
+                        <tr key={teacher.id}>
+                          <td>{teacher.name}</td>
+                          <td>{teacher.email}</td>
+                          <td>{teacher.username || '-'}</td>
+                          <td>
+                            <span className={`role-badge ${teacher.role}`}>
+                              {teacher.role === 'admin' ? '👑' : '👨‍🏫'} {teacher.role.toUpperCase()}
+                            </span>
+                          </td>
+                          <td>{new Date(teacher.created_at).toLocaleDateString()}</td>
+                          <td className="actions">
+                            <button 
+                              className="btn-edit"
+                              onClick={() => handleEditUser(teacher)}
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button 
+                              className="btn-delete"
+                              onClick={() => handleDeleteUser('teacher', teacher.id)}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Students Table */}
+            <div className="table-section">
+              <h3>Students</h3>
+              <div className="table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Username</th>
+                      <th>Course</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.length === 0 ? (
+                      <tr><td colSpan="6" className="no-data">No students found</td></tr>
+                    ) : (
+                      students.map(student => (
+                        <tr key={student.id}>
+                          <td>{student.name}</td>
+                          <td>{student.email}</td>
+                          <td>{student.username || '-'}</td>
+                          <td>{student.course || '-'}</td>
+                          <td>{new Date(student.created_at).toLocaleDateString()}</td>
+                          <td className="actions">
+                            <button 
+                              className="btn-edit"
+                              onClick={() => handleEditUser(student)}
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button 
+                              className="btn-delete"
+                              onClick={() => handleDeleteUser('student', student.id)}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Buildings Tab */}
+        {activeTab === 'buildings' && (
+          <div className="buildings-container">
+            <div className="section-header">
+              <h2>Building Management</h2>
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  setEditingBuilding(null);
+                  resetBuildingForm();
+                  setShowCreateBuildingModal(true);
+                }}
+              >
+                ➕ Add Building
+              </button>
+            </div>
+
+            <div className="buildings-grid">
+              {buildings.length === 0 ? (
+                <div className="no-data">No buildings found. Add one to get started!</div>
+              ) : (
+                buildings.map(building => (
+                  <div key={building.id} className="building-card">
+                    <div className="building-header">
+                      <h3>{building.name}</h3>
+                      <span className={`status-badge ${building.is_active ? 'active' : 'inactive'}`}>
+                        {building.is_active ? '✅ Active' : '❌ Inactive'}
                       </span>
-                    </p>
-                  )}
-                </div>
-
-                {/* Live Attendance Map - Only shown when class is open */}
-                {selectedClass.isOpen && selectedClass.currentSessionLat && selectedClass.currentSessionLon && (
-                  <div className="detail-section">
-                    <h4>📍 Live Attendance Map</h4>
-                    <AttendanceMap
-                      teacherLocation={{
-                        lat: selectedClass.currentSessionLat,
-                        lng: selectedClass.currentSessionLon
-                      }}
-                      students={attendanceRecords.filter(r => r.latitude && r.longitude).map(r => ({
-                        name: r.studentName,
-                        email: r.studentEmail || '',
-                        latitude: r.latitude,
-                        longitude: r.longitude,
-                        signed_in_at: r.signInTime
-                      }))}
-                      geofenceRadius={100}
-                    />
-                  </div>
-                )}
-
-                <div className="detail-section">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h4>Attendance Records</h4>
-                    <div className="date-picker-container">
-                      <label style={{ marginRight: '10px', fontSize: '14px' }}>Select Date:</label>
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => handleDateChange(e.target.value)}
-                        style={{
-                          padding: '8px 12px',
-                          borderRadius: '6px',
-                          border: '1px solid #ddd',
-                          fontSize: '14px'
-                        }}
-                      />
                     </div>
-                  </div>
-
-                  {loadingAttendance ? (
-                    <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                      Loading attendance records...
-                    </div>
-                  ) : attendanceRecords.length === 0 ? (
-                    <div style={{ 
-                      textAlign: 'center', 
-                      padding: '20px', 
-                      color: '#999',
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: '8px'
-                    }}>
-                      <p style={{ margin: 0 }}>📋 No attendance records for this date</p>
-                      <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Students will appear here after they sign in</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p style={{ 
-                        color: '#666', 
-                        fontSize: '14px', 
-                        marginBottom: '10px',
-                        fontWeight: '500'
-                      }}>
-                        {attendanceRecords.length} student{attendanceRecords.length !== 1 ? 's' : ''} signed in on {formatDate(selectedDate)}
+                    <div className="building-details">
+                      <p><strong>📍 Coordinates:</strong></p>
+                      <p className="coordinates">
+                        Lat: {building.latitude}, Lng: {building.longitude}
                       </p>
-                  <div className="attendance-list">
-                        {attendanceRecords.map((record, index) => (
-                          <div key={record.id || index} className={`attendance-item ${record.isLate ? 'late' : ''}`}>
-                        <div className="student-info">
-                              <span className="student-name">{record.studentName}</span>
-                              <span className={record.isLate ? 'late-status' : 'on-time-status'}>
-                                {record.isLate ? 'Late' : 'On Time'}
-                          </span>
-                        </div>
-                          <div className="sign-in-info">
-                              <span className="sign-in-time">
-                                {record.signInTime}
-                              </span>
-                              <span className="distance-info">
-                                {record.distance}m
-                              </span>
-                          </div>
-                      </div>
-                    ))}
-                  </div>
+                      {building.address && (
+                        <p><strong>📫 Address:</strong> {building.address}</p>
+                      )}
+                      {building.description && (
+                        <p><strong>📝 Description:</strong> {building.description}</p>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-primary" onClick={() => setShowClassDetailsModal(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h3>Settings</h3>
-              <button className="close-btn" onClick={() => setShowSettingsModal(false)}>
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Default Late Threshold (minutes):</label>
-                <input type="number" defaultValue="15" min="1" max="60" />
-              </div>
-              <div className="form-group">
-                <label>
-                  <input type="checkbox" defaultChecked />
-                  Auto-close classes after end time
-                </label>
-              </div>
-              <div className="form-group">
-                <label>
-                  <input type="checkbox" defaultChecked />
-                  Send notifications for late students
-                </label>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowSettingsModal(false)}>
-                Cancel
-              </button>
-              <button className="btn-primary" onClick={() => setShowSettingsModal(false)}>
-                Save Settings
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Manage Students Modal */}
-      {showManageStudentsModal && selectedClass && (
-        <div className="modal-overlay">
-          <div className="modal large-modal">
-            <div className="modal-header">
-              <h3>Manage Students - {selectedClass.code}</h3>
-              <button className="close-btn" onClick={() => setShowManageStudentsModal(false)}>
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              {/* Current Enrolled Students */}
-              <div className="detail-section">
-                <h4>Current Enrolled Students ({selectedClass.enrolledStudents?.length || 0})</h4>
-                <div className="enrolled-students-list">
-                  {(selectedClass.enrolledStudents || []).length > 0 ? (
-                    (selectedClass.enrolledStudents || []).map((studentId, index) => {
-                      const student = getStudentById(studentId);
-                      return student ? (
-                        <div key={studentId || index} className="enrolled-student-item">
-                      <div className="student-info">
-                            <span className="student-name">{student.name}</span>
-                            <span className="student-email">{student.email}</span>
-                        <span className="student-status">Enrolled</span>
-                      </div>
-                      <button 
-                        className="remove-student-btn"
-                            onClick={() => handleRemoveStudent(studentId)}
+                    
+                    {/* Mini Map */}
+                    <div className="building-map">
+                      <MapContainer
+                        center={[parseFloat(building.latitude), parseFloat(building.longitude)]}
+                        zoom={17}
+                        style={{ height: '150px', width: '100%' }}
+                        dragging={false}
+                        scrollWheelZoom={false}
+                        doubleClickZoom={false}
+                        zoomControl={false}
                       >
-                        ❌ Remove
+                        <TileLayer
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        />
+                        <Marker position={[parseFloat(building.latitude), parseFloat(building.longitude)]}>
+                          <Popup>{building.name}</Popup>
+                        </Marker>
+                        <Circle
+                          center={[parseFloat(building.latitude), parseFloat(building.longitude)]}
+                          radius={100}
+                          pathOptions={{ color: 'blue', fillColor: 'blue', fillOpacity: 0.1 }}
+                        />
+                      </MapContainer>
+                    </div>
+
+                    <div className="building-actions">
+                      <button 
+                        className="btn-edit"
+                        onClick={() => handleEditBuilding(building)}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button 
+                        className="btn-toggle"
+                        onClick={() => handleToggleBuildingActive(building.id)}
+                      >
+                        {building.is_active ? '⏸️ Deactivate' : '▶️ Activate'}
+                      </button>
+                      <button 
+                        className="btn-delete"
+                        onClick={() => handleDeleteBuilding(building.id)}
+                      >
+                        🗑️ Delete
                       </button>
                     </div>
-                      ) : null;
-                    })
-                  ) : (
-                    <p className="no-students">No students enrolled yet.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Add New Students */}
-              <div className="detail-section">
-                <h4>Add New Students</h4>
-                
-                {/* Search Bar */}
-                <div className="search-container">
-                  <input
-                    type="text"
-                    placeholder="Search by name, email, or course..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchStudents(e.target.value)}
-                    className="search-input"
-                  />
-                  <span className="search-icon">🔍</span>
-                </div>
-
-                {/* Available Students List */}
-                <div className="available-students-list">
-                  {getFilteredStudents().length > 0 ? (
-                    getFilteredStudents().map((student) => (
-                      <div key={student.id} className="available-student-item">
-                        <div className="student-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={selectedStudents.includes(student.id)}
-                            onChange={(e) => handleStudentSelection(student.id, e.target.checked)}
-                          />
-                        </div>
-                        <div className="student-details">
-                          <div className="student-name">{student.name}</div>
-                          <div className="student-email">{student.email}</div>
-                          <div className="student-course">{student.course}</div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-students">
-                      {searchTerm ? 'No students found matching your search.' : 'No available students to add.'}
-                    </div>
-                  )}
-                </div>
-
-                {/* Selected Students Summary */}
-                {selectedStudents.length > 0 && (
-                  <div className="selected-summary">
-                    <strong>{selectedStudents.length} student(s) selected</strong>
                   </div>
-                )}
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Create/Edit User Modal */}
+      {showCreateUserModal && (
+        <div className="modal-overlay" onClick={() => {
+          setShowCreateUserModal(false);
+          setEditingUser(null);
+          resetUserForm();
+        }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingUser ? 'Edit User' : 'Create New User'}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => {
+                  setShowCreateUserModal(false);
+                  setEditingUser(null);
+                  resetUserForm();
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitUser(onSubmitUser)} className="form-container">
+              <div className="form-group">
+                <label>Email *</label>
+                <input 
+                  type="email"
+                  {...registerUser('email', { 
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address'
+                    }
+                  })}
+                  className={userErrors.email ? 'error' : ''}
+                  disabled={editingUser !== null}
+                />
+                {userErrors.email && <span className="error-message">{userErrors.email.message}</span>}
               </div>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn-secondary" 
-                onClick={() => setShowManageStudentsModal(false)}
-                disabled={isAddingStudents}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleAddSelectedStudents}
-                disabled={selectedStudents.length === 0 || isAddingStudents}
-              >
-                {isAddingStudents ? (
-                  <>
-                    <span className="spinner"></span>
-                    Adding Students...
-                  </>
-                ) : (
-                  `Add Selected Students (${selectedStudents.length})`
-                )}
-              </button>
-            </div>
+
+              {!editingUser && (
+                <div className="form-group">
+                  <label>Password *</label>
+                  <input 
+                    type="password"
+                    {...registerUser('password', { 
+                      required: 'Password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters'
+                      }
+                    })}
+                    className={userErrors.password ? 'error' : ''}
+                  />
+                  {userErrors.password && <span className="error-message">{userErrors.password.message}</span>}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Role *</label>
+                <select 
+                  {...registerUser('role', { required: 'Role is required' })}
+                  className={userErrors.role ? 'error' : ''}
+                  disabled={editingUser !== null}
+                >
+                  <option value="">Select Role</option>
+                  <option value="admin">Admin</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="student">Student</option>
+                </select>
+                {userErrors.role && <span className="error-message">{userErrors.role.message}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Name</label>
+                <input 
+                  type="text"
+                  {...registerUser('name')}
+                  placeholder="Full name"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Username</label>
+                <input 
+                  type="text"
+                  {...registerUser('username')}
+                  placeholder="Optional username"
+                />
+              </div>
+
+              {selectedRole === 'student' && (
+                <div className="form-group">
+                  <label>Course</label>
+                  <input 
+                    type="text"
+                    {...registerUser('course')}
+                    placeholder="e.g., BSCS 3A"
+                  />
+                </div>
+              )}
+
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowCreateUserModal(false);
+                    setEditingUser(null);
+                    resetUserForm();
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {editingUser ? 'Update User' : 'Create User'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Change Password Modal */}
-      {showChangePasswordModal && (
-        <div className="modal-overlay">
-          <div className="modal">
+      {/* Create/Edit Building Modal */}
+      {showCreateBuildingModal && (
+        <div className="modal-overlay" onClick={() => {
+          setShowCreateBuildingModal(false);
+          setEditingBuilding(null);
+          resetBuildingForm();
+        }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>🔒 Change Password</h3>
-              <button className="close-btn" onClick={() => {
-                setShowChangePasswordModal(false);
-                setPasswordForm({ currentPassword: '', newPassword: '', newPassword_confirmation: '' });
-                setShowPasswords({ current: false, new: false, confirm: false });
-              }}>×</button>
-            </div>
-            <div className="modal-body">
-              <p style={{ marginBottom: '20px', color: '#666' }}>
-                Enter your current password and choose a new password (minimum 6 characters).
-              </p>
-              <div className="form-group">
-                <label>Current Password:</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPasswords.current ? 'text' : 'password'}
-                    value={passwordForm.currentPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                    placeholder="Enter current password"
-                    disabled={isChangingPassword}
-                    style={{ paddingRight: '40px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#666' }}
-                    disabled={isChangingPassword}
-                  >
-                    {showPasswords.current ? '👁️' : '👁️‍🗨️'}
-                  </button>
-                </div>
-              </div>
-              <div className="form-group">
-                <label>New Password:</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPasswords.new ? 'text' : 'password'}
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                    placeholder="Enter new password (min 6 characters)"
-                    disabled={isChangingPassword}
-                    style={{ paddingRight: '40px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#666' }}
-                    disabled={isChangingPassword}
-                  >
-                    {showPasswords.new ? '👁️' : '👁️‍🗨️'}
-                  </button>
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Confirm New Password:</label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPasswords.confirm ? 'text' : 'password'}
-                    value={passwordForm.newPassword_confirmation}
-                    onChange={(e) => setPasswordForm({...passwordForm, newPassword_confirmation: e.target.value})}
-                    placeholder="Confirm new password"
-                    disabled={isChangingPassword}
-                    style={{ paddingRight: '40px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#666' }}
-                    disabled={isChangingPassword}
-                  >
-                    {showPasswords.confirm ? '👁️' : '👁️‍🗨️'}
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => {
-                setShowChangePasswordModal(false);
-                setPasswordForm({ currentPassword: '', newPassword: '', newPassword_confirmation: '' });
-                setShowPasswords({ current: false, new: false, confirm: false });
-              }} disabled={isChangingPassword}>Cancel</button>
-              <button className="btn-primary" onClick={handleChangePassword} disabled={isChangingPassword}>
-                {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+              <h2>{editingBuilding ? 'Edit Building' : 'Add New Building'}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => {
+                  setShowCreateBuildingModal(false);
+                  setEditingBuilding(null);
+                  resetBuildingForm();
+                }}
+              >
+                ✕
               </button>
             </div>
+            
+            <form onSubmit={handleSubmitBuilding(onSubmitBuilding)} className="form-container">
+              <div className="form-group">
+                <label>Building Name *</label>
+                <input 
+                  type="text"
+                  {...registerBuilding('name', { required: 'Building name is required' })}
+                  className={buildingErrors.name ? 'error' : ''}
+                  placeholder="e.g., Science Building"
+                />
+                {buildingErrors.name && <span className="error-message">{buildingErrors.name.message}</span>}
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Latitude *</label>
+                  <input 
+                    type="number"
+                    step="0.00000001"
+                    {...registerBuilding('latitude', { 
+                      required: 'Latitude is required',
+                      min: { value: -90, message: 'Latitude must be between -90 and 90' },
+                      max: { value: 90, message: 'Latitude must be between -90 and 90' }
+                    })}
+                    className={buildingErrors.latitude ? 'error' : ''}
+                    placeholder="e.g., 8.98765432"
+                  />
+                  {buildingErrors.latitude && <span className="error-message">{buildingErrors.latitude.message}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Longitude *</label>
+                  <input 
+                    type="number"
+                    step="0.00000001"
+                    {...registerBuilding('longitude', { 
+                      required: 'Longitude is required',
+                      min: { value: -180, message: 'Longitude must be between -180 and 180' },
+                      max: { value: 180, message: 'Longitude must be between -180 and 180' }
+                    })}
+                    className={buildingErrors.longitude ? 'error' : ''}
+                    placeholder="e.g., 125.12345678"
+                  />
+                  {buildingErrors.longitude && <span className="error-message">{buildingErrors.longitude.message}</span>}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Address</label>
+                <input 
+                  type="text"
+                  {...registerBuilding('address')}
+                  placeholder="Street address (optional)"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <textarea 
+                  {...registerBuilding('description')}
+                  rows="3"
+                  placeholder="Building description (optional)"
+                />
+              </div>
+
+              <div className="form-group checkbox-group">
+                <label>
+                  <input 
+                    type="checkbox"
+                    {...registerBuilding('is_active')}
+                    defaultChecked={true}
+                  />
+                  <span>Active</span>
+                </label>
+              </div>
+
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowCreateBuildingModal(false);
+                    setEditingBuilding(null);
+                    resetBuildingForm();
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {editingBuilding ? 'Update Building' : 'Add Building'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* Toast Notification */}
       {showToast && (
-        <div className={`toast ${toastType}`}>
-          <div className="toast-content">
-            <div className="toast-icon">
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            bottom: 'auto',
+            left: window.innerWidth <= 768 ? '50%' : 'auto',
+            right: window.innerWidth <= 768 ? 'auto' : '20px',
+            transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
+            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
+            minWidth: '280px',
+            maxHeight: '80px',
+            width: 'auto',
+            height: 'auto',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            zIndex: 99999,
+            overflow: 'hidden',
+            border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
+            display: 'inline-block',
+            pointerEvents: 'auto',
+            margin: '0'
+          }}
+        >
+          <div 
+            style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 16px',
+              background: toastType === 'success' ? '#d4edda' : '#f8d7da'
+            }}
+          >
+            <div style={{ fontSize: '20px', flexShrink: 0 }}>
               {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
             </div>
-            <div className="toast-message">{toastMessage}</div>
-            <button className="toast-close" onClick={() => setShowToast(false)}>
+            <div style={{ 
+              flex: 1,
+              fontSize: '14px',
+              lineHeight: '1.4',
+              color: toastType === 'success' ? '#155724' : '#721c24',
+              fontWeight: '500',
+              wordBreak: 'break-word'
+            }}>
+              {toastMessage}
+            </div>
+            <button 
+              onClick={() => setShowToast(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: toastType === 'success' ? '#155724' : '#721c24',
+                padding: '0',
+                lineHeight: '1',
+                flexShrink: 0,
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               ×
             </button>
           </div>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api, { authAPI } from '../services/api';
+import LoadingScreen from './LoadingScreen';
+import echo from '../services/echo';
 import './StudentProfile.css';
 
 const StudentProfile = () => {
@@ -10,7 +12,7 @@ const StudentProfile = () => {
     address: '',
     guardianName: '',
     relationship: '',
-    guardianPhone: '',
+    guardianEmail: '',
     profilePicture: null
   });
   
@@ -46,7 +48,7 @@ const StudentProfile = () => {
     address: '',
     guardianName: '',
     relationship: '',
-    guardianPhone: ''
+    guardianEmail: ''
   });
   const [courseOptions, setCourseOptions] = useState([]);
 
@@ -83,7 +85,7 @@ const StudentProfile = () => {
             address: p.address || '',
             guardianName: p.guardianName || '',
             relationship: p.relationship || '',
-            guardianPhone: p.guardianPhone || '',
+            guardianEmail: p.guardianEmail || '',
             profilePicture: null
           };
           setStudent(merged);
@@ -99,7 +101,7 @@ const StudentProfile = () => {
             address: '',
             guardianName: '',
             relationship: '',
-            guardianPhone: '',
+            guardianEmail: '',
             profilePicture: null
           };
           setStudent(fallback);
@@ -109,27 +111,11 @@ const StudentProfile = () => {
 
       // Load classes (separate try/catch so profile still loads if classes fail)
       try {
-        const response = await api.get('/classes');
-        const allClasses = response?.data?.classes || [];
-        
-        // Get student's record ID from students API
-        let studentRecordId = null;
-        try {
-          const studentsResponse = await api.get('/students');
-          const allStudents = studentsResponse.data.students || [];
-          const studentRecord = allStudents.find(s => s.email === currentUser?.email);
-          studentRecordId = studentRecord?.id;
-        } catch (e) {
-          console.error('Error fetching student ID:', e);
-        }
-        
-        // Filter to only show classes where student is enrolled
-        const enrolledClasses = studentRecordId 
-          ? allClasses.filter(classItem => {
-              const enrolledStudents = classItem.enrolledStudents || [];
-              return enrolledStudents.includes(studentRecordId);
-            })
-          : []; // If no student ID found, show no classes
+        // NEW: Use studentEmail parameter to fetch only enrolled classes
+        const response = await api.get('/classes', {
+          params: { studentEmail: currentUser?.email }
+        });
+        const enrolledClasses = response?.data?.classes || [];
         
         const mapped = enrolledClasses.map(r => ({
           id: r.id,
@@ -155,7 +141,42 @@ const StudentProfile = () => {
     loadCourseOptions();
     loadData();
 
-    return () => clearInterval(timer);
+    // 🔥 WEBSOCKET LISTENERS - REAL-TIME CLASS UPDATES!
+    
+    // Listen for class updates (opened/closed)
+    const classChannel = echo.channel('classes')
+      .listen('.class.updated', (event) => {
+        console.log('🔄 Class updated via WebSocket (Student):', event);
+        const updatedClass = event.class;
+        
+        // Update the class in state if it's in the student's enrolled classes
+        setClasses(prevClasses => {
+          return prevClasses.map(c => {
+            if (c.id === updatedClass.id) {
+              return {
+                ...c,
+                isOpen: updatedClass.is_open,
+                startTime: updatedClass.start_time,
+                endTime: updatedClass.end_time
+              };
+            }
+            return c;
+          });
+        });
+        
+        // Show toast notification
+        if (event.action === 'opened') {
+          showToastMessage(`📍 ${updatedClass.class_name} is now OPEN!`, 'success');
+        } else if (event.action === 'closed') {
+          showToastMessage(`🔒 ${updatedClass.class_name} is now closed`, 'info');
+        }
+      });
+
+    return () => {
+      clearInterval(timer);
+      // Disconnect WebSocket channels
+      echo.leave('classes');
+    };
   }, []);
 
   // Check if class sign-in is available based on current time
@@ -392,7 +413,7 @@ const StudentProfile = () => {
       address: student.address || '',
       guardianName: student.guardianName || '',
       relationship: student.relationship || '',
-      guardianPhone: student.guardianPhone || ''
+      guardianEmail: student.guardianEmail || ''
     });
     setShowEditModal(true);
   };
@@ -409,7 +430,7 @@ const StudentProfile = () => {
         address: editForm.address,
         guardianName: editForm.guardianName,
         relationship: editForm.relationship,
-        guardianPhone: editForm.guardianPhone
+        guardianEmail: editForm.guardianEmail
       });
       console.log('Profile save response:', response.data);
     setStudent({
@@ -420,7 +441,7 @@ const StudentProfile = () => {
       address: editForm.address,
       guardianName: editForm.guardianName,
       relationship: editForm.relationship,
-      guardianPhone: editForm.guardianPhone
+      guardianEmail: editForm.guardianEmail
     });
     setShowEditModal(false);
     showToastMessage('Profile updated successfully', 'success');
@@ -512,14 +533,7 @@ const StudentProfile = () => {
   const displayName = (student.name && String(student.name).trim()) || storedUser?.name || emailDerived || '';
 
   if (loading) {
-    return (
-      <div className="student-profile">
-        <div className="profile-container">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Loading your profile..." />;
   }
 
   return (
@@ -548,7 +562,7 @@ const StudentProfile = () => {
             <p><strong>Address:</strong> {student.address}</p>
             <p><strong>Guardian:</strong> {student.guardianName}</p>
             <p><strong>Relationship:</strong> {student.relationship}</p>
-            <p><strong>Guardian Phone:</strong> {student.guardianPhone}</p>
+            <p><strong>Guardian Email:</strong> {student.guardianEmail}</p>
             <div className="current-time">
               Current Time: {formatTime(currentTime)}
             </div>
@@ -587,24 +601,24 @@ const StudentProfile = () => {
               classes.map((classItem) => (
               <div 
                 key={classItem.id}
-                className={`class-item ${!isClassAvailable(classItem) ? 'unavailable' : ''} ${classItem.isSignedIn ? 'signed-in' : ''}`}
+                className={`class-item ${!classItem.isOpen ? 'unavailable' : ''} ${classItem.isSignedIn ? 'signed-in' : ''}`}
                 onClick={() => handleClassClick(classItem.id)}
               >
                 <div className="class-info">
                   <span className="class-code">{classItem.code || 'N/A'}</span>
                   <span className="class-name">{classItem.name || 'N/A'}</span>
-                  <span className="class-time">{classItem.timeSlot || classItem.time_slot || 'Always Available'}</span>
+                  <span className="class-time" style={{
+                    color: classItem.isOpen ? '#28a745' : '#6c757d',
+                    fontWeight: '600',
+                    fontSize: '14px'
+                  }}>
+                    {classItem.isOpen ? '🟢 OPEN' : '🔴 CLOSED'}
+                  </span>
                   <span className="class-instructor">Instructor: {classItem.instructor || 'N/A'}</span>
                 </div>
                 <div className="class-status">
-                  {!isClassAvailable(classItem) ? (
-                    <span className="status unavailable">Not Available</span>
-                  ) : classItem.alwaysAvailable ? (
-                    classItem.isSignedIn ? (
-                      <span className="status signed-in">Signed In</span>
-                    ) : (
-                      <span className="status always-available">Always Open</span>
-                    )
+                  {!classItem.isOpen ? (
+                    <span className="status unavailable">Class Closed</span>
                   ) : classItem.isSignedIn ? (
                     <span className="status signed-in">Signed In</span>
                   ) : (
@@ -733,12 +747,12 @@ const StudentProfile = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label>Guardian's Phone Number:</label>
+                <label>Guardian's Email Address:</label>
                 <input
-                  type="tel"
-                  value={editForm.guardianPhone}
-                  onChange={(e) => setEditForm({...editForm, guardianPhone: e.target.value})}
-                  placeholder="+63 912 345 6789"
+                  type="email"
+                  value={editForm.guardianEmail}
+                  onChange={(e) => setEditForm({...editForm, guardianEmail: e.target.value})}
+                  placeholder="guardian@example.com"
                 />
               </div>
             </div>
@@ -994,13 +1008,70 @@ const StudentProfile = () => {
 
       {/* Toast Notification */}
       {showToast && (
-        <div className={`toast ${toastType}`}>
-          <div className="toast-content">
-            <div className="toast-icon">
-              {toastType === 'success' ? '✅' : '❌'}
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            bottom: 'auto',
+            left: window.innerWidth <= 768 ? '50%' : 'auto',
+            right: window.innerWidth <= 768 ? 'auto' : '20px',
+            transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
+            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
+            minWidth: '280px',
+            maxHeight: '80px',
+            width: 'auto',
+            height: 'auto',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            zIndex: 99999,
+            overflow: 'hidden',
+            border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
+            display: 'inline-block',
+            pointerEvents: 'auto',
+            margin: '0'
+          }}
+        >
+          <div 
+            style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 16px',
+              background: toastType === 'success' ? '#d4edda' : '#f8d7da'
+            }}
+          >
+            <div style={{ fontSize: '20px', flexShrink: 0 }}>
+              {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
             </div>
-            <div className="toast-message">{toastMessage}</div>
-            <button className="toast-close" onClick={() => setShowToast(false)}>
+            <div style={{ 
+              flex: 1,
+              fontSize: '14px',
+              lineHeight: '1.4',
+              color: toastType === 'success' ? '#155724' : '#721c24',
+              fontWeight: '500',
+              wordBreak: 'break-word'
+            }}>
+              {toastMessage}
+            </div>
+            <button 
+              onClick={() => setShowToast(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: toastType === 'success' ? '#155724' : '#721c24',
+                padding: '0',
+                lineHeight: '1',
+                flexShrink: 0,
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
               ×
             </button>
           </div>
