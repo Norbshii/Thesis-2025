@@ -36,6 +36,31 @@ Route::get('/health', function () {
     ]);
 });
 
+// Debug mail config
+Route::get('/debug/mail-config', function () {
+    return response()->json([
+        'mail_config' => [
+            'MAIL_MAILER' => env('MAIL_MAILER'),
+            'MAIL_HOST' => env('MAIL_HOST'),
+            'MAIL_PORT' => env('MAIL_PORT'),
+            'MAIL_USERNAME' => env('MAIL_USERNAME'),
+            'MAIL_PASSWORD' => env('MAIL_PASSWORD') ? '***SET*** (length: ' . strlen(env('MAIL_PASSWORD')) . ')' : 'NOT SET',
+            'MAIL_ENCRYPTION' => env('MAIL_ENCRYPTION'),
+            'MAIL_FROM_ADDRESS' => env('MAIL_FROM_ADDRESS'),
+            'MAIL_FROM_NAME' => env('MAIL_FROM_NAME'),
+        ],
+        'config_mail' => [
+            'default' => config('mail.default'),
+            'from_address' => config('mail.from.address'),
+            'from_name' => config('mail.from.name'),
+            'smtp_host' => config('mail.mailers.smtp.host'),
+            'smtp_port' => config('mail.mailers.smtp.port'),
+            'smtp_username' => config('mail.mailers.smtp.username'),
+            'smtp_password' => config('mail.mailers.smtp.password') ? '***SET***' : 'NOT SET',
+        ]
+    ]);
+});
+
 // Public routes (MySQL-backed auth)
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);

@@ -851,42 +851,6 @@ class ClassesController extends Controller
 
             \Log::info('Attendance record created successfully', ['id' => $attendanceRecord->id]);
 
-            // Send SMS to guardian (if phone number exists and SMS is configured)
-            $smsResult = null;
-            if ($guardianPhone && !empty(env('SEMAPHORE_API_KEY'))) {
-                try {
-                    $signInTimeFormatted = $currentDateTime->format('g:i A'); // 12-hour format
-                    
-                    $message = $this->sms->generateAttendanceMessage(
-                        $studentName,
-                        $class->class_name,
-                        $class->teacher_name ?? $class->teacher_email,
-                        $signInTimeFormatted,
-                        $isLate
-                    );
-                    
-                    $smsResult = $this->sms->sendSMS($guardianPhone, $message);
-                    
-                    if ($smsResult['success']) {
-                        \Log::info('SMS sent to guardian', [
-                            'phone' => $guardianPhone,
-                            'student' => $studentName,
-                            'class' => $class->class_name
-                        ]);
-                    } else {
-                        \Log::warning('SMS failed to send', [
-                            'phone' => $guardianPhone,
-                            'error' => $smsResult['message']
-                        ]);
-                    }
-                } catch (\Exception $smsError) {
-                    \Log::error('SMS exception: ' . $smsError->getMessage());
-                }
-            } elseif (!$guardianPhone) {
-                \Log::info('SMS not sent: No guardian phone number for student', ['student' => $studentName]);
-            } else {
-                \Log::info('SMS not sent: SEMAPHORE_API_KEY not configured');
-            }
 
             // Send email notification to guardian (if email address exists)
             $emailSent = false;
