@@ -96,55 +96,97 @@ class ClassesController extends Controller
 
     public function update(Request $request, $id)
     {
-        $class = ClassModel::findOrFail($id);
-        
-        $validator = Validator::make($request->all(), [
-            'code' => 'required|string|max:50',
-            'name' => 'required|string|max:200',
-            'date' => 'required|string', // days of week
-            'startTime' => 'required|string',
-            'endTime' => 'required|string',
-            'maxStudents' => 'required|integer|min:1',
-            'lateThreshold' => 'required|integer|min:1',
-            'isManualControl' => 'boolean',
-            'teacherEmail' => 'required|email',
-            'building_id' => 'nullable|integer|exists:buildings,id',
-        ]);
+        try {
+            $class = ClassModel::findOrFail($id);
+            
+            \Log::info('Class update request', [
+                'class_id' => $id,
+                'request_data' => $request->all()
+            ]);
+            
+            $validator = Validator::make($request->all(), [
+                'code' => 'required|string|max:50',
+                'name' => 'required|string|max:200',
+                'date' => 'nullable|string', // days of week - optional for mobile
+                'startTime' => 'required|string',
+                'endTime' => 'required|string',
+                'maxStudents' => 'nullable|integer|min:1',
+                'lateThreshold' => 'required|integer|min:1',
+                'isManualControl' => 'nullable|boolean',
+                'teacherEmail' => 'required|email',
+                'building_id' => 'nullable|integer|exists:buildings,id',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+            if ($validator->fails()) {
+                \Log::error('Class update validation failed', [
+                    'errors' => $validator->errors()->toArray(),
+                    'input' => $request->all()
+                ]);
+                return response()->json([
+                    'message' => 'Validation failed', 
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Find teacher by email
+            $teacher = Teacher::where('email', $request->input('teacherEmail'))->first();
+            
+            // Update class (only update fields that are provided)
+            $updateData = [
+                'class_code' => $request->input('code'),
+                'class_name' => $request->input('name'),
+                'teacher_id' => $teacher ? $teacher->id : null,
+                'teacher_email' => $request->input('teacherEmail'),
+                'teacher_name' => $teacher ? $teacher->name : null,
+                'start_time' => $request->input('startTime'),
+                'end_time' => $request->input('endTime'),
+                'late_threshold' => $request->input('lateThreshold'),
+            ];
+
+            // Only update if provided
+            if ($request->has('date')) {
+                $updateData['days'] = $request->input('date');
+            }
+            if ($request->has('maxStudents')) {
+                $updateData['max_students'] = $request->input('maxStudents');
+            }
+            if ($request->has('isManualControl')) {
+                $updateData['is_manual_control'] = $request->input('isManualControl');
+            }
+            if ($request->has('building_id')) {
+                $updateData['building_id'] = $request->input('building_id');
+            }
+            if ($request->has('geofenceRadius')) {
+                $updateData['geofence_radius'] = $request->input('geofenceRadius');
+            }
+
+            $class->update($updateData);
+
+            // Reload relationships
+            $class->load(['teacher', 'building', 'students']);
+
+            // Broadcast class updated event
+            broadcast(new ClassUpdated($class, 'updated'));
+
+            \Log::info('Class updated successfully', ['class_id' => $id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Class updated successfully',
+                'class' => $class
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error updating class', [
+                'class_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Find teacher by email
-        $teacher = Teacher::where('email', $request->input('teacherEmail'))->first();
-        
-        // Update class
-        $class->update([
-            'class_code' => $request->input('code'),
-            'class_name' => $request->input('name'),
-            'teacher_id' => $teacher ? $teacher->id : null,
-            'teacher_email' => $request->input('teacherEmail'),
-            'teacher_name' => $teacher ? $teacher->name : null,
-            'start_time' => $request->input('startTime'),
-            'end_time' => $request->input('endTime'),
-            'days' => $request->input('date'),
-            'room' => $request->input('room', null),
-            'geofence_radius' => $request->input('geofenceRadius', 100),
-            'late_threshold' => $request->input('lateThreshold'),
-            'building_id' => $request->input('building_id'),
-        ]);
-
-        // Reload relationships
-        $class->load(['teacher', 'building', 'students']);
-
-        // Broadcast class updated event
-        broadcast(new ClassUpdated($class, 'updated'));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Class updated successfully',
-            'class' => $class
-        ]);
     }
 
     public function store(Request $request)
