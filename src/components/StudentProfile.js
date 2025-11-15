@@ -402,16 +402,24 @@ const StudentProfile = () => {
       } catch (error) {
         console.error('Error signing in:', error);
         
-        // If ALL location attempts failed, try TEST MODE sign-in (no location required)
-        if (error.message && (error.message.includes('failed') || error.message.includes('timed out'))) {
-          console.log('⚠️ All location attempts failed. Attempting test mode sign-in...');
+        // If this is a geolocation error (has .code property) OR location attempt failed
+        // try TEST MODE sign-in (no location required)
+        const isLocationError = error.code || 
+                               (error.message && error.message.toLowerCase().includes('location')) ||
+                               (error.message && error.message.includes('failed')) ||
+                               (error.message && error.message.includes('timeout'));
+        
+        if (isLocationError) {
+          console.log('⚠️ Location acquisition failed. Attempting TEST MODE sign-in...');
+          showToastMessage('⚠️ Cannot get location. Trying test mode sign-in...', 'info');
+          
           try {
             const currentUser = authAPI.getStoredUser();
             const response = await api.post('/classes/student-signin', {
               classId: selectedClass.id,
               studentEmail: currentUser?.email || '',
               studentName: student.name || currentUser?.name || 'Student'
-              // No latitude/longitude - test mode
+              // No latitude/longitude - test mode will handle this
             });
             
             if (response.data.success) {
@@ -421,14 +429,20 @@ const StudentProfile = () => {
                   : c
               ));
               
-              showToastMessage('✅ Signed in successfully (Test Mode - no location check)', 'success');
+              showToastMessage('✅ Signed in successfully (Test Mode - Location check bypassed)', 'success');
               setShowSignInModal(false);
               setSelectedClass(null);
-              return; // Success - exit
+              return; // Success - exit early
             }
           } catch (testModeError) {
-            console.error('Test mode sign-in also failed:', testModeError);
-            // Fall through to show original error
+            console.error('❌ Test mode sign-in also failed:', testModeError);
+            
+            // Show test mode error if it's an API error
+            if (testModeError.response?.data?.message) {
+              showToastMessage(testModeError.response.data.message, 'error');
+              return;
+            }
+            // Otherwise fall through to show original error
           }
         }
         
