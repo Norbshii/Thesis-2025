@@ -276,38 +276,74 @@ const StudentProfile = () => {
       try {
         // Get student's current location
         console.log('📍 Requesting geolocation...');
-        showToastMessage('📍 Getting your location...', 'info');
+        showToastMessage('📍 Getting your location... Please wait.', 'info');
         
-        const position = await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Location request timed out after 30 seconds'));
-          }, 30000);
+        // Try low accuracy first (faster), then high accuracy if needed
+        let position;
+        try {
+          // First attempt: Low accuracy (fast)
+          position = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('timeout'));
+            }, 8000);
+            
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                clearTimeout(timeout);
+                console.log('✅ Quick location acquired:', {
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                  accuracy: pos.coords.accuracy
+                });
+                resolve(pos);
+              },
+              (err) => {
+                clearTimeout(timeout);
+                reject(err);
+              },
+              {
+                enableHighAccuracy: false,
+                timeout: 7000,
+                maximumAge: 30000 // Accept cached location up to 30 seconds old
+              }
+            );
+          });
+        } catch (firstError) {
+          console.log('⚠️ Quick location failed, trying high accuracy...');
+          showToastMessage('📍 Acquiring precise location... This may take a moment.', 'info');
           
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              clearTimeout(timeout);
-              console.log('✅ Geolocation success:', {
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-                accuracy: pos.coords.accuracy
-              });
-              resolve(pos);
-            },
-            (err) => {
-              clearTimeout(timeout);
-              console.error('❌ Geolocation error:', {
-                code: err.code,
-                message: err.message
-              });
-              reject(err);
-            },
-            {
-              enableHighAccuracy: false, // False is better for mobile (faster)
-              timeout: 25000, // 25 seconds for mobile GPS
-              maximumAge: 10000 // Allow 10-second old location
-            }
-          );
-        });
+          // Second attempt: High accuracy (slower but more precise)
+          position = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('Location request timed out'));
+            }, 30000);
+            
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                clearTimeout(timeout);
+                console.log('✅ High accuracy location acquired:', {
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                  accuracy: pos.coords.accuracy
+                });
+                resolve(pos);
+              },
+              (err) => {
+                clearTimeout(timeout);
+                console.error('❌ High accuracy failed:', {
+                  code: err.code,
+                  message: err.message
+                });
+                reject(err);
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 25000,
+                maximumAge: 0
+              }
+            );
+          });
+        }
 
         const { latitude, longitude } = position.coords;
         console.log('📍 Using coordinates:', { latitude, longitude });
