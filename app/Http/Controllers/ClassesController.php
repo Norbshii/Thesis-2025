@@ -621,23 +621,36 @@ class ClassesController extends Controller
      */
     public function studentSignIn(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // Test mode: Allow sign-in without location for testing
+        $testMode = env('ALLOW_TEST_MODE', false);
+        
+        $rules = [
             'classId' => 'required|string',
             'studentEmail' => 'required|email',
             'studentName' => 'required|string',
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-        ]);
+        ];
+        
+        // Only require location if not in test mode
+        if (!$testMode) {
+            $rules['latitude'] = 'required|numeric|between:-90,90';
+            $rules['longitude'] = 'required|numeric|between:-180,180';
+        }
+        
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
+            \Log::error('Student sign-in validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'input' => $request->all()
+            ]);
             return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
         $classId = $request->input('classId');
         $studentEmail = $request->input('studentEmail');
         $studentName = $request->input('studentName');
-        $studentLat = $request->input('latitude');
-        $studentLon = $request->input('longitude');
+        $studentLat = $request->input('latitude', 0);
+        $studentLon = $request->input('longitude', 0);
 
         try {
             // Get class record to check if open and get current session geofence
@@ -656,7 +669,7 @@ class ClassesController extends Controller
             $teacherLon = $class->current_session_lon;
             $sessionOpened = $class->current_session_opened;
 
-            if ($teacherLat === null || $teacherLon === null) {
+            if (!$testMode && ($teacherLat === null || $teacherLon === null)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Class geofence not set. Teacher needs to open the class first.'
@@ -664,7 +677,18 @@ class ClassesController extends Controller
             }
 
             // Calculate distance between student and teacher
-            $distance = $this->calculateDistance($teacherLat, $teacherLon, $studentLat, $studentLon);
+            // In test mode, set distance to 0 (always within geofence)
+            if ($testMode) {
+                $distance = 0;
+                $teacherLat = $teacherLat ?? 0;
+                $teacherLon = $teacherLon ?? 0;
+                \Log::info('TEST MODE: Geofence check bypassed', [
+                    'student' => $studentName,
+                    'class' => $class->class_code
+                ]);
+            } else {
+                $distance = $this->calculateDistance($teacherLat, $teacherLon, $studentLat, $studentLon);
+            }
             
             // Geofence radius (increased for testing flexibility)
             $geofenceRadius = $class->geofence_radius ?? env('GEOFENCE_RADIUS', 500);

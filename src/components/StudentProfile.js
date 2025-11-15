@@ -402,6 +402,36 @@ const StudentProfile = () => {
       } catch (error) {
         console.error('Error signing in:', error);
         
+        // If ALL location attempts failed, try TEST MODE sign-in (no location required)
+        if (error.message && (error.message.includes('failed') || error.message.includes('timed out'))) {
+          console.log('⚠️ All location attempts failed. Attempting test mode sign-in...');
+          try {
+            const currentUser = authAPI.getStoredUser();
+            const response = await api.post('/classes/student-signin', {
+              classId: selectedClass.id,
+              studentEmail: currentUser?.email || '',
+              studentName: student.name || currentUser?.name || 'Student'
+              // No latitude/longitude - test mode
+            });
+            
+            if (response.data.success) {
+              setClasses(classes.map(c => 
+                c.id === selectedClass.id 
+                  ? { ...c, isSignedIn: true }
+                  : c
+              ));
+              
+              showToastMessage('✅ Signed in successfully (Test Mode - no location check)', 'success');
+              setShowSignInModal(false);
+              setSelectedClass(null);
+              return; // Success - exit
+            }
+          } catch (testModeError) {
+            console.error('Test mode sign-in also failed:', testModeError);
+            // Fall through to show original error
+          }
+        }
+        
         // Better error messages
         if (error.response?.status === 400 && error.response?.data?.alreadySignedIn) {
           // Duplicate sign-in attempt
