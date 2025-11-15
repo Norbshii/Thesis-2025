@@ -131,9 +131,14 @@ class ClassesController extends Controller
             // Find teacher by email
             $teacher = Teacher::where('email', $request->input('teacherEmail'))->first();
             
+            // Check if class_code is changing
+            $oldClassCode = $class->class_code;
+            $newClassCode = $request->input('code');
+            $classCodeChanged = $oldClassCode !== $newClassCode;
+            
             // Update class (only update fields that are provided)
             $updateData = [
-                'class_code' => $request->input('code'),
+                'class_code' => $newClassCode,
                 'class_name' => $request->input('name'),
                 'teacher_id' => $teacher ? $teacher->id : null,
                 'teacher_email' => $request->input('teacherEmail'),
@@ -161,6 +166,34 @@ class ClassesController extends Controller
             }
 
             $class->update($updateData);
+
+            // If class_code or class_name changed, update all attendance records
+            if ($classCodeChanged) {
+                // Class code changed - update both code and name
+                $updatedCount = AttendanceEntry::where('class_code', $oldClassCode)
+                    ->update([
+                        'class_code' => $newClassCode,
+                        'class_name' => $request->input('name')
+                    ]);
+                
+                \Log::info('Updated attendance records after class code change', [
+                    'old_code' => $oldClassCode,
+                    'new_code' => $newClassCode,
+                    'updated_records' => $updatedCount
+                ]);
+            } else {
+                // Class code same but name might have changed - update name only
+                $updatedCount = AttendanceEntry::where('class_code', $newClassCode)
+                    ->update(['class_name' => $request->input('name')]);
+                
+                if ($updatedCount > 0) {
+                    \Log::info('Updated attendance records class name', [
+                        'class_code' => $newClassCode,
+                        'new_name' => $request->input('name'),
+                        'updated_records' => $updatedCount
+                    ]);
+                }
+            }
 
             // If class is open and end time changed, recalculate auto_close_time
             if ($class->is_open && $request->has('endTime') && $class->current_session_opened) {
@@ -624,6 +657,14 @@ class ClassesController extends Controller
         // Test mode: Allow sign-in without location for testing
         $testMode = env('ALLOW_TEST_MODE', false);
         
+        \Log::info('Student sign-in attempt', [
+            'test_mode' => $testMode,
+            'has_latitude' => $request->has('latitude'),
+            'has_longitude' => $request->has('longitude'),
+            'student' => $request->input('studentName'),
+            'class' => $request->input('classId')
+        ]);
+        
         $rules = [
             'classId' => 'required|string',
             'studentEmail' => 'required|email',
@@ -640,6 +681,7 @@ class ClassesController extends Controller
 
         if ($validator->fails()) {
             \Log::error('Student sign-in validation failed', [
+                'test_mode' => $testMode,
                 'errors' => $validator->errors()->toArray(),
                 'input' => $request->all()
             ]);
@@ -921,7 +963,7 @@ class ClassesController extends Controller
         try {
             $class = ClassModel::findOrFail($classId);
             
-            \Log::info('Fetching attendance', [
+            \Log::info('Fetching attendance - START', [
                 'classId' => $classId,
                 'classCode' => $class->class_code,
                 'requestedDate' => $request->query('date')
@@ -930,12 +972,20 @@ class ClassesController extends Controller
             // Get date filter if provided
             $date = $request->query('date');
             
+            // Debug: Check total records for this class (no date filter)
+            $totalForClass = AttendanceEntry::where('class_code', $class->class_code)->count();
+            \Log::info('Total attendance records for class', [
+                'class_code' => $class->class_code,
+                'total_count' => $totalForClass
+            ]);
+            
             // Build query
             $query = AttendanceEntry::where('class_code', $class->class_code)
                 ->orderBy('sign_in_time', 'asc');
             
             if ($date) {
                 $query->whereDate('date', $date);
+                \Log::info('Applying date filter', ['date' => $date]);
             }
             
             $attendanceRecords = $query->get()->map(function ($record) {
@@ -959,13 +1009,21 @@ class ClassesController extends Controller
                 ];
             });
             
-            \Log::info('Attendance records found', ['count' => $attendanceRecords->count()]);
+            \Log::info('Attendance records found', [
+                'count' => $attendanceRecords->count(),
+                'records' => $attendanceRecords->toArray()
+            ]);
             
             return response()->json([
                 'success' => true,
                 'attendance' => $attendanceRecords,
                 'classCode' => $class->class_code,
                 'className' => $class->class_name,
+                'debug' => [
+                    'requestedDate' => $date,
+                    'totalRecordsForClass' => $totalForClass,
+                    'returnedCount' => $attendanceRecords->count()
+                ]
             ]);
             
         } catch (\Exception $e) {
