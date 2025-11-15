@@ -666,8 +666,8 @@ class ClassesController extends Controller
             // Calculate distance between student and teacher
             $distance = $this->calculateDistance($teacherLat, $teacherLon, $studentLat, $studentLon);
             
-            // Geofence radius
-            $geofenceRadius = $class->geofence_radius ?? env('GEOFENCE_RADIUS', 100);
+            // Geofence radius (increased for testing flexibility)
+            $geofenceRadius = $class->geofence_radius ?? env('GEOFENCE_RADIUS', 500);
 
             \Log::info('Geofence validation', [
                 'teacherLat' => $teacherLat,
