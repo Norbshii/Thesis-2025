@@ -1388,9 +1388,12 @@ const TeacherDashboard = () => {
                         email: r.studentEmail || '',
                         latitude: r.latitude,
                         longitude: r.longitude,
-                        signed_in_at: r.signInTime
+                        signed_in_at: r.signInTime,
+                        signInTime: r.signInTime,
+                        date: r.date,
+                        status: r.status
                       }))}
-                      geofenceRadius={100}
+                      geofenceRadius={selectedClass.geofenceRadius || 100}
                     />
                   </div>
                 )}
