@@ -9,6 +9,7 @@ use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\StudentsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BuildingController;
+use App\Http\Controllers\SectionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,6 +66,10 @@ Route::get('/students', [StudentsController::class, 'index']);
 // Buildings list (for teachers to select when creating classes)
 Route::get('/buildings', [BuildingController::class, 'index']);
 
+// Sections list (for students and admins)
+Route::get('/sections', [SectionController::class, 'index']);
+Route::get('/sections/active', [SectionController::class, 'active']);
+
 // Protected routes - Admin only
 Route::middleware(\App\Http\Middleware\CheckRole::class . ':admin')->prefix('admin')->group(function () {
     // User management
@@ -81,6 +86,13 @@ Route::middleware(\App\Http\Middleware\CheckRole::class . ':admin')->prefix('adm
     Route::put('/buildings/{id}', [BuildingController::class, 'update']);
     Route::delete('/buildings/{id}', [BuildingController::class, 'destroy']);
     Route::patch('/buildings/{id}/toggle-active', [BuildingController::class, 'toggleActive']);
+    
+    // Section management
+    Route::get('/sections', [SectionController::class, 'index']);
+    Route::post('/sections', [SectionController::class, 'store']);
+    Route::put('/sections/{id}', [SectionController::class, 'update']);
+    Route::delete('/sections/{id}', [SectionController::class, 'destroy']);
+    Route::patch('/sections/{id}/toggle-active', [SectionController::class, 'toggleActive']);
 });
 
 // Protected routes - Teacher only

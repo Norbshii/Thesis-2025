@@ -954,3 +954,259 @@
   }
 }
 
+/* ========================================
+   SECTIONS MANAGEMENT - MODERN UI/UX
+   ======================================== */
+
+.sections-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.sections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.section-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border-left: 4px solid #667eea;
+  position: relative;
+  overflow: hidden;
+}
+
+.section-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 0 0 0 100%;
+  z-index: 0;
+}
+
+.section-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.section-card h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-card h3::before {
+  content: '📚';
+  font-size: 1.3rem;
+}
+
+.status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(56, 239, 125, 0.3);
+}
+
+.status-badge.inactive {
+  background: linear-gradient(135deg, #f2709c 0%, #ff9472 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(242, 112, 156, 0.3);
+}
+
+.section-details {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-radius: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.section-details p {
+  margin: 0.6rem 0;
+  font-size: 0.95rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-details p strong {
+  color: #667eea;
+  min-width: 100px;
+  font-weight: 600;
+}
+
+.section-details p::before {
+  font-size: 1.1rem;
+}
+
+.section-details p:nth-child(1)::before {
+  content: '🎓';
+}
+
+.section-details p:nth-child(2)::before {
+  content: '📅';
+}
+
+.section-details p:nth-child(3)::before {
+  content: '🔤';
+}
+
+.section-details p:nth-child(4)::before {
+  content: '👥';
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.section-actions button {
+  flex: 1;
+  min-width: 90px;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.btn-toggle {
+  background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+  color: #333;
+  box-shadow: 0 2px 8px rgba(166, 193, 238, 0.3);
+}
+
+.btn-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(166, 193, 238, 0.4);
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 242, 254, 0.3);
+}
+
+.btn-edit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 242, 254, 0.4);
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(250, 112, 154, 0.3);
+}
+
+.btn-delete:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(250, 112, 154, 0.4);
+}
+
+/* Empty State */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.empty-state::before {
+  content: '📚';
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  color: #999;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .sections-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .section-card {
+    padding: 1.25rem;
+  }
+
+  .section-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .section-actions {
+    flex-direction: column;
+  }
+
+  .section-actions button {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .sections-container {
+    padding: 1rem;
+  }
+
+  .section-header-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .status-badge {
+    align-self: flex-start;
+  }
+}
+

@@ -17,18 +17,21 @@ L.Icon.Default.mergeOptions({
 });
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'buildings' | 'stats'
+  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'buildings' | 'sections' | 'stats'
   const [loading, setLoading] = useState(true);
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
   const [buildings, setBuildings] = useState([]);
+  const [sections, setSections] = useState([]);
   const [stats, setStats] = useState({});
   
   // Modal states
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showCreateBuildingModal, setShowCreateBuildingModal] = useState(false);
+  const [showCreateSectionModal, setShowCreateSectionModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [editingBuilding, setEditingBuilding] = useState(null);
+  const [editingSection, setEditingSection] = useState(null);
   
   // Toast states
   const [showToast, setShowToast] = useState(false);
@@ -38,6 +41,7 @@ const AdminDashboard = () => {
   // Form hooks
   const { register: registerUser, handleSubmit: handleSubmitUser, formState: { errors: userErrors }, reset: resetUserForm, watch: watchUser } = useForm();
   const { register: registerBuilding, handleSubmit: handleSubmitBuilding, formState: { errors: buildingErrors }, reset: resetBuildingForm } = useForm();
+  const { register: registerSection, handleSubmit: handleSubmitSection, formState: { errors: sectionErrors }, reset: resetSectionForm } = useForm();
   
   const selectedRole = watchUser('role');
 
@@ -76,6 +80,7 @@ const AdminDashboard = () => {
       await Promise.all([
         fetchUsers(),
         fetchBuildings(),
+        fetchSections(),
         fetchStats()
       ]);
     } catch (error) {
@@ -107,6 +112,18 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching buildings:', error);
+      throw error;
+    }
+  };
+
+  const fetchSections = async () => {
+    try {
+      const response = await api.get('/admin/sections');
+      if (response.data.success) {
+        setSections(response.data.sections || []);
+      }
+    } catch (error) {
+      console.error('Error fetching sections:', error);
       throw error;
     }
   };
@@ -259,6 +276,78 @@ const AdminDashboard = () => {
     }
   };
 
+  // Section Management Functions
+  const onSubmitSection = async (data) => {
+    try {
+      if (editingSection) {
+        // Update section
+        const response = await api.put(`/admin/sections/${editingSection.id}`, data);
+        if (response.data.success) {
+          showToastMessage('Section updated successfully!');
+          await fetchSections();
+          await fetchStats();
+          setShowCreateSectionModal(false);
+          setEditingSection(null);
+          resetSectionForm();
+        }
+      } else {
+        // Create section
+        const response = await api.post('/admin/sections', data);
+        if (response.data.success) {
+          showToastMessage('Section created successfully!');
+          await fetchSections();
+          await fetchStats();
+          setShowCreateSectionModal(false);
+          resetSectionForm();
+        }
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Error saving section';
+      showToastMessage(errorMsg, 'error');
+    }
+  };
+
+  const handleDeleteSection = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this section?')) return;
+    
+    try {
+      const response = await api.delete(`/admin/sections/${id}`);
+      if (response.data.success) {
+        showToastMessage('Section deleted successfully!');
+        await fetchSections();
+        await fetchStats();
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Error deleting section';
+      showToastMessage(errorMsg, 'error');
+    }
+  };
+
+  const handleEditSection = (section) => {
+    setEditingSection(section);
+    resetSectionForm({
+      name: section.name,
+      course: section.course,
+      year_level: section.year_level,
+      section_letter: section.section_letter,
+      capacity: section.capacity,
+      is_active: section.is_active
+    });
+    setShowCreateSectionModal(true);
+  };
+
+  const handleToggleSectionActive = async (id) => {
+    try {
+      const response = await api.patch(`/admin/sections/${id}/toggle-active`);
+      if (response.data.success) {
+        showToastMessage('Section status updated!');
+        await fetchSections();
+      }
+    } catch (error) {
+      showToastMessage('Error updating section status', 'error');
+    }
+  };
+
   const handleLogout = () => {
     authAPI.logout();
     window.location.href = '/login';
@@ -302,6 +391,12 @@ const AdminDashboard = () => {
           onClick={() => setActiveTab('buildings')}
         >
           🏢 Buildings
+        </button>
+        <button 
+          className={`admin-tab ${activeTab === 'sections' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sections')}
+        >
+          📚 Sections
         </button>
       </div>
 
@@ -430,22 +525,20 @@ const AdminDashboard = () => {
                       <th>Name</th>
                       <th>Email</th>
                       <th>Username</th>
-                      <th>Course</th>
-                      <th>Section</th>
+                      <th>Course & Section</th>
                       <th>Created</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {students.length === 0 ? (
-                      <tr><td colSpan="7" className="no-data">No students found</td></tr>
+                      <tr><td colSpan="6" className="no-data">No students found</td></tr>
                     ) : (
                       students.map(student => (
                         <tr key={student.id}>
                           <td>{student.name}</td>
                           <td>{student.email}</td>
                           <td>{student.username || '-'}</td>
-                          <td>{student.course || '-'}</td>
                           <td>{student.section || '-'}</td>
                           <td>{new Date(student.created_at).toLocaleDateString()}</td>
                           <td className="actions">
@@ -566,6 +659,70 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Sections Tab */}
+        {activeTab === 'sections' && (
+          <div className="sections-container">
+            <div className="section-header">
+              <h2>Section Management</h2>
+              <button 
+                className="btn-primary"
+                onClick={() => {
+                  setEditingSection(null);
+                  resetSectionForm();
+                  setShowCreateSectionModal(true);
+                }}
+              >
+                ➕ Add Section
+              </button>
+            </div>
+
+            <div className="sections-grid">
+              {sections.length === 0 ? (
+                <div className="empty-state">
+                  <p>No sections found. Click "Add Section" to create one.</p>
+                </div>
+              ) : (
+                sections.map(section => (
+                  <div key={section.id} className="section-card">
+                    <div className="section-header-row">
+                      <h3>{section.name}</h3>
+                      <span className={`status-badge ${section.is_active ? 'active' : 'inactive'}`}>
+                        {section.is_active ? '✓ Active' : '✗ Inactive'}
+                      </span>
+                    </div>
+                    <div className="section-details">
+                      <p><strong>Course:</strong> {section.course}</p>
+                      <p><strong>Year Level:</strong> {section.year_level}</p>
+                      <p><strong>Section:</strong> {section.section_letter}</p>
+                      <p><strong>Capacity:</strong> {section.capacity} students</p>
+                    </div>
+                    <div className="section-actions">
+                      <button 
+                        className="btn-toggle"
+                        onClick={() => handleToggleSectionActive(section.id)}
+                      >
+                        {section.is_active ? '🔴 Deactivate' : '🟢 Activate'}
+                      </button>
+                      <button 
+                        className="btn-edit"
+                        onClick={() => handleEditSection(section)}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button 
+                        className="btn-delete"
+                        onClick={() => handleDeleteSection(section.id)}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create/Edit User Modal */}
@@ -660,24 +817,17 @@ const AdminDashboard = () => {
               </div>
 
               {selectedRole === 'student' && (
-                <>
-                  <div className="form-group">
-                    <label>Course</label>
-                    <input 
-                      type="text"
-                      {...registerUser('course')}
-                      placeholder="e.g., BSCS, BSIT, BTLED"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Section</label>
-                    <input 
-                      type="text"
-                      {...registerUser('section')}
-                      placeholder="e.g., 3A, 2B, 1C"
-                    />
-                  </div>
-                </>
+                <div className="form-group">
+                  <label>Course & Section</label>
+                  <select {...registerUser('section')}>
+                    <option value="">Select course & section...</option>
+                    {sections.filter(s => s.is_active).map(section => (
+                      <option key={section.id} value={section.name}>
+                        {section.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
 
               <div className="form-actions">
@@ -812,6 +962,116 @@ const AdminDashboard = () => {
                 </button>
                 <button type="submit" className="btn-primary">
                   {editingBuilding ? 'Update Building' : 'Add Building'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create/Edit Section Modal */}
+      {showCreateSectionModal && (
+        <div className="modal-overlay" onClick={() => {
+          setShowCreateSectionModal(false);
+          setEditingSection(null);
+          resetSectionForm();
+        }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingSection ? 'Edit Section' : 'Create New Section'}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => {
+                  setShowCreateSectionModal(false);
+                  setEditingSection(null);
+                  resetSectionForm();
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitSection(onSubmitSection)} className="form-container">
+              <div className="form-group">
+                <label>Section Name * (e.g., BSCS 4B)</label>
+                <input 
+                  type="text"
+                  {...registerSection('name', { required: 'Section name is required' })}
+                  placeholder="BSCS 4B"
+                />
+                {sectionErrors.name && <span className="error">{sectionErrors.name.message}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Course *</label>
+                <select {...registerSection('course', { required: 'Course is required' })}>
+                  <option value="">Select course...</option>
+                  <option value="BSCS">BSCS</option>
+                  <option value="BSIT">BSIT</option>
+                  <option value="BTLED">BTLED</option>
+                </select>
+                {sectionErrors.course && <span className="error">{sectionErrors.course.message}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Year Level *</label>
+                <select {...registerSection('year_level', { required: 'Year level is required' })}>
+                  <option value="">Select year...</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                </select>
+                {sectionErrors.year_level && <span className="error">{sectionErrors.year_level.message}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Section Letter *</label>
+                <input 
+                  type="text"
+                  {...registerSection('section_letter', { required: 'Section letter is required' })}
+                  placeholder="A, B, C..."
+                />
+                {sectionErrors.section_letter && <span className="error">{sectionErrors.section_letter.message}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Capacity (students)</label>
+                <input 
+                  type="number"
+                  {...registerSection('capacity')}
+                  placeholder="40"
+                  min="1"
+                  max="100"
+                />
+              </div>
+
+              {editingSection && (
+                <div className="form-group">
+                  <label>
+                    <input 
+                      type="checkbox"
+                      {...registerSection('is_active')}
+                    />
+                    {' '}Active
+                  </label>
+                </div>
+              )}
+
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowCreateSectionModal(false);
+                    setEditingSection(null);
+                    resetSectionForm();
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {editingSection ? 'Update Section' : 'Add Section'}
                 </button>
               </div>
             </form>

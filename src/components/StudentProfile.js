@@ -53,6 +53,7 @@ const StudentProfile = () => {
     guardianEmail: ''
   });
   const [courseOptions, setCourseOptions] = useState([]);
+  const [sectionOptions, setSectionOptions] = useState([]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -67,6 +68,17 @@ const StudentProfile = () => {
       } catch (error) {
         console.error('Failed to load course options:', error);
         setCourseOptions([]);
+      }
+    };
+
+    // Load section options
+    const loadSectionOptions = async () => {
+      try {
+        const response = await api.get('/sections/active');
+        setSectionOptions(response.data.sections || []);
+      } catch (error) {
+        console.error('Failed to load section options:', error);
+        setSectionOptions([]);
       }
     };
 
@@ -143,6 +155,7 @@ const StudentProfile = () => {
     };
 
     loadCourseOptions();
+    loadSectionOptions();
     loadData();
 
     // 🔥 WEBSOCKET LISTENERS - REAL-TIME CLASS UPDATES!
@@ -564,8 +577,7 @@ const StudentProfile = () => {
               <h2>{displayName}</h2>
             </div>
             
-            <p><strong>Course:</strong> {student.course}</p>
-            <p><strong>Section:</strong> {student.section}</p>
+            <p><strong>Course & Section:</strong> {student.section || 'Not set'}</p>
             <p><strong>Age:</strong> {student.age} years old</p>
             <p><strong>Address:</strong> {student.address}</p>
             <p><strong>Guardian:</strong> {student.guardianName}</p>
@@ -705,27 +717,18 @@ const StudentProfile = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Course:</label>
+                <label>Course & Section:</label>
                 <select
-                  value={editForm.course}
-                  onChange={(e) => setEditForm({...editForm, course: e.target.value})}
+                  value={editForm.section}
+                  onChange={(e) => setEditForm({...editForm, section: e.target.value})}
                 >
-                  <option value="">Select Course</option>
-                  {courseOptions.map((course, index) => (
-                    <option key={index} value={course}>
-                      {course}
+                  <option value="">Select Course & Section</option>
+                  {sectionOptions.map((section) => (
+                    <option key={section.id} value={section.name}>
+                      {section.name}
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="form-group">
-                <label>Section:</label>
-                <input
-                  type="text"
-                  value={editForm.section}
-                  onChange={(e) => setEditForm({...editForm, section: e.target.value})}
-                  placeholder="e.g., 3A, 2B, 1C"
-                />
               </div>
               <div className="form-group">
                 <label>Address:</label>
