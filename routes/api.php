@@ -43,6 +43,7 @@ Route::post('/change-password', [AuthController::class, 'changePassword']);
 // Public Airtable-backed class routes (no auth, to reduce setup for non-technical users)
 Route::get('/classes', [ClassesController::class, 'index']);
 Route::post('/classes', [ClassesController::class, 'store']);
+Route::put('/classes/{id}', [ClassesController::class, 'update']);
 Route::post('/class/toggle-signin', [ClassesController::class, 'toggle']);
 Route::post('/classes/add-students', [ClassesController::class, 'addStudents']);
 Route::post('/classes/remove-student', [ClassesController::class, 'removeStudent']);

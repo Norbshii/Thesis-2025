@@ -30,15 +30,24 @@ class AutoManageClasses extends Command
      */
     public function handle()
     {
-        $now = Carbon::now();
-        $currentTime = $now->format('H:i:s');
-        $currentDay = $now->format('D'); // Mon, Tue, Wed, etc.
-        
-        $this->info("Running auto-manage classes at {$now->format('Y-m-d H:i:s')}");
-        $this->info("Current time: {$currentTime}, Day: {$currentDay}");
-        
-        // Get all classes
-        $classes = ClassModel::with('building')->get();
+        try {
+            $now = Carbon::now();
+            $currentTime = $now->format('H:i:s');
+            $currentDay = $now->format('D'); // Mon, Tue, Wed, etc.
+            
+            $this->info("Running auto-manage classes at {$now->format('Y-m-d H:i:s')}");
+            $this->info("Current time: {$currentTime}, Day: {$currentDay}");
+            
+            // Get all classes
+            $classes = ClassModel::with('building')->get();
+        } catch (\Exception $e) {
+            Log::error("Auto-manage classes failed to fetch data", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->error("Failed to connect to database: " . $e->getMessage());
+            return Command::FAILURE;
+        }
         
         $openedCount = 0;
         $closedCount = 0;

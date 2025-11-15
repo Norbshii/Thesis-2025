@@ -21,6 +21,7 @@ const TeacherDashboard = () => {
   
   // Modal states
   const [showAddClassModal, setShowAddClassModal] = useState(false);
+  const [showEditClassModal, setShowEditClassModal] = useState(false);
   const [showClassDetailsModal, setShowClassDetailsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showManageStudentsModal, setShowManageStudentsModal] = useState(false);
@@ -290,6 +291,65 @@ const TeacherDashboard = () => {
     } catch (error) {
       console.error('Error adding class:', error);
       const errorMsg = error.response?.data?.message || 'Failed to add class';
+      showToastMessage(errorMsg, 'error');
+    } finally {
+      setIsCreatingClass(false);
+    }
+  };
+
+  const handleEditClass = (classItem) => {
+    setSelectedClass(classItem);
+    setNewClass({
+      code: classItem.classCode,
+      name: classItem.className,
+      date: classItem.days,
+      startTime: classItem.startTime,
+      endTime: classItem.endTime,
+      maxStudents: classItem.maxStudents || 30,
+      lateThreshold: classItem.lateThreshold || 15,
+      isManualControl: classItem.isManualControl || false,
+      building_id: classItem.building?.id || ''
+    });
+    setShowEditClassModal(true);
+  };
+
+  const handleUpdateClass = async () => {
+    if (!newClass.code || !newClass.name || !newClass.startTime || !newClass.endTime) {
+      showToastMessage('Please fill in all required fields', 'error');
+      return;
+    }
+
+    setIsCreatingClass(true);
+    try {
+      const currentUser = authAPI.getStoredUser();
+      const today = new Date().toISOString().split('T')[0];
+      const payload = {
+        code: newClass.code,
+        name: newClass.name,
+        date: today,
+        startTime: newClass.startTime,
+        endTime: newClass.endTime,
+        maxStudents: parseInt(newClass.maxStudents, 10) || 30,
+        lateThreshold: parseInt(newClass.lateThreshold, 10) || 15,
+        isManualControl: newClass.isManualControl,
+        teacherEmail: currentUser?.email,
+        building_id: newClass.building_id || null
+      };
+      
+      const response = await api.put(`/classes/${selectedClass.id}`, payload);
+
+      // Update local state
+      setClasses(classes.map(c => 
+        c.id === selectedClass.id 
+          ? { ...c, ...response.data.class }
+          : c
+      ));
+      
+      setShowEditClassModal(false);
+      showToastMessage('Class updated successfully!', 'success');
+    } catch (error) {
+      console.error('Error updating class:', error);
+      const errorMsg = error.response?.data?.message || 'Failed to update class';
       showToastMessage(errorMsg, 'error');
     } finally {
       setIsCreatingClass(false);
@@ -1021,6 +1081,21 @@ const TeacherDashboard = () => {
                     >
                       Manage Students
                     </button>
+                    <button 
+                      className="edit-btn"
+                      onClick={() => handleEditClass(classItem)}
+                      style={{
+                        backgroundColor: '#17a2b8',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px'
+                      }}
+                    >
+                      ✏️ Edit Class
+                    </button>
                   </div>
 
                   {/* Live Attendance Map - Shows below class card */}
@@ -1251,6 +1326,147 @@ const TeacherDashboard = () => {
                   </>
                 ) : (
                   'Add Class'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Class Modal */}
+      {showEditClassModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>✏️ Edit Class</h3>
+              <button className="close-btn" onClick={() => setShowEditClassModal(false)}>
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Class Code:</label>
+                  <input
+                    type="text"
+                    value={newClass.code}
+                    onChange={(e) => setNewClass({...newClass, code: e.target.value})}
+                    placeholder="e.g., CC 201"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Class Name:</label>
+                  <input
+                    type="text"
+                    value={newClass.name}
+                    onChange={(e) => setNewClass({...newClass, name: e.target.value})}
+                    placeholder="e.g., Introduction to Computing"
+                  />
+                </div>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Max Students:</label>
+                  <input
+                    type="number"
+                    value={newClass.maxStudents}
+                    onChange={(e) => setNewClass({...newClass, maxStudents: parseInt(e.target.value)})}
+                    min="1"
+                    max="100"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Late Threshold (minutes):</label>
+                  <input
+                    type="number"
+                    value={newClass.lateThreshold}
+                    onChange={(e) => setNewClass({...newClass, lateThreshold: parseInt(e.target.value)})}
+                    min="0"
+                    max="60"
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Building Location:</label>
+                  <select
+                    value={newClass.building_id}
+                    onChange={(e) => setNewClass({...newClass, building_id: e.target.value})}
+                    style={{
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      fontSize: '14px',
+                      width: '100%'
+                    }}
+                  >
+                    <option value="">Select a building (optional)</option>
+                    {buildings.map(building => (
+                      <option key={building.id} value={building.id}>
+                        {building.name}
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
+                    ⚠️ Changing building will update the class location when opened
+                  </small>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Start Time:</label>
+                  <input
+                    type="time"
+                    value={newClass.startTime}
+                    onChange={(e) => setNewClass({...newClass, startTime: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>End Time:</label>
+                  <input
+                    type="time"
+                    value={newClass.endTime}
+                    onChange={(e) => setNewClass({...newClass, endTime: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={newClass.isManualControl}
+                      onChange={(e) => setNewClass({...newClass, isManualControl: e.target.checked})}
+                    />
+                    Manual Control (Override time-based sign-in)
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowEditClassModal(false)}
+                disabled={isCreatingClass}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleUpdateClass}
+                disabled={isCreatingClass}
+              >
+                {isCreatingClass ? (
+                  <>
+                    <span className="spinner"></span>
+                    Updating...
+                  </>
+                ) : (
+                  'Update Class'
                 )}
               </button>
             </div>

@@ -21,6 +21,7 @@ class Student extends Authenticatable
         'role',
         'age',
         'course',
+        'section',
         'address',
         'guardian_name',
         'relationship',

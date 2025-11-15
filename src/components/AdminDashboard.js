@@ -431,13 +431,14 @@ const AdminDashboard = () => {
                       <th>Email</th>
                       <th>Username</th>
                       <th>Course</th>
+                      <th>Section</th>
                       <th>Created</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {students.length === 0 ? (
-                      <tr><td colSpan="6" className="no-data">No students found</td></tr>
+                      <tr><td colSpan="7" className="no-data">No students found</td></tr>
                     ) : (
                       students.map(student => (
                         <tr key={student.id}>
@@ -445,6 +446,7 @@ const AdminDashboard = () => {
                           <td>{student.email}</td>
                           <td>{student.username || '-'}</td>
                           <td>{student.course || '-'}</td>
+                          <td>{student.section || '-'}</td>
                           <td>{new Date(student.created_at).toLocaleDateString()}</td>
                           <td className="actions">
                             <button 
@@ -658,14 +660,24 @@ const AdminDashboard = () => {
               </div>
 
               {selectedRole === 'student' && (
-                <div className="form-group">
-                  <label>Course</label>
-                  <input 
-                    type="text"
-                    {...registerUser('course')}
-                    placeholder="e.g., BSCS 3A"
-                  />
-                </div>
+                <>
+                  <div className="form-group">
+                    <label>Course</label>
+                    <input 
+                      type="text"
+                      {...registerUser('course')}
+                      placeholder="e.g., BSCS, BSIT, BTLED"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Section</label>
+                    <input 
+                      type="text"
+                      {...registerUser('section')}
+                      placeholder="e.g., 3A, 2B, 1C"
+                    />
+                  </div>
+                </>
               )}
 
               <div className="form-actions">

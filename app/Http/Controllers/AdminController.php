@@ -32,7 +32,7 @@ class AdminController extends Controller
                     ];
                 });
 
-            $students = Student::select('id', 'name', 'email', 'username', 'course', 'created_at')
+            $students = Student::select('id', 'name', 'email', 'username', 'course', 'section', 'created_at')
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($student) {
@@ -42,6 +42,7 @@ class AdminController extends Controller
                         'email' => $student->email,
                         'username' => $student->username,
                         'course' => $student->course,
+                        'section' => $student->section,
                         'role' => 'student',
                         'type' => 'student',
                         'created_at' => $student->created_at->format('Y-m-d H:i:s'),
@@ -76,6 +77,7 @@ class AdminController extends Controller
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
             'course' => 'nullable|string|max:255', // For students
+            'section' => 'nullable|string|max:255', // For students
         ]);
 
         if ($validator->fails()) {
@@ -139,6 +141,7 @@ class AdminController extends Controller
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'course' => $request->course,
+                'section' => $request->section,
                 'role' => 'student',
             ]);
             

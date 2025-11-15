@@ -9,6 +9,7 @@ const StudentProfile = () => {
     name: '',
     age: '',
     course: '',
+    section: '',
     address: '',
     guardianName: '',
     relationship: '',
@@ -45,6 +46,7 @@ const StudentProfile = () => {
     name: '',
     age: '',
     course: '',
+    section: '',
     address: '',
     guardianName: '',
     relationship: '',
@@ -82,6 +84,7 @@ const StudentProfile = () => {
             name: p.name || currentUser?.name || fallbackNameFromEmail || '',
             age: p.age || '',
             course: p.course || '',
+            section: p.section || '',
             address: p.address || '',
             guardianName: p.guardianName || '',
             relationship: p.relationship || '',
@@ -98,6 +101,7 @@ const StudentProfile = () => {
             name: currentUser?.name || fallbackNameFromEmail || '',
             age: '',
             course: '',
+            section: '',
             address: '',
             guardianName: '',
             relationship: '',
@@ -410,6 +414,7 @@ const StudentProfile = () => {
       name: student.name || '',
       age: student.age || '',
       course: student.course || '',
+      section: student.section || '',
       address: student.address || '',
       guardianName: student.guardianName || '',
       relationship: student.relationship || '',
@@ -427,6 +432,7 @@ const StudentProfile = () => {
         name: editForm.name,
         age: editForm.age ? parseInt(editForm.age, 10) : null,
         course: editForm.course,
+        section: editForm.section,
         address: editForm.address,
         guardianName: editForm.guardianName,
         relationship: editForm.relationship,
@@ -438,6 +444,7 @@ const StudentProfile = () => {
       name: editForm.name,
       age: editForm.age,
       course: editForm.course,
+      section: editForm.section,
       address: editForm.address,
       guardianName: editForm.guardianName,
       relationship: editForm.relationship,
@@ -557,7 +564,8 @@ const StudentProfile = () => {
               <h2>{displayName}</h2>
             </div>
             
-            <p><strong>Course & Section:</strong> {student.course}</p>
+            <p><strong>Course:</strong> {student.course}</p>
+            <p><strong>Section:</strong> {student.section}</p>
             <p><strong>Age:</strong> {student.age} years old</p>
             <p><strong>Address:</strong> {student.address}</p>
             <p><strong>Guardian:</strong> {student.guardianName}</p>
@@ -697,18 +705,27 @@ const StudentProfile = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Course Yr & Section:</label>
+                <label>Course:</label>
                 <select
                   value={editForm.course}
                   onChange={(e) => setEditForm({...editForm, course: e.target.value})}
                 >
-                  <option value="">Select Course & Section</option>
+                  <option value="">Select Course</option>
                   {courseOptions.map((course, index) => (
                     <option key={index} value={course}>
                       {course}
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="form-group">
+                <label>Section:</label>
+                <input
+                  type="text"
+                  value={editForm.section}
+                  onChange={(e) => setEditForm({...editForm, section: e.target.value})}
+                  placeholder="e.g., 3A, 2B, 1C"
+                />
               </div>
               <div className="form-group">
                 <label>Address:</label>

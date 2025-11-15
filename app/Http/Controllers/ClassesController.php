@@ -94,6 +94,59 @@ class ClassesController extends Controller
         return response()->json(['classes' => $formattedClasses]);
     }
 
+    public function update(Request $request, $id)
+    {
+        $class = ClassModel::findOrFail($id);
+        
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|max:50',
+            'name' => 'required|string|max:200',
+            'date' => 'required|string', // days of week
+            'startTime' => 'required|string',
+            'endTime' => 'required|string',
+            'maxStudents' => 'required|integer|min:1',
+            'lateThreshold' => 'required|integer|min:1',
+            'isManualControl' => 'boolean',
+            'teacherEmail' => 'required|email',
+            'building_id' => 'nullable|integer|exists:buildings,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        // Find teacher by email
+        $teacher = Teacher::where('email', $request->input('teacherEmail'))->first();
+        
+        // Update class
+        $class->update([
+            'class_code' => $request->input('code'),
+            'class_name' => $request->input('name'),
+            'teacher_id' => $teacher ? $teacher->id : null,
+            'teacher_email' => $request->input('teacherEmail'),
+            'teacher_name' => $teacher ? $teacher->name : null,
+            'start_time' => $request->input('startTime'),
+            'end_time' => $request->input('endTime'),
+            'days' => $request->input('date'),
+            'room' => $request->input('room', null),
+            'geofence_radius' => $request->input('geofenceRadius', 100),
+            'late_threshold' => $request->input('lateThreshold'),
+            'building_id' => $request->input('building_id'),
+        ]);
+
+        // Reload relationships
+        $class->load(['teacher', 'building', 'students']);
+
+        // Broadcast class updated event
+        broadcast(new ClassUpdated($class, 'updated'));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Class updated successfully',
+            'class' => $class
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

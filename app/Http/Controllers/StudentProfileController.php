@@ -71,6 +71,7 @@ class StudentProfileController extends Controller
                 'department' => $user->department ?? null,
                 'age' => $user->age,
                 'course' => $user->course,
+                'section' => $user->section,
                 'address' => $user->address,
                 'guardianName' => $user->guardian_name,
                 'relationship' => $user->relationship,
@@ -105,6 +106,7 @@ class StudentProfileController extends Controller
             'name' => 'nullable|string|max:100',
             'age' => 'nullable|integer|min:1|max:120',
             'course' => 'nullable|string|max:100',
+            'section' => 'nullable|string|max:100',
             'address' => 'nullable|string|max:200',
             'guardianName' => 'nullable|string|max:100',
             'relationship' => 'nullable|string|max:100',
@@ -144,6 +146,9 @@ class StudentProfileController extends Controller
             }
             if ($request->filled('course')) {
                 $updateData['course'] = $request->input('course');
+            }
+            if ($request->filled('section')) {
+                $updateData['section'] = $request->input('section');
             }
             if ($request->filled('address')) {
                 $updateData['address'] = $request->input('address');

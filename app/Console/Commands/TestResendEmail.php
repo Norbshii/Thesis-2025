@@ -20,7 +20,7 @@ class TestResendEmail extends Command
      *
      * @var string
      */
-    protected $description = 'Send a test email using Resend to verify configuration';
+    protected $description = 'Send a test email to verify email configuration';
 
     /**
      * Execute the console command.
@@ -31,18 +31,11 @@ class TestResendEmail extends Command
     {
         $email = $this->argument('email');
 
-        $this->info('Testing Resend email configuration...');
+        $mailDriver = config('mail.default');
+        $this->info("Testing email configuration (Driver: {$mailDriver})...");
         $this->info('Sending test email to: ' . $email);
 
         try {
-            // Check if API key is configured
-            if (empty(env('RESEND_API_KEY'))) {
-                $this->error('❌ RESEND_API_KEY is not configured in .env file!');
-                $this->line('');
-                $this->line('Please add the following to your .env file:');
-                $this->line('RESEND_API_KEY=your_api_key_here');
-                return Command::FAILURE;
-            }
 
             // Sample test data
             $testData = [
@@ -69,7 +62,7 @@ class TestResendEmail extends Command
             $this->line('');
             $this->line('If you don\'t see the email:');
             $this->line('  1. Check your spam/junk folder');
-            $this->line('  2. Verify your Resend API key is correct');
+            $this->line('  2. Verify your email service credentials are correct');
             $this->line('  3. Check storage/logs/laravel.log for errors');
 
             return Command::SUCCESS;
@@ -81,7 +74,7 @@ class TestResendEmail extends Command
             $this->error('Error: ' . $e->getMessage());
             $this->error('');
             $this->line('Troubleshooting:');
-            $this->line('  1. Verify RESEND_API_KEY in .env is correct');
+            $this->line('  1. Verify mail credentials in .env are correct');
             $this->line('  2. Check config/mail.php exists and is configured');
             $this->line('  3. Run: php artisan config:clear');
             $this->line('  4. Check storage/logs/laravel.log for details');
