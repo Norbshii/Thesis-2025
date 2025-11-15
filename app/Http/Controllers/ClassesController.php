@@ -743,9 +743,9 @@ class ClassesController extends Controller
                 \Log::info('SMS not sent: SEMAPHORE_API_KEY not configured');
             }
 
-            // Send email notification to guardian (if email address exists and Resend is configured)
+            // Send email notification to guardian (if email address exists)
             $emailSent = false;
-            if ($guardianEmail && !empty(env('RESEND_API_KEY'))) {
+            if ($guardianEmail) {
                 try {
                     $emailData = [
                         'studentName' => $studentName,
@@ -773,10 +773,8 @@ class ClassesController extends Controller
                         'error' => $emailError->getMessage()
                     ]);
                 }
-            } elseif (!$guardianEmail) {
-                \Log::info('Email not sent: No guardian email for student', ['student' => $studentName]);
             } else {
-                \Log::info('Email not sent: RESEND_API_KEY not configured');
+                \Log::info('Email not sent: No guardian email for student', ['student' => $studentName]);
             }
 
             // Broadcast attendance update event
@@ -802,7 +800,7 @@ class ClassesController extends Controller
                 'smsSent' => isset($smsResult) && $smsResult['success'],
                 'emailSent' => $emailSent,
                 'smsNote' => !$guardianPhone ? 'Add guardian phone to receive SMS alerts' : ($smsResult ? null : 'SMS service not configured'),
-                'emailNote' => !$guardianEmail ? 'Add guardian email to receive email notifications' : (!$emailSent && env('RESEND_API_KEY') ? 'Email service error' : null)
+                'emailNote' => !$guardianEmail ? 'Add guardian email to receive email notifications' : (!$emailSent ? 'Email service error' : null)
             ]);
 
         } catch (\Exception $e) {
