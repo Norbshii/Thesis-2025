@@ -515,6 +515,9 @@ class ClassesController extends Controller
         try {
             $class = ClassModel::findOrFail($classId);
             
+            // Calculate geofence time for all students who signed in to this session
+            $this->calculateGeofenceTimes($class);
+            
             // Mark class as closed (session data stays for history)
             $class->update(['is_open' => false]);
             
@@ -889,6 +892,15 @@ class ClassesController extends Controller
             $emailSent = false;
             if ($guardianEmail) {
                 try {
+                    \Log::info('Attempting to send email', [
+                        'to' => $guardianEmail,
+                        'student' => $studentName,
+                        'class' => $class->class_name,
+                        'mail_mailer' => env('MAIL_MAILER'),
+                        'mail_host' => env('MAIL_HOST'),
+                        'mail_from' => env('MAIL_FROM_ADDRESS')
+                    ]);
+                    
                     $emailData = [
                         'studentName' => $studentName,
                         'guardianName' => $guardianName,
@@ -904,15 +916,16 @@ class ClassesController extends Controller
                     Mail::to($guardianEmail)->send(new StudentSignInNotification($emailData));
                     $emailSent = true;
 
-                    \Log::info('Email sent to guardian', [
+                    \Log::info('✅ Email sent successfully to guardian', [
                         'email' => $guardianEmail,
                         'student' => $studentName,
                         'class' => $class->class_name
                     ]);
                 } catch (\Exception $emailError) {
-                    \Log::error('Email failed to send', [
+                    \Log::error('❌ Email failed to send', [
                         'email' => $guardianEmail,
-                        'error' => $emailError->getMessage()
+                        'error' => $emailError->getMessage(),
+                        'trace' => $emailError->getTraceAsString()
                     ]);
                 }
             } else {
@@ -1033,6 +1046,55 @@ class ClassesController extends Controller
                 'message' => 'Failed to retrieve attendance records',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Calculate geofence time for all students in the current session
+     */
+    private function calculateGeofenceTimes($class)
+    {
+        try {
+            $now = now();
+            $todayDate = $now->format('Y-m-d');
+            
+            // Get all attendance records for today's session
+            $attendanceRecords = AttendanceEntry::where('class_code', $class->class_code)
+                ->whereDate('date', $todayDate)
+                ->where('currently_inside', true)
+                ->get();
+            
+            foreach ($attendanceRecords as $record) {
+                if ($record->geofence_entry_time) {
+                    // Calculate time from entry to now (class close time)
+                    $entryTime = \Carbon\Carbon::parse($record->geofence_entry_time);
+                    $timeInsideSeconds = $entryTime->diffInSeconds($now);
+                    
+                    $record->update([
+                        'time_inside_geofence' => $timeInsideSeconds,
+                        'geofence_exit_time' => $now,
+                        'currently_inside' => false,
+                    ]);
+                    
+                    \Log::info('Updated geofence time for student', [
+                        'student' => $record->student_name,
+                        'entry_time' => $entryTime->toDateTimeString(),
+                        'exit_time' => $now->toDateTimeString(),
+                        'time_inside_seconds' => $timeInsideSeconds,
+                        'time_inside_minutes' => round($timeInsideSeconds / 60, 1)
+                    ]);
+                }
+            }
+            
+            \Log::info('Calculated geofence times for class', [
+                'class_code' => $class->class_code,
+                'records_updated' => $attendanceRecords->count()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to calculate geofence times', [
+                'class_code' => $class->class_code,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }
