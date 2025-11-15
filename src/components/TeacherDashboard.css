@@ -623,7 +623,8 @@
 }
 
 .large-modal {
-  max-width: 800px;
+  max-width: 900px;
+  width: 90%;
 }
 
 .modal-header {
@@ -1252,4 +1253,38 @@
   }
   
   /* Toast styles are now inline for better control */
+}
+
+/* Attendance Records Mobile Optimization */
+@media (max-width: 768px) {
+  /* Summary Stats - Stack on mobile */
+  .modal-body > div > div:first-child {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* Attendance Cards Grid - 2 columns on tablet */
+  .modal-body > div > div[style*="gridTemplateColumns"] {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Summary Stats - Full width on very small screens */
+  .modal-body > div > div:first-child {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  
+  .modal-body > div > div:first-child > div {
+    padding: 12px !important;
+  }
+  
+  .modal-body > div > div:first-child > div > div:first-child {
+    font-size: 24px !important;
+  }
+  
+  /* Attendance Cards Grid - 1 column on mobile */
+  .modal-body > div > div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
 }

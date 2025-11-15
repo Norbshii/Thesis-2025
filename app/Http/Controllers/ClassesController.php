@@ -309,6 +309,14 @@ class ClassesController extends Controller
      */
     public function openClass(Request $request)
     {
+        \Log::info('Opening class request', [
+            'classId' => $request->input('classId'),
+            'latitude' => $request->input('latitude'),
+            'longitude' => $request->input('longitude'),
+            'latitude_type' => gettype($request->input('latitude')),
+            'longitude_type' => gettype($request->input('longitude'))
+        ]);
+
         $validator = Validator::make($request->all(), [
             'classId' => 'required|string',
             'latitude' => 'required|numeric|between:-90,90',
@@ -316,7 +324,15 @@ class ClassesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+            \Log::error('Class open validation failed', [
+                'errors' => $validator->errors()->toArray(),
+                'input' => $request->all()
+            ]);
+            return response()->json([
+                'message' => 'Validation failed', 
+                'errors' => $validator->errors(),
+                'debug_input' => $request->all()
+            ], 422);
         }
 
         $classId = $request->input('classId');

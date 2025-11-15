@@ -29,6 +29,7 @@ const TeacherDashboard = () => {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Live attendance for all classes (for map display)
   const [liveAttendance, setLiveAttendance] = useState({});
@@ -368,10 +369,21 @@ const TeacherDashboard = () => {
         showToastMessage(`📍 Using ${classItem.building.name} location...`, 'info');
 
         try {
-          const latitude = classItem.building.latitude;
-          const longitude = classItem.building.longitude;
+          const latitude = parseFloat(classItem.building.latitude);
+          const longitude = parseFloat(classItem.building.longitude);
 
           console.log(`✅ Building Location: ${latitude}, ${longitude}`);
+
+          // Validate coordinates
+          if (isNaN(latitude) || isNaN(longitude)) {
+            showToastMessage('❌ Invalid building coordinates. Please edit the building and fix the location.', 'error');
+            return;
+          }
+
+          if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            showToastMessage('❌ Building coordinates are out of range. Please edit the building.', 'error');
+            return;
+          }
 
           // Call API to open class with building's geolocation
           const response = await api.post('/classes/open', {
@@ -399,173 +411,10 @@ const TeacherDashboard = () => {
         return; // Exit early - we used building location
       }
 
-      // No building location - fall back to teacher's GPS (legacy behavior)
-      if (!navigator.geolocation) {
-        showToastMessage('Geolocation is not supported by your browser. Please use a modern browser like Chrome, Firefox, or Safari.', 'error');
-        return;
-      }
-
-      // Show loading message
-      showToastMessage('📍 Getting your location... This may take 20-30 seconds indoors.', 'info');
-
-      try {
-        console.log('No building assigned - requesting teacher geolocation (indoor-friendly mode)...');
-        
-        // Check if permission is granted first
-        if (navigator.permissions) {
-          try {
-            const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
-            console.log('Geolocation permission status:', permissionStatus.state);
-            
-            if (permissionStatus.state === 'denied') {
-              showToastMessage('Location permission denied. Please enable location access in your browser settings and reload the page.', 'error');
-              return;
-            }
-          } catch (permError) {
-            console.warn('Could not check permission status:', permError);
-          }
-        }
-        
-        // Indoor-friendly location strategy: Watch for improvements over time
-        let bestPosition = null;
-        let watchId = null;
-        
-        const getLocationWithWatch = () => {
-          return new Promise((resolve, reject) => {
-            let positionCount = 0;
-            const maxWaitTime = 30000; // 30 seconds total wait
-            const minPositions = 3; // Collect at least 3 readings
-            const startTime = Date.now();
-            
-            const timeoutId = setTimeout(() => {
-              if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-              }
-              if (bestPosition) {
-                console.log(`⏱️ Timeout reached, using best position: ${bestPosition.coords.accuracy}m`);
-                resolve(bestPosition);
-              } else {
-                reject(new Error('Location timeout - no position obtained'));
-              }
-            }, maxWaitTime);
-            
-            watchId = navigator.geolocation.watchPosition(
-              (position) => {
-                positionCount++;
-                const accuracy = position.coords.accuracy;
-                const elapsed = Date.now() - startTime;
-                
-                console.log(`📍 Position ${positionCount}: Accuracy ${accuracy.toFixed(1)}m (${(elapsed/1000).toFixed(1)}s elapsed)`);
-                
-                // Keep the best (most accurate) position
-                if (!bestPosition || accuracy < bestPosition.coords.accuracy) {
-                  bestPosition = position;
-                  console.log(`✨ New best accuracy: ${accuracy.toFixed(1)}m`);
-                }
-                
-                // Success conditions:
-                // 1. Very good accuracy (< 50m)
-                // 2. Good accuracy (< 100m) after 15 seconds
-                // 3. Acceptable accuracy (< 300m) after 20 seconds
-                // 4. Any accuracy after collecting enough readings
-                const goodEnough = (
-                  (accuracy < 50) ||
-                  (accuracy < 100 && elapsed > 15000) ||
-                  (accuracy < 300 && elapsed > 20000) ||
-                  (positionCount >= minPositions && elapsed > 10000)
-                );
-                
-                if (goodEnough) {
-                  clearTimeout(timeoutId);
-                  navigator.geolocation.clearWatch(watchId);
-                  console.log(`✅ Acceptable location found: ${accuracy.toFixed(1)}m after ${(elapsed/1000).toFixed(1)}s`);
-                  resolve(bestPosition);
-                }
-              },
-              (error) => {
-                clearTimeout(timeoutId);
-                if (watchId !== null) {
-                  navigator.geolocation.clearWatch(watchId);
-                }
-                console.error('Geolocation error:', error);
-                
-                // If we have at least one position, use it
-                if (bestPosition) {
-                  console.log(`⚠️ Error occurred, but using best position: ${bestPosition.coords.accuracy}m`);
-                  resolve(bestPosition);
-                } else {
-                  reject(error);
-                }
-              },
-              {
-                enableHighAccuracy: true,
-                timeout: 10000, // Timeout for each individual reading
-                maximumAge: 0
-              }
-            );
-          });
-        };
-        
-        const position = await getLocationWithWatch();
-
-        const { latitude, longitude, accuracy } = position.coords;
-        console.log(`✅ Final Location: ${latitude}, ${longitude}, Accuracy: ${accuracy}m`);
-        
-        // Show accuracy info to teacher
-        let accuracyMessage = '';
-        if (accuracy < 50) {
-          accuracyMessage = `📍 Excellent accuracy: ${Math.round(accuracy)}m`;
-        } else if (accuracy < 100) {
-          accuracyMessage = `📍 Good accuracy: ${Math.round(accuracy)}m`;
-        } else if (accuracy < 300) {
-          accuracyMessage = `📍 Acceptable accuracy: ${Math.round(accuracy)}m (Good for indoor use)`;
-        } else {
-          accuracyMessage = `📍 Low accuracy: ${Math.round(accuracy)}m (Location may be approximate)`;
-        }
-        console.log(accuracyMessage);
-
-        // Call API to open class with geolocation
-        const response = await api.post('/classes/open', {
-          classId: classId,
-          latitude: latitude,
-          longitude: longitude
-        });
-
-        // Update the class with GPS coordinates
-        setClasses(classes.map(c => 
-          c.id === classId ? { 
-            ...c, 
-            isOpen: true,
-            currentSessionLat: latitude,
-            currentSessionLon: longitude,
-            currentSessionOpened: new Date().toISOString()
-          } : c
-        ));
-
-        // Check if geofencing is active
-        if (response.data.geofence_active === false) {
-          showToastMessage(`${response.data.message} ${response.data.warning}`, 'info');
-        } else {
-          showToastMessage(`✅ Class opened successfully! ${accuracyMessage} • Geofence: 100m radius`, 'success');
-        }
-      } catch (error) {
-        console.error('Geolocation error:', error);
-        if (error.code) {
-          // Geolocation API error codes
-          const errorMessages = {
-            1: '📍 Location Access Denied. Please enable location permission in your browser settings and reload the page.',
-            2: '📡 Location Unavailable. Please enable Location Services in your phone settings and make sure GPS is turned on.',
-            3: '⏱️ Location Timeout. GPS is taking too long. Please go outdoors or near a window and try again.'
-          };
-          showToastMessage(errorMessages[error.code] || 'Failed to get location. Please try again.', 'error');
-        } else if (error.message && error.message.includes('timeout')) {
-          showToastMessage('⏱️ Location request timed out. Please go outdoors or near a window and try again.', 'error');
-        } else if (error.response) {
-          showToastMessage(error.response?.data?.message || 'Failed to open class. Please try again.', 'error');
-        } else {
-          showToastMessage('❌ Failed to get location. Please check location services are enabled and try again.', 'error');
-        }
-      }
+      // No building location - show warning and require building assignment
+      showToastMessage('⚠️ No building assigned! Please edit this class and assign a building first.', 'error');
+      console.warn('⚠️ Class has no building assigned. Please use the Edit Class function to assign a building.');
+      return;
     } else {
       // Closing class
       try {
@@ -898,6 +747,16 @@ const TeacherDashboard = () => {
       day: 'numeric'
     });
   };
+
+  // Filter attendance records based on search query
+  const filteredRecords = attendanceRecords.filter(record => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      record.studentName?.toLowerCase().includes(query) ||
+      record.studentEmail?.toLowerCase().includes(query)
+    );
+  });
 
   const isLate = (signInTime, startTime, lateThreshold) => {
     if (!signInTime) return false;
@@ -1563,34 +1422,226 @@ const TeacherDashboard = () => {
                     </div>
                   ) : (
                     <div>
-                      <p style={{ 
-                        color: '#666', 
-                        fontSize: '14px', 
-                        marginBottom: '10px',
-                        fontWeight: '500'
+                      {/* Summary Stats */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                        gap: '12px',
+                        marginBottom: '20px'
                       }}>
-                        {attendanceRecords.length} student{attendanceRecords.length !== 1 ? 's' : ''} signed in on {formatDate(selectedDate)}
-                      </p>
-                  <div className="attendance-list">
-                        {attendanceRecords.map((record, index) => (
-                          <div key={record.id || index} className={`attendance-item ${record.isLate ? 'late' : ''}`}>
-                        <div className="student-info">
-                              <span className="student-name">{record.studentName}</span>
-                              <span className={record.isLate ? 'late-status' : 'on-time-status'}>
-                                {record.isLate ? 'Late' : 'On Time'}
-                          </span>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          padding: '16px',
+                          borderRadius: '12px',
+                          color: 'white',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>{attendanceRecords.length}</div>
+                          <div style={{ fontSize: '12px', opacity: 0.9 }}>Total Present</div>
                         </div>
-                          <div className="sign-in-info">
-                              <span className="sign-in-time">
-                                {record.signInTime}
-                              </span>
-                              <span className="distance-info">
-                                {record.distance}m
-                              </span>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                          padding: '16px',
+                          borderRadius: '12px',
+                          color: 'white',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                            {attendanceRecords.filter(r => !r.isLate).length}
                           </div>
+                          <div style={{ fontSize: '12px', opacity: 0.9 }}>On Time</div>
+                        </div>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                          padding: '16px',
+                          borderRadius: '12px',
+                          color: 'white',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                            {attendanceRecords.filter(r => r.isLate).length}
+                          </div>
+                          <div style={{ fontSize: '12px', opacity: 0.9 }}>Late</div>
+                        </div>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                          padding: '16px',
+                          borderRadius: '12px',
+                          color: 'white',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
+                            {attendanceRecords.filter(r => r.distance <= 100).length}
+                          </div>
+                          <div style={{ fontSize: '12px', opacity: 0.9 }}>In Geofence</div>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+
+                      {/* Search Bar */}
+                      <div style={{ marginBottom: '16px' }}>
+                        <input
+                          type="text"
+                          placeholder="🔍 Search student by name or email..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            borderRadius: '12px',
+                            border: '2px solid #e9ecef',
+                            fontSize: '14px',
+                            outline: 'none',
+                            transition: 'border-color 0.3s ease'
+                          }}
+                          onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                          onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+                        />
+                        {searchQuery && (
+                          <div style={{ marginTop: '8px', fontSize: '13px', color: '#6c757d' }}>
+                            Showing {filteredRecords.length} of {attendanceRecords.length} students
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Attendance Cards - 3 Column Grid */}
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+                        gap: '16px' 
+                      }}>
+                        {filteredRecords.map((record, index) => (
+                          <div key={record.id || index} style={{
+                            background: 'white',
+                            border: `2px solid ${record.isLate ? '#ffc107' : '#28a745'}`,
+                            borderRadius: '12px',
+                            padding: '12px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: '100%'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.1)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                          >
+                            {/* Header */}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              marginBottom: '10px',
+                              paddingBottom: '10px',
+                              borderBottom: '1px solid #f0f0f0'
+                            }}>
+                              <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                background: `linear-gradient(135deg, ${record.isLate ? '#ffc107' : '#28a745'} 0%, ${record.isLate ? '#ff9800' : '#20c997'} 100%)`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontSize: '16px',
+                                fontWeight: 'bold',
+                                flexShrink: 0
+                              }}>
+                                {record.studentName?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ 
+                                  fontSize: '15px', 
+                                  fontWeight: '600', 
+                                  color: '#2c3e50',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {record.studentName}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '11px', 
+                                  color: '#7f8c8d',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {record.studentEmail || 'No email'}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div style={{
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              background: record.isLate ? '#fff3cd' : '#d4edda',
+                              color: record.isLate ? '#856404' : '#155724',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              textAlign: 'center',
+                              marginBottom: '10px'
+                            }}>
+                              {record.isLate ? '⏰ Late' : '✅ On Time'}
+                            </div>
+
+                            {/* Info */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: '#6c757d' }}>🕐 Time</span>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
+                                  {record.signInTime}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: '#6c757d' }}>📍 Distance</span>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
+                                  {record.distance ? `${Math.round(record.distance)}m` : 'N/A'}
+                                </span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: '#6c757d' }}>🎯 Status</span>
+                                <span style={{ 
+                                  fontSize: '13px', 
+                                  fontWeight: '600', 
+                                  color: record.distance <= 100 ? '#28a745' : '#dc3545' 
+                                }}>
+                                  {record.distance <= 100 ? 'Inside' : 'Outside'}
+                                </span>
+                              </div>
+                              {record.timeInsideGeofence !== undefined && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '11px', color: '#6c757d' }}>⏱️ Duration</span>
+                                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
+                                    {Math.floor(record.timeInsideGeofence / 60)}m {record.timeInsideGeofence % 60}s
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {filteredRecords.length === 0 && searchQuery && (
+                        <div style={{
+                          textAlign: 'center',
+                          padding: '40px 20px',
+                          color: '#999',
+                          background: '#f8f9fa',
+                          borderRadius: '12px'
+                        }}>
+                          <div style={{ fontSize: '48px', marginBottom: '10px' }}>🔍</div>
+                          <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '5px' }}>No results found</div>
+                          <div style={{ fontSize: '14px' }}>Try searching with a different name or email</div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
