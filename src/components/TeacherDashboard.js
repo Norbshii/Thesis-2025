@@ -323,11 +323,10 @@ const TeacherDashboard = () => {
     setIsCreatingClass(true);
     try {
       const currentUser = authAPI.getStoredUser();
-      const today = new Date().toISOString().split('T')[0];
       const payload = {
         code: newClass.code,
         name: newClass.name,
-        date: today,
+        date: selectedClass.date, // Preserve original date/days
         startTime: newClass.startTime,
         endTime: newClass.endTime,
         maxStudents: parseInt(newClass.maxStudents, 10) || 30,
@@ -339,15 +338,25 @@ const TeacherDashboard = () => {
       
       const response = await api.put(`/classes/${selectedClass.id}`, payload);
 
-      // Update local state
+      // Update local state with full response data
+      const updatedClass = {
+        ...selectedClass,
+        code: response.data.class.class_code,
+        name: response.data.class.class_name,
+        startTime: response.data.class.start_time,
+        endTime: response.data.class.end_time,
+        lateThreshold: response.data.class.late_threshold,
+        isManualControl: response.data.class.is_manual_control,
+        building: response.data.class.building,
+        building_id: response.data.class.building_id
+      };
+
       setClasses(classes.map(c => 
-        c.id === selectedClass.id 
-          ? { ...c, ...response.data.class }
-          : c
+        c.id === selectedClass.id ? updatedClass : c
       ));
       
       setShowEditClassModal(false);
-      showToastMessage('Class updated successfully!', 'success');
+      showToastMessage('✅ Class updated! Time slots refreshed.', 'success');
     } catch (error) {
       console.error('Error updating class:', error);
       const errorMsg = error.response?.data?.message || 'Failed to update class';

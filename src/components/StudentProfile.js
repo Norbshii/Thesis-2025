@@ -275,41 +275,42 @@ const StudentProfile = () => {
 
       try {
         // Get student's current location
-        console.log('Requesting geolocation...');
-        showToastMessage('Getting your location...', 'info');
+        console.log('📍 Requesting geolocation...');
+        showToastMessage('📍 Getting your location...', 'info');
         
         const position = await new Promise((resolve, reject) => {
-          let resolved = false;
+          const timeout = setTimeout(() => {
+            reject(new Error('Location request timed out after 15 seconds'));
+          }, 15000);
           
           navigator.geolocation.getCurrentPosition(
             (pos) => {
-              if (!resolved) {
-                resolved = true;
-                console.log('Geolocation success:', pos);
-                resolve(pos);
-              }
+              clearTimeout(timeout);
+              console.log('✅ Geolocation success:', {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+                accuracy: pos.coords.accuracy
+              });
+              resolve(pos);
             },
             (err) => {
-              if (!resolved) {
-                console.error('Geolocation error (will retry):', err);
-                // Don't reject immediately, wait for potential success
-                setTimeout(() => {
-                  if (!resolved) {
-                    resolved = true;
-                    reject(err);
-                  }
-                }, 2000);
-              }
+              clearTimeout(timeout);
+              console.error('❌ Geolocation error:', {
+                code: err.code,
+                message: err.message
+              });
+              reject(err);
             },
             {
-              enableHighAccuracy: false, // Changed to false for better compatibility
-              timeout: 20000,
-              maximumAge: 5000 // Allow cached location
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
             }
           );
         });
 
         const { latitude, longitude } = position.coords;
+        console.log('📍 Using coordinates:', { latitude, longitude });
         const currentUser = authAPI.getStoredUser();
 
         // Call API to sign in with geolocation validation
@@ -374,15 +375,20 @@ const StudentProfile = () => {
         } else if (error.code) {
           // Geolocation error
           const errorMessages = {
-            1: 'Location permission denied. Please enable location access to sign in.',
-            2: 'Location unavailable. Please check your device settings.',
-            3: 'Location request timed out. Please try again.'
+            1: '🚫 Location permission denied. Please enable location access in your browser settings.',
+            2: '📡 Location unavailable. Please check if GPS is enabled on your device.',
+            3: '⏱️ Location request timed out. Please try again.'
           };
-          showToastMessage(errorMessages[error.code] || 'Failed to get location', 'error');
+          const msg = errorMessages[error.code] || 'Failed to get location';
+          console.error('Geolocation error details:', error);
+          showToastMessage(msg, 'error');
+        } else if (error.message && error.message.includes('timed out')) {
+          showToastMessage('⏱️ Location request timed out. Please ensure GPS is enabled and try again.', 'error');
         } else if (error.response?.data?.message) {
           showToastMessage(error.response.data.message, 'error');
         } else {
-          showToastMessage('Failed to sign in. Please try again.', 'error');
+          console.error('Unknown sign-in error:', error);
+          showToastMessage('❌ Failed to sign in. Please check your location settings and try again.', 'error');
         }
       } finally {
         setIsSigningIn(false);
