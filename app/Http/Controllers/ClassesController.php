@@ -162,6 +162,26 @@ class ClassesController extends Controller
 
             $class->update($updateData);
 
+            // If class is open and end time changed, recalculate auto_close_time
+            if ($class->is_open && $request->has('endTime') && $class->current_session_opened) {
+                $start = \Carbon\Carbon::parse($class->current_session_opened);
+                $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $request->input('endTime'));
+                $today = \Carbon\Carbon::today();
+                $endDateTime = $today->copy()->setTimeFromTimeString($endTime->format('H:i:s'));
+                
+                // Calculate new duration from session start
+                $newDuration = $start->diffInMinutes($endDateTime);
+                $newAutoCloseTime = $start->copy()->addMinutes($newDuration);
+                
+                $class->update(['auto_close_time' => $newAutoCloseTime]);
+                
+                \Log::info('Recalculated auto_close_time for open class', [
+                    'class_id' => $id,
+                    'new_end_time' => $request->input('endTime'),
+                    'new_auto_close_time' => $newAutoCloseTime->toDateTimeString()
+                ]);
+            }
+
             // Reload relationships
             $class->load(['teacher', 'building', 'students']);
 

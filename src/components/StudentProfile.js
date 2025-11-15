@@ -280,8 +280,8 @@ const StudentProfile = () => {
         
         const position = await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
-            reject(new Error('Location request timed out after 15 seconds'));
-          }, 15000);
+            reject(new Error('Location request timed out after 30 seconds'));
+          }, 30000);
           
           navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -302,9 +302,9 @@ const StudentProfile = () => {
               reject(err);
             },
             {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0
+              enableHighAccuracy: false, // False is better for mobile (faster)
+              timeout: 25000, // 25 seconds for mobile GPS
+              maximumAge: 10000 // Allow 10-second old location
             }
           );
         });
