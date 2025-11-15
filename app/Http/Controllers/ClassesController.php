@@ -670,6 +670,8 @@ class ClassesController extends Controller
             $geofenceRadius = $class->geofence_radius ?? env('GEOFENCE_RADIUS', 500);
 
             \Log::info('Geofence validation', [
+                'class' => $class->class_code,
+                'student' => $studentName,
                 'teacherLat' => $teacherLat,
                 'teacherLon' => $teacherLon,
                 'studentLat' => $studentLat,
@@ -680,9 +682,21 @@ class ClassesController extends Controller
             ]);
 
             if ($distance > $geofenceRadius) {
+                \Log::warning('Student outside geofence', [
+                    'student' => $studentName,
+                    'distance' => round($distance, 2) . 'm',
+                    'max_allowed' => $geofenceRadius . 'm',
+                    'difference' => round($distance - $geofenceRadius, 2) . 'm too far'
+                ]);
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not within the classroom area. Please move closer to sign in.',
+                    'message' => sprintf(
+                        'You are %.0fm away from the classroom. Maximum distance allowed is %.0fm. Please move %.0fm closer.',
+                        $distance,
+                        $geofenceRadius,
+                        $distance - $geofenceRadius
+                    ),
                     'distance' => round($distance, 2),
                     'required' => $geofenceRadius
                 ], 403);

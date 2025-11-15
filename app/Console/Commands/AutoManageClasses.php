@@ -109,24 +109,49 @@ class AutoManageClasses extends Command
      */
     private function shouldClassBeClosed($class, $currentTime)
     {
-        // Priority 1: Check if auto_close_time is set and has passed
-        // This is the MOST ACCURATE because it accounts for when the class was actually opened
+        // If manual control is enabled, ONLY check auto_close_time (ignore scheduled end time)
+        if ($class->is_manual_control) {
+            if ($class->auto_close_time) {
+                $autoCloseTime = Carbon::parse($class->auto_close_time);
+                return Carbon::now()->gte($autoCloseTime);
+            }
+            // Manual control with no auto_close_time = never auto-close
+            return false;
+        }
+        
+        // For time-based classes:
+        // Priority 1: If auto_close_time is set (class was manually opened), use that
         if ($class->auto_close_time) {
             $autoCloseTime = Carbon::parse($class->auto_close_time);
             if (Carbon::now()->gte($autoCloseTime)) {
+                \Log::info('Class should close (auto_close_time reached)', [
+                    'class' => $class->class_code,
+                    'auto_close_time' => $autoCloseTime->format('H:i:s'),
+                    'current_time' => Carbon::now()->format('H:i:s')
+                ]);
                 return true;
             }
+            // If auto_close_time is set but not reached yet, don't close
+            return false;
         }
         
-        // Priority 2: Check if end time has passed (with 1-minute grace period for testing)
-        // This is a fallback in case auto_close_time wasn't set
+        // Priority 2: Check if scheduled end time has passed (only if auto_close_time not set)
         $endTime = Carbon::createFromFormat('H:i:s', $class->end_time);
         $current = Carbon::createFromFormat('H:i:s', $currentTime);
         
         // Close if current time is past end time + 1 minute grace period
         $closeWindow = $endTime->copy()->addMinute();
         
-        return $current->gte($closeWindow);
+        if ($current->gte($closeWindow)) {
+            \Log::info('Class should close (scheduled end time passed)', [
+                'class' => $class->class_code,
+                'end_time' => $class->end_time,
+                'current_time' => $currentTime
+            ]);
+            return true;
+        }
+        
+        return false;
     }
     
     /**

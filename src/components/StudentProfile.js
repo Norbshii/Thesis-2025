@@ -278,23 +278,20 @@ const StudentProfile = () => {
         console.log('📍 Requesting geolocation...');
         showToastMessage('📍 Getting your location... Please wait.', 'info');
         
-        // Try low accuracy first (faster), then high accuracy if needed
+        // Multiple attempts with different strategies
         let position;
+        let attempt = 1;
+        
+        // Attempt 1: Use any cached location (fastest)
         try {
-          // First attempt: Low accuracy (fast)
+          console.log('📍 Attempt 1: Trying cached/network location...');
           position = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('timeout'));
-            }, 8000);
+            const timeout = setTimeout(() => reject(new Error('timeout')), 5000);
             
             navigator.geolocation.getCurrentPosition(
               (pos) => {
                 clearTimeout(timeout);
-                console.log('✅ Quick location acquired:', {
-                  lat: pos.coords.latitude,
-                  lng: pos.coords.longitude,
-                  accuracy: pos.coords.accuracy
-                });
+                console.log('✅ Cached/Network location acquired:', pos.coords);
                 resolve(pos);
               },
               (err) => {
@@ -303,47 +300,75 @@ const StudentProfile = () => {
               },
               {
                 enableHighAccuracy: false,
-                timeout: 7000,
-                maximumAge: 30000 // Accept cached location up to 30 seconds old
+                timeout: 4000,
+                maximumAge: 60000 // Accept up to 1 minute old location
               }
             );
           });
-        } catch (firstError) {
-          console.log('⚠️ Quick location failed, trying high accuracy...');
-          showToastMessage('📍 Acquiring precise location... This may take a moment.', 'info');
+        } catch (e1) {
+          console.log('⚠️ Attempt 1 failed, trying GPS...');
+          attempt = 2;
           
-          // Second attempt: High accuracy (slower but more precise)
-          position = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              reject(new Error('Location request timed out'));
-            }, 30000);
+          // Attempt 2: GPS low accuracy
+          try {
+            showToastMessage('📍 Getting GPS location... Please wait.', 'info');
+            position = await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => reject(new Error('timeout')), 15000);
+              
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  clearTimeout(timeout);
+                  console.log('✅ GPS location acquired:', pos.coords);
+                  resolve(pos);
+                },
+                (err) => {
+                  clearTimeout(timeout);
+                  reject(err);
+                },
+                {
+                  enableHighAccuracy: false,
+                  timeout: 12000,
+                  maximumAge: 0
+                }
+              );
+            });
+          } catch (e2) {
+            console.log('⚠️ Attempt 2 failed, trying high accuracy GPS...');
+            attempt = 3;
             
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                clearTimeout(timeout);
-                console.log('✅ High accuracy location acquired:', {
-                  lat: pos.coords.latitude,
-                  lng: pos.coords.longitude,
-                  accuracy: pos.coords.accuracy
-                });
-                resolve(pos);
-              },
-              (err) => {
-                clearTimeout(timeout);
-                console.error('❌ High accuracy failed:', {
-                  code: err.code,
-                  message: err.message
-                });
-                reject(err);
-              },
-              {
-                enableHighAccuracy: true,
-                timeout: 25000,
-                maximumAge: 0
-              }
-            );
-          });
+            // Attempt 3: GPS high accuracy (last resort)
+            showToastMessage('📍 Acquiring precise GPS... This takes longer.', 'info');
+            position = await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('All location attempts failed'));
+              }, 40000);
+              
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  clearTimeout(timeout);
+                  console.log('✅ High accuracy GPS acquired:', pos.coords);
+                  resolve(pos);
+                },
+                (err) => {
+                  clearTimeout(timeout);
+                  console.error('❌ All attempts failed');
+                  reject(err);
+                },
+                {
+                  enableHighAccuracy: true,
+                  timeout: 35000,
+                  maximumAge: 0
+                }
+              );
+            });
+          }
         }
+        
+        console.log(`📍 Location acquired on attempt ${attempt}:`, {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
 
         const { latitude, longitude } = position.coords;
         console.log('📍 Using coordinates:', { latitude, longitude });
