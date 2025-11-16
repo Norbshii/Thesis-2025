@@ -26,6 +26,10 @@ WORKDIR /var/www/html
 # Copy existing application directory contents
 COPY . /var/www/html
 
+# Copy startup script and make executable
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 # Copy existing application directory permissions
 RUN chown -R www-data:www-data /var/www/html
 
@@ -50,7 +54,6 @@ RUN php artisan view:clear || true
 # Expose ports
 EXPOSE 8000
 
-# Start Laravel server with scheduler (WebSockets handled by Pusher.com)
-# Run migrations on startup, then start scheduler and server
-CMD sh -c 'php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan schedule:work & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}'
+# Start Laravel server with scheduler using startup script
+CMD ["/usr/local/bin/start.sh"]
 
