@@ -61,6 +61,49 @@ Route::get('/debug/mail-config', function () {
     ]);
 });
 
+// Test email sending
+Route::get('/debug/test-email', function () {
+    try {
+        $testEmail = env('MAIL_USERNAME', 'davelima2@gmail.com');
+        
+        \Log::info('=== TEST EMAIL ATTEMPT ===', [
+            'to' => $testEmail,
+            'from' => config('mail.from.address'),
+            'mailer' => config('mail.default'),
+            'host' => config('mail.mailers.smtp.host')
+        ]);
+        
+        \Illuminate\Support\Facades\Mail::raw(
+            'This is a test email from PinPoint Attendance System on Render. Timestamp: ' . now()->toDateTimeString(),
+            function ($message) use ($testEmail) {
+                $message->to($testEmail)
+                        ->subject('PinPoint Test Email - ' . now()->toDateTimeString());
+            }
+        );
+        
+        \Log::info('=== TEST EMAIL SENT SUCCESSFULLY ===');
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Test email sent successfully!',
+            'sent_to' => $testEmail,
+            'check_inbox' => 'Check your email at ' . $testEmail
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error('=== TEST EMAIL FAILED ===', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to send test email',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
+
 // Public routes (MySQL-backed auth)
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
