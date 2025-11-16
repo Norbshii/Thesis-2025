@@ -17,8 +17,11 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-    # Get latest Composer
-    COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
+# Enable Apache mod_rewrite for Laravel
+RUN a2enmod rewrite
+
+# Get latest Composer
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www/html
@@ -29,6 +32,9 @@ COPY . /var/www/html
 # Copy startup script and make executable
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
+
+# Copy Apache config for Laravel
+COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
 # Copy existing application directory permissions
 RUN chown -R www-data:www-data /var/www/html

@@ -317,8 +317,8 @@ const TeacherDashboard = () => {
   const handleUpdateClass = async () => {
     if (!newClass.code || !newClass.name || !newClass.startTime || !newClass.endTime) {
       showToastMessage('Please fill in all required fields', 'error');
-      return;
-    }
+        return;
+      }
 
     setIsCreatingClass(true);
     try {
@@ -395,25 +395,25 @@ const TeacherDashboard = () => {
           }
 
           // Call API to open class with building's geolocation
-          const response = await api.post('/classes/open', {
-            classId: classId,
-            latitude: latitude,
-            longitude: longitude
-          });
+        const response = await api.post('/classes/open', {
+          classId: classId,
+          latitude: latitude,
+          longitude: longitude
+        });
 
           // Update the class with building coordinates
-          setClasses(classes.map(c => 
-            c.id === classId ? { 
-              ...c, 
-              isOpen: true,
-              currentSessionLat: latitude,
-              currentSessionLon: longitude,
-              currentSessionOpened: new Date().toISOString()
-            } : c
-          ));
+        setClasses(classes.map(c => 
+          c.id === classId ? { 
+            ...c, 
+            isOpen: true,
+            currentSessionLat: latitude,
+            currentSessionLon: longitude,
+            currentSessionOpened: new Date().toISOString()
+          } : c
+        ));
 
           showToastMessage(`✅ Class opened at ${classItem.building.name}! 📍 Using constant building location (100m radius)`, 'success');
-        } catch (error) {
+      } catch (error) {
           console.error('Error opening class with building location:', error);
           showToastMessage(error.response?.data?.message || 'Failed to open class. Please try again.', 'error');
         }
@@ -1501,7 +1501,7 @@ const TeacherDashboard = () => {
                             padding: '12px 16px',
                             borderRadius: '12px',
                             border: '2px solid #e9ecef',
-                            fontSize: '14px',
+                        fontSize: '14px', 
                             outline: 'none',
                             transition: 'border-color 0.3s ease'
                           }}
@@ -1548,7 +1548,7 @@ const TeacherDashboard = () => {
                               display: 'flex',
                               alignItems: 'center',
                               gap: '10px',
-                              marginBottom: '10px',
+                        marginBottom: '10px',
                               paddingBottom: '10px',
                               borderBottom: '1px solid #f0f0f0'
                             }}>
@@ -1566,7 +1566,7 @@ const TeacherDashboard = () => {
                                 flexShrink: 0
                               }}>
                                 {record.studentName?.charAt(0)?.toUpperCase() || '?'}
-                              </div>
+                        </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ 
                                   fontSize: '15px', 
@@ -1609,14 +1609,14 @@ const TeacherDashboard = () => {
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '11px', color: '#6c757d' }}>🕐 Time</span>
                                 <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
-                                  {record.signInTime}
-                                </span>
+                                {record.signInTime}
+                              </span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '11px', color: '#6c757d' }}>📍 Distance</span>
                                 <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
                                   {record.distance ? `${Math.round(record.distance)}m` : 'N/A'}
-                                </span>
+                              </span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '11px', color: '#6c757d' }}>🎯 Status</span>
@@ -1636,10 +1636,10 @@ const TeacherDashboard = () => {
                                   </span>
                                 </div>
                               )}
-                            </div>
                           </div>
-                        ))}
                       </div>
+                    ))}
+                  </div>
 
                       {filteredRecords.length === 0 && searchQuery && (
                         <div style={{
