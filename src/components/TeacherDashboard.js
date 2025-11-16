@@ -135,12 +135,12 @@ const TeacherDashboard = () => {
               
               if (attendanceResponse.data.success && attendanceResponse.data.attendance) {
                 const todayAttendance = attendanceResponse.data.attendance.map(record => ({
-                  studentName: record.student_name,
-                  studentEmail: record.student_email,
-                  latitude: record.student_latitude,
-                  longitude: record.student_longitude,
-                  signInTime: record.sign_in_time,
-                  timeInsideGeofence: record.time_inside_geofence || 0
+                  studentName: record.studentName,
+                  studentEmail: record.studentEmail,
+                  latitude: record.latitude,
+                  longitude: record.longitude,
+                  signInTime: record.signInTime,
+                  timeInsideGeofence: record.timeInsideGeofence || 0
                 }));
                 
                 setLiveAttendance(prev => ({
@@ -224,16 +224,34 @@ const TeacherDashboard = () => {
           console.log('👥 Attendance updated via WebSocket:', event);
           const newAttendance = event.attendance;
           
+          // Normalize WebSocket data to match API response format (camelCase)
+          const normalizedAttendance = {
+            studentName: newAttendance.student_name || newAttendance.studentName,
+            studentEmail: newAttendance.student_email || newAttendance.studentEmail,
+            latitude: newAttendance.latitude,
+            longitude: newAttendance.longitude,
+            signInTime: newAttendance.sign_in_time || newAttendance.signInTime,
+            timeInsideGeofence: newAttendance.timeInsideGeofence || 0
+          };
+          
           // Update live attendance map immediately
           setLiveAttendance(prev => {
             const currentAttendance = prev[event.classId] || [];
+            // Check if this student already exists (avoid duplicates)
+            const exists = currentAttendance.some(
+              a => a.studentEmail === normalizedAttendance.studentEmail && 
+                   a.signInTime === normalizedAttendance.signInTime
+            );
+            if (exists) {
+              return prev; // Don't add duplicate
+            }
             return {
               ...prev,
-              [event.classId]: [...currentAttendance, newAttendance]
+              [event.classId]: [...currentAttendance, normalizedAttendance]
             };
           });
           
-          showToastMessage(`✅ ${newAttendance.student_name} signed in!`, 'success');
+          showToastMessage(`✅ ${normalizedAttendance.studentName} signed in!`, 'success');
         });
     });
     
