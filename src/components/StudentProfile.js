@@ -143,7 +143,8 @@ const StudentProfile = () => {
           alwaysAvailable: !!r.always_available,
           isOpen: !!r.isOpen,
           startTime: r.startTime || null,
-          endTime: r.endTime || null
+          endTime: r.endTime || null,
+          building: r.building || null // Add building information
         }));
         setClasses(mapped);
       } catch (error) {
@@ -738,6 +739,15 @@ const StudentProfile = () => {
                 <div className="class-info">
                   <span className="class-code">{classItem.code || 'N/A'}</span>
                   <span className="class-name">{classItem.name || 'N/A'}</span>
+                  {classItem.building && (
+                    <span className="class-building" style={{
+                      fontSize: '13px',
+                      color: '#6c757d',
+                      fontWeight: '500'
+                    }}>
+                      🏢 {classItem.building.name || 'Building'}
+                    </span>
+                  )}
                   <span className="class-time" style={{
                     color: classItem.isOpen ? '#28a745' : '#6c757d',
                     fontWeight: '600',
@@ -916,6 +926,9 @@ const StudentProfile = () => {
               <div className="class-info-modal">
                 <h4>{selectedClass.code} - {selectedClass.name}</h4>
                 <p><strong>Instructor:</strong> {selectedClass.instructor}</p>
+                {selectedClass.building && (
+                  <p><strong>Building:</strong> {selectedClass.building.name}</p>
+                )}
                 <p><strong>Time:</strong> {selectedClass.timeSlot}</p>
                 <p><strong>Current Status:</strong> {selectedClass.isSignedIn ? 'Signed In' : 'Not Signed In'}</p>
               </div>

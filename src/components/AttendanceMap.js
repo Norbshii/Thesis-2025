@@ -93,6 +93,16 @@ function CenterMapButton({ teacherLocation, onCenter }) {
 }
 
 export default function AttendanceMap({ teacherLocation, students = [], geofenceRadius = 100 }) {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for real-time timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (!teacherLocation || !teacherLocation.lat || !teacherLocation.lng) {
     return (
       <div style={{
@@ -167,7 +177,22 @@ export default function AttendanceMap({ teacherLocation, students = [], geofence
             student.longitude
           );
 
-          const timeInside = student.timeInsideGeofence || 0;
+          // Calculate real-time time inside geofence
+          let timeInside = student.timeInsideGeofence || 0;
+          
+          // If student is currently inside and we have entry time, calculate elapsed time
+          if (student.currentlyInside && student.geofenceEntryTime) {
+            try {
+              const entryTime = new Date(student.geofenceEntryTime);
+              if (!isNaN(entryTime.getTime())) {
+                const elapsedSeconds = Math.floor((currentTime - entryTime) / 1000);
+                timeInside = elapsedSeconds;
+              }
+            } catch (e) {
+              console.error('Error calculating elapsed time:', e);
+            }
+          }
+          
           const timeOutside = student.timeOutsideGeofence || 0;
 
           return (
@@ -206,9 +231,6 @@ export default function AttendanceMap({ teacherLocation, students = [], geofence
                   }}>
                     <div style={{ marginBottom: '4px' }}>
                       ⏱️ <strong>Time Inside:</strong> {formatDuration(timeInside)}
-                    </div>
-                    <div>
-                      ⏰ <strong>Time Outside:</strong> {formatDuration(timeOutside)}
                     </div>
                   </div>
 

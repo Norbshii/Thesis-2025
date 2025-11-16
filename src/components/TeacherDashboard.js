@@ -143,7 +143,9 @@ const TeacherDashboard = () => {
                     latitude: record.latitude,
                     longitude: record.longitude,
                     signInTime: record.signInTime,
-                    timeInsideGeofence: record.timeInsideGeofence || 0
+                    timeInsideGeofence: record.timeInsideGeofence || 0,
+                    geofenceEntryTime: record.geofenceEntryTime || null,
+                    currentlyInside: record.currentlyInside !== undefined ? record.currentlyInside : true
                   }));
                 
                 return { classId: classItem.id, attendance: todayAttendance };
@@ -252,7 +254,9 @@ const TeacherDashboard = () => {
             latitude: newAttendance.latitude,
             longitude: newAttendance.longitude,
             signInTime: newAttendance.sign_in_time || newAttendance.signInTime,
-            timeInsideGeofence: newAttendance.timeInsideGeofence || 0
+            timeInsideGeofence: newAttendance.timeInsideGeofence || 0,
+            geofenceEntryTime: newAttendance.geofence_entry_time || newAttendance.geofenceEntryTime || null,
+            currentlyInside: newAttendance.currently_inside !== undefined ? newAttendance.currently_inside : (newAttendance.currentlyInside !== undefined ? newAttendance.currentlyInside : true)
           };
           
           // Update live attendance map immediately
@@ -321,14 +325,16 @@ const TeacherDashboard = () => {
             if (attendanceResponse.data.success && attendanceResponse.data.attendance) {
               const todayAttendance = attendanceResponse.data.attendance
                 .filter(record => record.latitude && record.longitude)
-                .map(record => ({
-                  studentName: record.studentName,
-                  studentEmail: record.studentEmail,
-                  latitude: record.latitude,
-                  longitude: record.longitude,
-                  signInTime: record.signInTime,
-                  timeInsideGeofence: record.timeInsideGeofence || 0
-                }));
+                  .map(record => ({
+                    studentName: record.studentName,
+                    studentEmail: record.studentEmail,
+                    latitude: record.latitude,
+                    longitude: record.longitude,
+                    signInTime: record.signInTime,
+                    timeInsideGeofence: record.timeInsideGeofence || 0,
+                    geofenceEntryTime: record.geofenceEntryTime || null,
+                    currentlyInside: record.currentlyInside !== undefined ? record.currentlyInside : true
+                  }));
               
               return { classId: classItem.id, attendance: todayAttendance };
             }
@@ -1179,7 +1185,9 @@ const TeacherDashboard = () => {
                           latitude: r.latitude,
                           longitude: r.longitude,
                           signed_in_at: r.signInTime,
-                          timeInsideGeofence: r.timeInsideGeofence || 0
+                          timeInsideGeofence: r.timeInsideGeofence || 0,
+                          geofenceEntryTime: r.geofenceEntryTime || null,
+                          currentlyInside: r.currentlyInside !== undefined ? r.currentlyInside : true
                         }));
                       })()}
                       geofenceRadius={classItem.geofenceRadius || 100}
