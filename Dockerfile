@@ -45,6 +45,6 @@ RUN php artisan view:clear || true
 # Expose port
 EXPOSE 8000
 
-# Run migrations and start server with scheduler
-CMD php artisan migrate --force && php artisan schedule:work & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+# Run migrations, start queue worker, scheduler, and server
+CMD php artisan migrate --force && php artisan queue:work --tries=3 --timeout=60 & php artisan schedule:work & php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
 

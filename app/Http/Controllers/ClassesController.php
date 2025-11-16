@@ -833,123 +833,52 @@ class ClassesController extends Controller
                 ]);
             }
 
-            // Store attendance record in attendance_entries table
-            $attendanceRecord = AttendanceEntry::create([
-                'class_id' => $class->id,
-                'student_id' => $student ? $student->id : null,
-                'class_code' => $class->class_code,
-                'class_name' => $class->class_name,
-                'teacher_email' => $class->teacher_email,
-                'student_email' => $studentEmail,
-                'student_name' => $studentName,
-                'date' => $todayDate,
-                'sign_in_time' => $currentDateTime->format('H:i:s'),
-                'status' => $isLate ? 'Late' : 'On Time',
-                'distance' => round($distance, 2),
-                'student_latitude' => (float)$studentLat,
-                'student_longitude' => (float)$studentLon,
-                'timestamp' => $currentDateTime,
-                'geofence_entry_time' => $currentDateTime,
-                'currently_inside' => true,
-                'time_inside_geofence' => 0,
-                'time_outside_geofence' => 0,
-                'last_location_update' => $currentDateTime,
+            // Dispatch sign-in processing to queue for better performance
+            \App\Jobs\ProcessStudentSignIn::dispatch(
+                $class->id,
+                $studentEmail,
+                $studentName,
+                $studentLat,
+                $studentLon,
+                $distance,
+                $isLate,
+                $currentDateTime->toIso8601String(), // Convert to string for queue serialization
+                $student ? $student->id : null
+            );
+
+            \Log::info('✅ Student sign-in queued for processing', [
+                'student' => $studentName,
+                'class' => $class->class_code,
+                'isLate' => $isLate
             ]);
 
-            \Log::info('Attendance record created successfully', ['id' => $attendanceRecord->id]);
-
-
+            // EMAIL FUNCTIONALITY COMMENTED OUT - Not in use currently
+            // Email sending has been moved to queue job (ProcessStudentSignIn)
+            // Uncomment and enable in the job when email functionality is needed
+            /*
             // Send email notification to guardian (if email address exists)
             $emailSent = false;
             if ($guardianEmail) {
                 try {
-                    \Log::info('Attempting to send email', [
-                        'to' => $guardianEmail,
-                        'student' => $studentName,
-                        'class' => $class->class_name,
-                        'mail_mailer' => env('MAIL_MAILER'),
-                        'resend_api_key_set' => !empty(env('RESEND_API_KEY'))
-                    ]);
-                    
-                    $emailData = [
-                        'studentName' => $studentName,
-                        'guardianName' => $guardianName,
-                        'className' => $class->class_name,
-                        'signInTime' => $currentDateTime->format('g:i A'),
-                        'signInDate' => $currentDateTime->format('l, F j, Y'),
-                        'status' => $isLate ? 'Late' : 'On Time',
-                        'distance' => round($distance, 2),
-                        'isWithinGeofence' => $distance <= $geofenceRadius,
-                        'teacherName' => $class->teacher_name ?? 'Teacher',
-                    ];
-
-                    // Use Resend API directly if API key is set (works on Render free tier)
-                    $resendApiKey = env('RESEND_API_KEY');
-                    if ($resendApiKey) {
-                        $resend = new Resend($resendApiKey);
-                        
-                        // Render email content
-                        $emailContent = view('emails.student-signin', $emailData)->render();
-                        
-                        $result = $resend->emails->send([
-                            'from' => env('MAIL_FROM_ADDRESS', 'noreply@pinpoint.click'),
-                            'to' => $guardianEmail,
-                            'subject' => '[PinPoint] ' . $studentName . ' signed in to ' . $class->class_name,
-                            'html' => $emailContent,
-                        ]);
-                        
-                        $emailSent = true;
-                        \Log::info('✅ Email sent via Resend API', [
-                            'email' => $guardianEmail,
-                            'student' => $studentName,
-                            'class' => $class->class_name,
-                            'resend_id' => $result->id ?? 'unknown'
-                        ]);
-                    } else {
-                        // Fallback to Laravel Mail (for local development)
-                        Mail::to($guardianEmail)->send(new StudentSignInNotification($emailData));
-                        $emailSent = true;
-                        \Log::info('✅ Email sent via Laravel Mail', [
-                            'email' => $guardianEmail,
-                            'student' => $studentName,
-                            'class' => $class->class_name
-                        ]);
-                    }
+                    // ... email sending code ...
                 } catch (\Exception $emailError) {
                     \Log::error('❌ Email failed to send', [
                         'email' => $guardianEmail,
-                        'error' => $emailError->getMessage(),
-                        'trace' => $emailError->getTraceAsString()
+                        'error' => $emailError->getMessage()
                     ]);
                 }
-            } else {
-                \Log::info('Email not sent: No guardian email for student', ['student' => $studentName]);
             }
-
-            // Broadcast attendance update event
-            $attendanceData = [
-                'id' => $attendanceRecord->id,
-                'student_name' => $studentName,
-                'student_email' => $studentEmail,
-                'sign_in_time' => $currentDateTime->format('H:i:s'),
-                'status' => $isLate ? 'Late' : 'On Time',
-                'distance' => round($distance, 2),
-                'latitude' => (float)$studentLat,
-                'longitude' => (float)$studentLon,
-                'timestamp' => $currentDateTime->toIso8601String(),
-            ];
-            broadcast(new AttendanceUpdated($classId, $attendanceData));
+            */
             
+            // Return immediate response - actual processing happens in queue
             return response()->json([
                 'success' => true,
                 'message' => $isLate ? 'Signed in successfully (Late)' : 'Signed in successfully (On time)',
                 'isLate' => $isLate,
                 'signInTime' => $currentDateTime->format('H:i:s'),
                 'distance' => round($distance, 2),
-                'smsSent' => isset($smsResult) && $smsResult['success'],
-                'emailSent' => $emailSent,
-                'smsNote' => !$guardianPhone ? 'Add guardian phone to receive SMS alerts' : ($smsResult ? null : 'SMS service not configured'),
-                'emailNote' => !$guardianEmail ? 'Add guardian email to receive email notifications' : (!$emailSent ? 'Email service error' : null)
+                'queued' => true, // Indicate that processing is queued
+                'note' => 'Your sign-in is being processed. Attendance will update shortly.'
             ]);
 
         } catch (\Exception $e) {

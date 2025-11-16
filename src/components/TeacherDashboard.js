@@ -145,6 +145,7 @@ const TeacherDashboard = () => {
                     signInTime: record.signInTime,
                     timeInsideGeofence: record.timeInsideGeofence || 0,
                     geofenceEntryTime: record.geofenceEntryTime || null,
+                    geofenceExitTime: record.geofenceExitTime || null,
                     currentlyInside: record.currentlyInside !== undefined ? record.currentlyInside : true
                   }));
                 
@@ -256,6 +257,7 @@ const TeacherDashboard = () => {
             signInTime: newAttendance.sign_in_time || newAttendance.signInTime,
             timeInsideGeofence: newAttendance.timeInsideGeofence || 0,
             geofenceEntryTime: newAttendance.geofence_entry_time || newAttendance.geofenceEntryTime || null,
+            geofenceExitTime: newAttendance.geofence_exit_time || newAttendance.geofenceExitTime || null,
             currentlyInside: newAttendance.currently_inside !== undefined ? newAttendance.currently_inside : (newAttendance.currentlyInside !== undefined ? newAttendance.currentlyInside : true)
           };
           
@@ -333,6 +335,7 @@ const TeacherDashboard = () => {
                     signInTime: record.signInTime,
                     timeInsideGeofence: record.timeInsideGeofence || 0,
                     geofenceEntryTime: record.geofenceEntryTime || null,
+                    geofenceExitTime: record.geofenceExitTime || null,
                     currentlyInside: record.currentlyInside !== undefined ? record.currentlyInside : true
                   }));
               
@@ -1187,10 +1190,12 @@ const TeacherDashboard = () => {
                           signed_in_at: r.signInTime,
                           timeInsideGeofence: r.timeInsideGeofence || 0,
                           geofenceEntryTime: r.geofenceEntryTime || null,
+                          geofenceExitTime: r.geofenceExitTime || null,
                           currentlyInside: r.currentlyInside !== undefined ? r.currentlyInside : true
                         }));
                       })()}
                       geofenceRadius={classItem.geofenceRadius || 100}
+                      isClassOpen={classItem.isOpen}
                     />
                   </div>
                 </div>
@@ -1571,9 +1576,14 @@ const TeacherDashboard = () => {
                         signed_in_at: r.signInTime,
                         signInTime: r.signInTime,
                         date: r.date,
-                        status: r.status
+                        status: r.status,
+                        timeInsideGeofence: r.timeInsideGeofence || 0,
+                        geofenceEntryTime: r.geofenceEntryTime || null,
+                        geofenceExitTime: r.geofenceExitTime || null,
+                        currentlyInside: r.currentlyInside !== undefined ? r.currentlyInside : true
                       }))}
                       geofenceRadius={selectedClass.geofenceRadius || 100}
+                      isClassOpen={selectedClass.isOpen}
                     />
                   </div>
                 )}

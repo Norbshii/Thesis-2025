@@ -92,7 +92,7 @@ function CenterMapButton({ teacherLocation, onCenter }) {
   );
 }
 
-export default function AttendanceMap({ teacherLocation, students = [], geofenceRadius = 100 }) {
+export default function AttendanceMap({ teacherLocation, students = [], geofenceRadius = 100, isClassOpen = true }) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every second for real-time timer
@@ -177,11 +177,16 @@ export default function AttendanceMap({ teacherLocation, students = [], geofence
             student.longitude
           );
 
-          // Calculate real-time time inside geofence
+          // Calculate time inside geofence
           let timeInside = student.timeInsideGeofence || 0;
           
-          // If student is currently inside and we have entry time, calculate elapsed time
-          if (student.currentlyInside && student.geofenceEntryTime) {
+          // If class is closed OR student has exit time, use stored value (don't calculate real-time)
+          if (!isClassOpen || student.geofenceExitTime) {
+            // Class is closed - use the stored time_inside_geofence value
+            // This was calculated when the class closed
+            timeInside = student.timeInsideGeofence || 0;
+          } else if (student.currentlyInside && student.geofenceEntryTime && isClassOpen) {
+            // Class is open AND student is currently inside - calculate real-time elapsed
             try {
               const entryTime = new Date(student.geofenceEntryTime);
               if (!isNaN(entryTime.getTime())) {
