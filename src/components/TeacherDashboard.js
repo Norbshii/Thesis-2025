@@ -123,35 +123,56 @@ const TeacherDashboard = () => {
           }));
           setClasses(classesWithAttendance);
           
-          // Fetch today's attendance for all open classes to populate the map
+          // Fetch today's attendance for ALL classes (open or closed) to populate the map
+          // This shows students who signed in today, even if class was closed/reopened
           const today = new Date().toISOString().split('T')[0];
-          const openClasses = classesWithAttendance.filter(cls => cls.isOpen);
           
-          for (const classItem of openClasses) {
+          // Fetch attendance for all classes in parallel
+          const attendancePromises = classesWithAttendance.map(async (classItem) => {
             try {
               const attendanceResponse = await api.get(`/classes/${classItem.id}/attendance`, {
                 params: { date: today }
               });
               
               if (attendanceResponse.data.success && attendanceResponse.data.attendance) {
-                const todayAttendance = attendanceResponse.data.attendance.map(record => ({
-                  studentName: record.studentName,
-                  studentEmail: record.studentEmail,
-                  latitude: record.latitude,
-                  longitude: record.longitude,
-                  signInTime: record.signInTime,
-                  timeInsideGeofence: record.timeInsideGeofence || 0
-                }));
+                const todayAttendance = attendanceResponse.data.attendance
+                  .filter(record => record.latitude && record.longitude) // Only include records with location
+                  .map(record => ({
+                    studentName: record.studentName,
+                    studentEmail: record.studentEmail,
+                    latitude: record.latitude,
+                    longitude: record.longitude,
+                    signInTime: record.signInTime,
+                    timeInsideGeofence: record.timeInsideGeofence || 0
+                  }));
                 
-                setLiveAttendance(prev => ({
-                  ...prev,
-                  [classItem.id]: todayAttendance
-                }));
+                return { classId: classItem.id, attendance: todayAttendance };
               }
+              return { classId: classItem.id, attendance: [] };
             } catch (attendanceError) {
               console.error(`Error fetching attendance for class ${classItem.id}:`, attendanceError);
+              return { classId: classItem.id, attendance: [] };
             }
-          }
+          });
+          
+          // Wait for all attendance fetches to complete
+          const attendanceResults = await Promise.all(attendancePromises);
+          
+          // Update liveAttendance state with all fetched records
+          setLiveAttendance(prev => {
+            const updated = { ...prev };
+            attendanceResults.forEach(({ classId, attendance }) => {
+              if (attendance.length > 0) {
+                console.log(`📊 Loaded ${attendance.length} attendance records for class ${classId}:`, attendance);
+              }
+              updated[classId] = attendance;
+            });
+            console.log('🗺️ Final liveAttendance state:', updated);
+            return updated;
+          });
+          
+          // Store today's date so we can detect when it changes
+          localStorage.setItem('lastAttendanceFetchDate', today);
         } catch (error) {
           console.error('Error loading classes:', error);
           showToastMessage('Failed to load classes', 'error');
@@ -280,6 +301,62 @@ const TeacherDashboard = () => {
       echo.leave('buildings');
     };
   }, []);
+
+  // Auto-refresh attendance when date changes (e.g., at midnight)
+  useEffect(() => {
+    const checkDateChange = () => {
+      const today = new Date().toISOString().split('T')[0];
+      const lastFetchedDate = localStorage.getItem('lastAttendanceFetchDate');
+      
+      // If date changed, refresh attendance for all classes
+      if (lastFetchedDate && lastFetchedDate !== today && classes.length > 0) {
+        console.log('📅 Date changed! Refreshing attendance data...');
+        
+        const attendancePromises = classes.map(async (classItem) => {
+          try {
+            const attendanceResponse = await api.get(`/classes/${classItem.id}/attendance`, {
+              params: { date: today }
+            });
+            
+            if (attendanceResponse.data.success && attendanceResponse.data.attendance) {
+              const todayAttendance = attendanceResponse.data.attendance
+                .filter(record => record.latitude && record.longitude)
+                .map(record => ({
+                  studentName: record.studentName,
+                  studentEmail: record.studentEmail,
+                  latitude: record.latitude,
+                  longitude: record.longitude,
+                  signInTime: record.signInTime,
+                  timeInsideGeofence: record.timeInsideGeofence || 0
+                }));
+              
+              return { classId: classItem.id, attendance: todayAttendance };
+            }
+            return { classId: classItem.id, attendance: [] };
+          } catch (attendanceError) {
+            console.error(`Error refreshing attendance for class ${classItem.id}:`, attendanceError);
+            return { classId: classItem.id, attendance: [] };
+          }
+        });
+        
+        Promise.all(attendancePromises).then(attendanceResults => {
+          setLiveAttendance(prev => {
+            const updated = { ...prev };
+            attendanceResults.forEach(({ classId, attendance }) => {
+              updated[classId] = attendance;
+            });
+            return updated;
+          });
+          localStorage.setItem('lastAttendanceFetchDate', today);
+        });
+      }
+    };
+    
+    // Check every minute if date changed
+    const dateCheckInterval = setInterval(checkDateChange, 60000);
+    
+    return () => clearInterval(dateCheckInterval);
+  }, [classes, currentTime]);
 
   const showToastMessage = (message, type) => {
     setToastMessage(message);
@@ -509,7 +586,7 @@ const TeacherDashboard = () => {
     
     const choice = prompt(
       `Extend "${classItem.name}" by how many minutes?\n\n` +
-      `Current end time: ${classItem.endTime}\n\n` +
+      `Current end time: ${formatTimeString(classItem.endTime)}\n\n` +
       `Enter minutes (5-180) or choose:\n` +
       options.map(o => `- ${o.value} (${o.label})`).join('\n')
     );
@@ -539,7 +616,7 @@ const TeacherDashboard = () => {
         ));
         
         showToastMessage(
-          `Class extended by ${minutes} minutes! New end time: ${response.data.newEndTime}`,
+          `Class extended by ${minutes} minutes! New end time: ${formatTimeString(response.data.newEndTime)}`,
           'success'
         );
       }
@@ -797,6 +874,28 @@ const TeacherDashboard = () => {
     });
   };
 
+  // Convert 24-hour time string (e.g., "21:07:00" or "21:07") to 12-hour format (e.g., "9:07 PM")
+  const formatTimeString = (timeString) => {
+    if (!timeString || timeString === 'N/A') return timeString;
+    
+    try {
+      // Handle formats like "21:07:00" or "21:07"
+      const [hours, minutes] = timeString.split(':').map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return timeString;
+      
+      const date = new Date();
+      date.setHours(hours, minutes, 0);
+      
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      return timeString; // Return original if conversion fails
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -945,7 +1044,7 @@ const TeacherDashboard = () => {
                       <h3 className="class-code">{classItem.code}</h3>
                       <h4 className="class-name">{classItem.name}</h4>
                       <p className="class-schedule">
-                        📅 {formatDate(new Date().toISOString().split('T')[0])} | 🕒 {classItem.startTime || 'N/A'} - {classItem.endTime || 'N/A'}
+                        📅 {formatDate(new Date().toISOString().split('T')[0])} | 🕒 {formatTimeString(classItem.startTime) || 'N/A'} - {formatTimeString(classItem.endTime) || 'N/A'}
                       </p>
                       <p className="class-stats">
                         👥 {classItem.enrolledStudents?.length || 0}/{classItem.maxStudents || 0} students
@@ -1037,28 +1136,52 @@ const TeacherDashboard = () => {
                           🟢 LIVE
                         </span>
                       )}
+                      {!classItem.isOpen && (
+                        <span style={{
+                          fontSize: '12px',
+                          color: '#6c757d',
+                          fontWeight: 'bold',
+                          padding: '4px 8px',
+                          background: '#e9ecef',
+                          borderRadius: '12px'
+                        }}>
+                          🔴 CLOSED
+                        </span>
+                      )}
                     </div>
                     <AttendanceMap
                       teacherLocation={
-                        classItem.isOpen && classItem.currentSessionLat && classItem.currentSessionLon
+                        // Always use building location (constant location for the class)
+                        (classItem.building && classItem.building.latitude && classItem.building.longitude)
                           ? {
-                              lat: classItem.currentSessionLat,
-                              lng: classItem.currentSessionLon
+                              lat: parseFloat(classItem.building.latitude),
+                              lng: parseFloat(classItem.building.longitude)
+                            }
+                          // Fallback: use first student's location if no building
+                          : (liveAttendance[classItem.id] && liveAttendance[classItem.id].length > 0 && liveAttendance[classItem.id][0].latitude)
+                          ? {
+                              lat: liveAttendance[classItem.id][0].latitude,
+                              lng: liveAttendance[classItem.id][0].longitude
                             }
                           : null
                       }
-                      students={
-                        (liveAttendance[classItem.id] || [])
-                          .filter(r => r.latitude && r.longitude)
-                          .map(r => ({
-                            name: r.studentName,
-                            email: r.studentEmail || '',
-                            latitude: r.latitude,
-                            longitude: r.longitude,
-                            signed_in_at: r.signInTime,
-                            timeInsideGeofence: r.timeInsideGeofence || 0
-                          }))
-                      }
+                      students={(() => {
+                        const classAttendance = liveAttendance[classItem.id] || [];
+                        const filtered = classAttendance.filter(r => r && r.latitude && r.longitude);
+                        console.log(`🗺️ Map data for class ${classItem.id} (${classItem.code}):`, {
+                          totalRecords: classAttendance.length,
+                          withLocation: filtered.length,
+                          records: filtered
+                        });
+                        return filtered.map(r => ({
+                          name: r.studentName,
+                          email: r.studentEmail || '',
+                          latitude: r.latitude,
+                          longitude: r.longitude,
+                          signed_in_at: r.signInTime,
+                          timeInsideGeofence: r.timeInsideGeofence || 0
+                        }));
+                      })()}
                       geofenceRadius={classItem.geofenceRadius || 100}
                     />
                   </div>
@@ -1406,7 +1529,7 @@ const TeacherDashboard = () => {
                 <div className="detail-section">
                   <h4>Class Information</h4>
                   <p><strong>Date:</strong> {formatDate(selectedClass.date)}</p>
-                  <p><strong>Time:</strong> {selectedClass.startTime} - {selectedClass.endTime}</p>
+                  <p><strong>Time:</strong> {formatTimeString(selectedClass.startTime)} - {formatTimeString(selectedClass.endTime)}</p>
                   <p><strong>Late Threshold:</strong> {selectedClass.lateThreshold} minutes</p>
                   <p><strong>Control Type:</strong> {selectedClass.isManualControl ? 'Manual' : 'Time-based'}</p>
                   {selectedClass.isOpen && selectedClass.currentSessionLat && selectedClass.currentSessionLon && (
@@ -1658,7 +1781,7 @@ const TeacherDashboard = () => {
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <span style={{ fontSize: '11px', color: '#6c757d' }}>🕐 Time</span>
                                 <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
-                                {record.signInTime}
+                                {formatTimeString(record.signInTime)}
                               </span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
