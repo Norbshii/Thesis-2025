@@ -122,6 +122,36 @@ const TeacherDashboard = () => {
             attendance: []
           }));
           setClasses(classesWithAttendance);
+          
+          // Fetch today's attendance for all open classes to populate the map
+          const today = new Date().toISOString().split('T')[0];
+          const openClasses = classesWithAttendance.filter(cls => cls.isOpen);
+          
+          for (const classItem of openClasses) {
+            try {
+              const attendanceResponse = await api.get(`/classes/${classItem.id}/attendance`, {
+                params: { date: today }
+              });
+              
+              if (attendanceResponse.data.success && attendanceResponse.data.attendance) {
+                const todayAttendance = attendanceResponse.data.attendance.map(record => ({
+                  studentName: record.student_name,
+                  studentEmail: record.student_email,
+                  latitude: record.student_latitude,
+                  longitude: record.student_longitude,
+                  signInTime: record.sign_in_time,
+                  timeInsideGeofence: record.time_inside_geofence || 0
+                }));
+                
+                setLiveAttendance(prev => ({
+                  ...prev,
+                  [classItem.id]: todayAttendance
+                }));
+              }
+            } catch (attendanceError) {
+              console.error(`Error fetching attendance for class ${classItem.id}:`, attendanceError);
+            }
+          }
         } catch (error) {
           console.error('Error loading classes:', error);
           showToastMessage('Failed to load classes', 'error');
@@ -1007,10 +1037,11 @@ const TeacherDashboard = () => {
                             email: r.studentEmail || '',
                             latitude: r.latitude,
                             longitude: r.longitude,
-                            signed_in_at: r.signInTime
+                            signed_in_at: r.signInTime,
+                            timeInsideGeofence: r.timeInsideGeofence || 0
                           }))
                       }
-                      geofenceRadius={100}
+                      geofenceRadius={classItem.geofenceRadius || 100}
                     />
                   </div>
                 </div>
