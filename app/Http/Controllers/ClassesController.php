@@ -776,27 +776,33 @@ class ClassesController extends Controller
             $currentDateTime = now();
             $todayDate = $currentDateTime->format('Y-m-d');
             
-            // Check for duplicate sign-in (same student, same class, same day)
-            $existingAttendance = AttendanceEntry::where('class_code', $class->class_code)
+            // Check for duplicate sign-in (same student, same class ID, same day)
+            // Check by class_id first (most specific), then fallback to class_code
+            $existingAttendance = AttendanceEntry::where('class_id', $class->id)
                 ->where('student_email', $studentEmail)
                 ->whereDate('date', $todayDate)
                 ->first();
             
             if ($existingAttendance) {
-                $signInTime = Carbon::parse($existingAttendance->sign_in_time)->format('H:i:s');
+                $signInTime = Carbon::parse($existingAttendance->sign_in_time)->format('g:i A');
+                $className = $existingAttendance->class_name ?? $class->class_name;
                 
                 \Log::info('Duplicate sign-in attempt blocked', [
                     'student' => $studentEmail,
-                    'class' => $class->class_code,
+                    'class_id' => $class->id,
+                    'class_code' => $class->class_code,
+                    'class_name' => $className,
                     'date' => $todayDate,
-                    'originalSignIn' => $signInTime
+                    'originalSignIn' => $signInTime,
+                    'existing_attendance_id' => $existingAttendance->id
                 ]);
                 
                 return response()->json([
                     'success' => false,
-                    'message' => "You have already signed in to this class today at {$signInTime}. Attendance has been recorded.",
+                    'message' => "You have already signed in to '{$className}' today at {$signInTime}. You can only sign in once per class per day.",
                     'alreadySignedIn' => true,
                     'signInTime' => $signInTime,
+                    'className' => $className,
                     'date' => $todayDate
                 ], 400);
             }
