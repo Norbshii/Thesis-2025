@@ -65,30 +65,58 @@ Route::get('/debug/mail-config', function () {
 Route::get('/debug/test-email', function () {
     try {
         $testEmail = env('MAIL_USERNAME', 'davelima2@gmail.com');
+        $resendApiKey = env('RESEND_API_KEY');
         
         \Log::info('=== TEST EMAIL ATTEMPT ===', [
             'to' => $testEmail,
-            'from' => config('mail.from.address'),
-            'mailer' => config('mail.default'),
-            'host' => config('mail.mailers.smtp.host')
+            'resend_api_key_set' => !empty($resendApiKey),
+            'api_key_length' => strlen($resendApiKey)
         ]);
         
-        \Illuminate\Support\Facades\Mail::raw(
-            'This is a test email from PinPoint Attendance System on Render. Timestamp: ' . now()->toDateTimeString(),
-            function ($message) use ($testEmail) {
-                $message->to($testEmail)
-                        ->subject('PinPoint Test Email - ' . now()->toDateTimeString());
-            }
-        );
-        
-        \Log::info('=== TEST EMAIL SENT SUCCESSFULLY ===');
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Test email sent successfully!',
-            'sent_to' => $testEmail,
-            'check_inbox' => 'Check your email at ' . $testEmail
-        ]);
+        // Test Resend API directly
+        if ($resendApiKey) {
+            $resend = new \Resend\Resend($resendApiKey);
+            
+            $result = $resend->emails->send([
+                'from' => env('MAIL_FROM_ADDRESS', 'onboarding@resend.dev'),
+                'to' => $testEmail,
+                'subject' => 'PinPoint Test Email - ' . now()->toDateTimeString(),
+                'html' => '<h1>Test Email from PinPoint</h1><p>This is a test email from PinPoint Attendance System.</p><p>Timestamp: ' . now()->toDateTimeString() . '</p><p>If you received this, Resend API is working correctly! ✅</p>',
+            ]);
+            
+            \Log::info('=== TEST EMAIL SENT SUCCESSFULLY VIA RESEND API ===', [
+                'resend_id' => $result->id ?? 'unknown',
+                'to' => $testEmail
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Test email sent successfully via Resend API!',
+                'sent_to' => $testEmail,
+                'resend_id' => $result->id ?? 'unknown',
+                'check_inbox' => 'Check your email at ' . $testEmail,
+                'method' => 'Resend API'
+            ]);
+        } else {
+            // Fallback to Laravel Mail
+            \Illuminate\Support\Facades\Mail::raw(
+                'This is a test email from PinPoint Attendance System. Timestamp: ' . now()->toDateTimeString(),
+                function ($message) use ($testEmail) {
+                    $message->to($testEmail)
+                            ->subject('PinPoint Test Email - ' . now()->toDateTimeString());
+                }
+            );
+            
+            \Log::info('=== TEST EMAIL SENT SUCCESSFULLY VIA LARAVEL MAIL ===');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Test email sent successfully via Laravel Mail!',
+                'sent_to' => $testEmail,
+                'check_inbox' => 'Check your email at ' . $testEmail,
+                'method' => 'Laravel Mail'
+            ]);
+        }
         
     } catch (\Exception $e) {
         \Log::error('=== TEST EMAIL FAILED ===', [
@@ -99,7 +127,8 @@ Route::get('/debug/test-email', function () {
         return response()->json([
             'success' => false,
             'message' => 'Failed to send test email',
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'error_class' => get_class($e)
         ], 500);
     }
 });

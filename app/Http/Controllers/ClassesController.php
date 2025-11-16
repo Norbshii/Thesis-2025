@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use App\Mail\StudentSignInNotification;
+use Resend\Resend;
 use App\Events\ClassUpdated;
 use App\Events\AttendanceUpdated;
 
@@ -861,8 +862,7 @@ class ClassesController extends Controller
                         'student' => $studentName,
                         'class' => $class->class_name,
                         'mail_mailer' => env('MAIL_MAILER'),
-                        'mail_host' => env('MAIL_HOST'),
-                        'mail_from' => env('MAIL_FROM_ADDRESS')
+                        'resend_api_key_set' => !empty(env('RESEND_API_KEY'))
                     ]);
                     
                     $emailData = [
@@ -877,14 +877,38 @@ class ClassesController extends Controller
                         'teacherName' => $class->teacher_name ?? 'Teacher',
                     ];
 
-                    Mail::to($guardianEmail)->send(new StudentSignInNotification($emailData));
-                    $emailSent = true;
-
-                    \Log::info('✅ Email sent successfully to guardian', [
-                        'email' => $guardianEmail,
-                        'student' => $studentName,
-                        'class' => $class->class_name
-                    ]);
+                    // Use Resend API directly if API key is set (works on Render free tier)
+                    $resendApiKey = env('RESEND_API_KEY');
+                    if ($resendApiKey) {
+                        $resend = new Resend($resendApiKey);
+                        
+                        // Render email content
+                        $emailContent = view('emails.student-signin', $emailData)->render();
+                        
+                        $result = $resend->emails->send([
+                            'from' => env('MAIL_FROM_ADDRESS', 'noreply@pinpoint.click'),
+                            'to' => $guardianEmail,
+                            'subject' => '[PinPoint] ' . $studentName . ' signed in to ' . $class->class_name,
+                            'html' => $emailContent,
+                        ]);
+                        
+                        $emailSent = true;
+                        \Log::info('✅ Email sent via Resend API', [
+                            'email' => $guardianEmail,
+                            'student' => $studentName,
+                            'class' => $class->class_name,
+                            'resend_id' => $result->id ?? 'unknown'
+                        ]);
+                    } else {
+                        // Fallback to Laravel Mail (for local development)
+                        Mail::to($guardianEmail)->send(new StudentSignInNotification($emailData));
+                        $emailSent = true;
+                        \Log::info('✅ Email sent via Laravel Mail', [
+                            'email' => $guardianEmail,
+                            'student' => $studentName,
+                            'class' => $class->class_name
+                        ]);
+                    }
                 } catch (\Exception $emailError) {
                     \Log::error('❌ Email failed to send', [
                         'email' => $guardianEmail,
