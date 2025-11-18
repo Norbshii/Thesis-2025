@@ -819,7 +819,7 @@ class ClassesController extends Controller
                 ]);
             }
 
-            // Calculate distance between student and geofence center
+            // Calculate distance between student and geofence center (building location)
             // In test mode, set distance to 0 (always within geofence) - ONLY in development
             if ($testMode && env('APP_ENV') === 'local') {
                 $distance = 0;
@@ -834,9 +834,29 @@ class ClassesController extends Controller
                     'student' => $studentName,
                     'class' => $class->class_code
                 ]);
-                $distance = $this->calculateDistance($geofenceLat, $geofenceLon, $studentLat, $studentLon);
+                // Only calculate if we have valid geofence coordinates
+                if ($geofenceLat !== null && $geofenceLon !== null) {
+                    $distance = $this->calculateDistance($geofenceLat, $geofenceLon, $studentLat, $studentLon);
+                } else {
+                    // No building - reject even in test mode (production)
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This class does not have a building assigned. Please contact your teacher or administrator.'
+                    ], 403);
+                }
             } else {
-                // Normal validation - calculate distance
+                // Normal validation - calculate distance from student to building
+                // At this point, geofenceLat/Lon should be set (we return early if no building)
+                if ($geofenceLat === null || $geofenceLon === null) {
+                    \Log::error('Geofence coordinates are null in normal validation', [
+                        'class' => $class->class_code,
+                        'has_building' => $class->building ? 'yes' : 'no'
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Geofence location error. Please contact support.'
+                    ], 500);
+                }
                 $distance = $this->calculateDistance($geofenceLat, $geofenceLon, $studentLat, $studentLon);
             }
             
@@ -950,6 +970,9 @@ class ClassesController extends Controller
             // Calculate if late based on when teacher ACTUALLY opened the class
             $lateThreshold = $class->late_threshold ?? 15;
             $isLate = false;
+            
+            // Get session opened time from class (when teacher opened it)
+            $sessionOpened = $class->current_session_opened;
             
             if ($sessionOpened) {
                 // Use the actual time teacher opened the class
