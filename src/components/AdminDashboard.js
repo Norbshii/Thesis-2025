@@ -8,6 +8,15 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './AdminDashboard.css';
 
+const TEACHER_DEPARTMENTS = [
+  'College of Education (COE)',
+  'College of Computing and Informatics (CCI)',
+  'College of Arts and Sciences (CAS)',
+  'College of Industrial and Technology (CIT)',
+  'College of Engineering and Architecture (CEA)',
+  'Others'
+];
+
 // Fix Leaflet marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -200,7 +209,8 @@ const AdminDashboard = () => {
       name: user.name,
       username: user.username,
       role: user.role,
-      course: user.course
+      course: user.course,
+      department: user.department || ''
     });
     setShowCreateUserModal(true);
   };
@@ -484,6 +494,7 @@ const AdminDashboard = () => {
                       <th>Email</th>
                       <th>Username</th>
                       <th>Role</th>
+                      <th>Department</th>
                       <th>Created</th>
                       <th>Actions</th>
                     </tr>
@@ -502,6 +513,7 @@ const AdminDashboard = () => {
                               {teacher.role === 'admin' ? '👑' : '👨‍🏫'} {teacher.role.toUpperCase()}
                             </span>
                           </td>
+                          <td>{teacher.department || '—'}</td>
                           <td>{new Date(teacher.created_at).toLocaleDateString()}</td>
                           <td className="actions">
                             <button 
@@ -825,6 +837,29 @@ const AdminDashboard = () => {
                   placeholder="Optional username"
                 />
               </div>
+
+              {selectedRole === 'teacher' && (
+                <div className="form-group">
+                  <label>Department *</label>
+                  <select
+                    {...registerUser('department', {
+                      validate: (value) => {
+                        if (selectedRole === 'teacher' && !value) {
+                          return 'Department is required for teachers';
+                        }
+                        return true;
+                      }
+                    })}
+                    className={userErrors.department ? 'error' : ''}
+                  >
+                    <option value="">Select department...</option>
+                    {TEACHER_DEPARTMENTS.map((dept) => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                  {userErrors.department && <span className="error-message">{userErrors.department.message}</span>}
+                </div>
+              )}
 
               {selectedRole === 'student' && (
                 <div className="form-group">
