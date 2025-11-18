@@ -401,7 +401,8 @@ class ClassesController extends Controller
     }
 
     /**
-     * Open class with geolocation (teacher's location)
+     * Open class with geolocation (uses building location, not teacher GPS)
+     * Note: Geofence validation uses building location from class->building relationship, not this session location
      */
     public function openClass(Request $request)
     {
@@ -699,8 +700,8 @@ class ClassesController extends Controller
         $studentLon = $request->input('longitude', 0);
 
         try {
-            // Get class record to check if open and get current session geofence
-            $class = ClassModel::findOrFail($classId);
+            // Get class record with building relationship
+            $class = ClassModel::with('building')->findOrFail($classId);
 
             // Check if class is open
             if (!$class->is_open) {
@@ -710,30 +711,56 @@ class ClassesController extends Controller
                 ], 403);
             }
 
-            // Get current session geofence data
-            $teacherLat = $class->current_session_lat;
-            $teacherLon = $class->current_session_lon;
-            $sessionOpened = $class->current_session_opened;
+            // ONLY use building location for geofence validation (constant, reliable location)
+            // Teacher session location is no longer used for geofence
+            $geofenceLat = null;
+            $geofenceLon = null;
 
-            if (!$testMode && ($teacherLat === null || $teacherLon === null)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Class geofence not set. Teacher needs to open the class first.'
-                ], 403);
+            if (!$class->building || !$class->building->latitude || !$class->building->longitude) {
+                // Reject if no building assigned (unless test mode)
+                if (!$testMode) {
+                    \Log::warning('No building assigned to class - geofence validation failed', [
+                        'class' => $class->class_code,
+                        'class_id' => $class->id,
+                        'has_building' => $class->building ? 'yes' : 'no',
+                        'building_id' => $class->building_id
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This class does not have a building assigned. Please contact your teacher or administrator to assign a building to this class.'
+                    ], 403);
+                }
+            } else {
+                // Use building location (constant, reliable)
+                $geofenceLat = (float)$class->building->latitude;
+                $geofenceLon = (float)$class->building->longitude;
+                \Log::info('Using building location for geofence validation', [
+                    'building' => $class->building->name,
+                    'building_id' => $class->building->id,
+                    'lat' => $geofenceLat,
+                    'lon' => $geofenceLon
+                ]);
             }
 
-            // Calculate distance between student and teacher
-            // In test mode, set distance to 0 (always within geofence)
-            if ($testMode) {
+            // Calculate distance between student and geofence center
+            // In test mode, set distance to 0 (always within geofence) - ONLY in development
+            if ($testMode && env('APP_ENV') === 'local') {
                 $distance = 0;
-                $teacherLat = $teacherLat ?? 0;
-                $teacherLon = $teacherLon ?? 0;
-                \Log::info('TEST MODE: Geofence check bypassed', [
+                \Log::warning('⚠️ TEST MODE: Geofence check bypassed (LOCAL ENV ONLY)', [
+                    'student' => $studentName,
+                    'class' => $class->class_code,
+                    'env' => env('APP_ENV')
+                ]);
+            } elseif ($testMode && env('APP_ENV') !== 'local') {
+                // Test mode in production is NOT allowed - treat as normal validation
+                \Log::warning('⚠️ Test mode enabled in production - ignoring and enforcing geofence', [
                     'student' => $studentName,
                     'class' => $class->class_code
                 ]);
+                $distance = $this->calculateDistance($geofenceLat, $geofenceLon, $studentLat, $studentLon);
             } else {
-                $distance = $this->calculateDistance($teacherLat, $teacherLon, $studentLat, $studentLon);
+                // Normal validation - calculate distance
+                $distance = $this->calculateDistance($geofenceLat, $geofenceLon, $studentLat, $studentLon);
             }
             
             // Geofence radius (increased for testing flexibility)
@@ -742,33 +769,43 @@ class ClassesController extends Controller
             \Log::info('Geofence validation', [
                 'class' => $class->class_code,
                 'student' => $studentName,
-                'teacherLat' => $teacherLat,
-                'teacherLon' => $teacherLon,
+                'building' => $class->building ? $class->building->name : 'none',
+                'geofenceLat' => $geofenceLat,
+                'geofenceLon' => $geofenceLon,
                 'studentLat' => $studentLat,
                 'studentLon' => $studentLon,
                 'distance' => round($distance, 2),
                 'radius' => $geofenceRadius,
-                'withinRange' => $distance <= $geofenceRadius
+                'withinRange' => $distance <= $geofenceRadius,
+                'testMode' => $testMode
             ]);
 
             if ($distance > $geofenceRadius) {
-                \Log::warning('Student outside geofence', [
+                \Log::warning('🚨 Student outside geofence - SIGN-IN REJECTED', [
                     'student' => $studentName,
+                    'studentEmail' => $studentEmail,
+                    'class' => $class->class_code,
+                    'building' => $class->building ? $class->building->name : 'none',
+                    'geofenceLocation' => [$geofenceLat, $geofenceLon],
+                    'studentLocation' => [$studentLat, $studentLon],
                     'distance' => round($distance, 2) . 'm',
                     'max_allowed' => $geofenceRadius . 'm',
-                    'difference' => round($distance - $geofenceRadius, 2) . 'm too far'
+                    'difference' => round($distance - $geofenceRadius, 2) . 'm too far',
+                    'suspicious' => $distance > ($geofenceRadius * 2) ? 'YES - Very far from building' : 'NO'
                 ]);
                 
                 return response()->json([
                     'success' => false,
                     'message' => sprintf(
-                        'You are %.0fm away from the classroom. Maximum distance allowed is %.0fm. Please move %.0fm closer.',
+                        'You are %.0fm away from %s. Maximum distance allowed is %.0fm. Please move %.0fm closer to the building to sign in.',
                         $distance,
+                        $class->building ? $class->building->name : 'the classroom',
                         $geofenceRadius,
                         $distance - $geofenceRadius
                     ),
                     'distance' => round($distance, 2),
-                    'required' => $geofenceRadius
+                    'required' => $geofenceRadius,
+                    'building' => $class->building ? $class->building->name : null
                 ], 403);
             }
 
@@ -1018,6 +1055,54 @@ class ClassesController extends Controller
                 'class_code' => $class->class_code,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Delete an attendance record
+     */
+    public function deleteAttendance(Request $request, $attendanceId)
+    {
+        try {
+            $attendanceRecord = AttendanceEntry::findOrFail($attendanceId);
+            
+            \Log::info('Deleting attendance record', [
+                'attendance_id' => $attendanceId,
+                'student' => $attendanceRecord->student_name,
+                'class' => $attendanceRecord->class_code,
+                'date' => $attendanceRecord->date
+            ]);
+            
+            $studentName = $attendanceRecord->student_name;
+            $classCode = $attendanceRecord->class_code;
+            
+            // Delete the record
+            $attendanceRecord->delete();
+            
+            \Log::info('Attendance record deleted successfully', [
+                'attendance_id' => $attendanceId,
+                'student' => $studentName,
+                'class' => $classCode
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance record deleted successfully',
+                'deleted_id' => $attendanceId
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete attendance record', [
+                'attendance_id' => $attendanceId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete attendance record',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

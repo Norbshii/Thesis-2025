@@ -151,6 +151,7 @@ Route::post('/classes/extend', [ClassesController::class, 'extendClass']);
 Route::post('/classes/toggle-manual-control', [ClassesController::class, 'toggleManualControl']);
 Route::post('/classes/student-signin', [ClassesController::class, 'studentSignIn']);
 Route::get('/classes/{classId}/attendance', [ClassesController::class, 'getAttendance']);
+Route::delete('/classes/attendance/{attendanceId}', [ClassesController::class, 'deleteAttendance']);
 
 // Student profile (public for simplicity; consider adding auth later)
 Route::get('/student/profile', [StudentProfileController::class, 'get']);

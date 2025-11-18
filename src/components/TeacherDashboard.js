@@ -667,6 +667,47 @@ const TeacherDashboard = () => {
     }
   };
 
+  const handleDeleteAttendance = async (attendanceId, studentName) => {
+    // Confirm deletion
+    if (!window.confirm(`Are you sure you want to delete the attendance record for ${studentName}? This will allow them to sign in again.`)) {
+      return;
+    }
+
+    try {
+      const response = await api.delete(`/classes/attendance/${attendanceId}`);
+      
+      if (response.data.success) {
+        showToastMessage(`Attendance record for ${studentName} deleted successfully`, 'success');
+        
+        // Refresh attendance records
+        if (selectedClass) {
+          await fetchAttendance(selectedClass.id, selectedDate);
+        }
+        
+        // Also update live attendance map if needed
+        if (selectedClass && liveAttendance[selectedClass.id]) {
+          setLiveAttendance(prev => {
+            const updated = { ...prev };
+            if (updated[selectedClass.id]) {
+              updated[selectedClass.id] = updated[selectedClass.id].filter(
+                record => record.id !== attendanceId
+              );
+            }
+            return updated;
+          });
+        }
+      } else {
+        showToastMessage('Failed to delete attendance record', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting attendance:', error);
+      showToastMessage(
+        error.response?.data?.message || 'Failed to delete attendance record',
+        'error'
+      );
+    }
+  };
+
   const handleDateChange = async (newDate) => {
     setSelectedDate(newDate);
     if (selectedClass) {
@@ -906,11 +947,38 @@ const TeacherDashboard = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) {
+      return new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+    // Handle date strings that might be invalid (like "Mon,Wed,Fri" from days field)
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid (not 1970-01-01 which is Unix epoch)
+      if (isNaN(date.getTime()) || date.getFullYear() === 1970) {
+        // If invalid, return today's date
+        return new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      // If parsing fails, return today's date
+      return new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
   };
 
   // Filter attendance records based on search query
@@ -1541,7 +1609,7 @@ const TeacherDashboard = () => {
               <div className="class-details-info">
                 <div className="detail-section">
                   <h4>Class Information</h4>
-                  <p><strong>Date:</strong> {formatDate(selectedClass.date)}</p>
+                  <p><strong>Date:</strong> {formatDate(selectedDate)}</p>
                   <p><strong>Time:</strong> {formatTimeString(selectedClass.startTime)} - {formatTimeString(selectedClass.endTime)}</p>
                   <p><strong>Late Threshold:</strong> {selectedClass.lateThreshold} minutes</p>
                   <p><strong>Control Type:</strong> {selectedClass.isManualControl ? 'Manual' : 'Time-based'}</p>
@@ -1778,6 +1846,39 @@ const TeacherDashboard = () => {
                                   {record.studentEmail || 'No email'}
                                 </div>
                               </div>
+                              {/* Delete Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteAttendance(record.id, record.studentName);
+                                }}
+                                style={{
+                                  background: '#dc3545',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  padding: '6px 10px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  transition: 'all 0.2s ease',
+                                  flexShrink: 0
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = '#c82333';
+                                  e.currentTarget.style.transform = 'scale(1.05)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = '#dc3545';
+                                  e.currentTarget.style.transform = 'scale(1)';
+                                }}
+                                title="Delete this attendance record"
+                              >
+                                🗑️ Delete
+                              </button>
                             </div>
 
                             {/* Status Badge */}

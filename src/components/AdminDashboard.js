@@ -348,9 +348,19 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    authAPI.logout();
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear all stored authentication data
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_data');
+      localStorage.removeItem('rememberMe');
+      // Redirect to login page
+      window.location.href = '/login';
+    }
   };
 
   if (loading) {
