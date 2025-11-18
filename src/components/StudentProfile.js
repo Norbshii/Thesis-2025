@@ -372,7 +372,38 @@ const StudentProfile = () => {
         });
 
         const { latitude, longitude } = position.coords;
-        console.log('📍 Using coordinates:', { latitude, longitude });
+        console.log('📍 Using coordinates:', { latitude, longitude, accuracy: position.coords.accuracy });
+        
+        // Validate coordinates before sending
+        if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+          console.error('❌ Invalid coordinates received:', { latitude, longitude });
+          showToastMessage('Invalid location detected. Please try again.', 'error');
+          setIsSigningIn(false);
+          return;
+        }
+        
+        // Check if coordinates are 0,0 (invalid - in the ocean)
+        if (latitude === 0 && longitude === 0) {
+          console.error('❌ Coordinates are 0,0 (invalid)');
+          showToastMessage('Location not available. Please refresh and allow location access.', 'error');
+          setIsSigningIn(false);
+          return;
+        }
+        
+        // Check if coordinates are in valid ranges
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+          console.error('❌ Coordinates out of range:', { latitude, longitude });
+          showToastMessage('Invalid location coordinates. Please try again.', 'error');
+          setIsSigningIn(false);
+          return;
+        }
+        
+        // Check accuracy - if accuracy is very poor (> 1000m), warn user
+        if (position.coords.accuracy && position.coords.accuracy > 1000) {
+          console.warn('⚠️ Low GPS accuracy:', position.coords.accuracy, 'meters');
+          showToastMessage(`⚠️ Low GPS accuracy (${Math.round(position.coords.accuracy)}m). Please move to an open area.`, 'warning');
+        }
+        
         const currentUser = authAPI.getStoredUser();
 
         // Call API to sign in with geolocation validation

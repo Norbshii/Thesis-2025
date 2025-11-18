@@ -696,8 +696,56 @@ class ClassesController extends Controller
         $classId = $request->input('classId');
         $studentEmail = $request->input('studentEmail');
         $studentName = $request->input('studentName');
-        $studentLat = $request->input('latitude', 0);
-        $studentLon = $request->input('longitude', 0);
+        $studentLat = $request->input('latitude');
+        $studentLon = $request->input('longitude');
+        
+        // Validate coordinates are provided and valid (not 0,0 which is in the ocean)
+        if (!$testMode) {
+            if ($studentLat === null || $studentLon === null) {
+                \Log::error('Student coordinates missing', [
+                    'student' => $studentName,
+                    'has_lat' => $request->has('latitude'),
+                    'has_lon' => $request->has('longitude'),
+                    'lat_value' => $request->input('latitude'),
+                    'lon_value' => $request->input('longitude')
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Location not available. Please enable location permissions and try again.'
+                ], 400);
+            }
+            
+            // Check if coordinates are valid (not 0,0 which is invalid)
+            if ((float)$studentLat == 0 && (float)$studentLon == 0) {
+                \Log::error('Student coordinates are 0,0 (invalid)', [
+                    'student' => $studentName,
+                    'lat' => $studentLat,
+                    'lon' => $studentLon
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid location detected. Please refresh the page and allow location access, then try again.'
+                ], 400);
+            }
+            
+            // Validate coordinate ranges
+            if ((float)$studentLat < -90 || (float)$studentLat > 90 || 
+                (float)$studentLon < -180 || (float)$studentLon > 180) {
+                \Log::error('Student coordinates out of range', [
+                    'student' => $studentName,
+                    'lat' => $studentLat,
+                    'lon' => $studentLon
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid location coordinates. Please try again.'
+                ], 400);
+            }
+        }
+        
+        // Cast to float for calculations
+        $studentLat = (float)$studentLat;
+        $studentLon = (float)$studentLon;
 
         try {
             // Get class record with building relationship
@@ -734,6 +782,35 @@ class ClassesController extends Controller
                 // Use building location (constant, reliable)
                 $geofenceLat = (float)$class->building->latitude;
                 $geofenceLon = (float)$class->building->longitude;
+                
+                // Validate building coordinates are valid (not 0,0)
+                if ($geofenceLat == 0 && $geofenceLon == 0) {
+                    \Log::error('Building coordinates are 0,0 (invalid)', [
+                        'building' => $class->building->name,
+                        'building_id' => $class->building->id,
+                        'class' => $class->class_code
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Building location is not configured correctly. Please contact your administrator.'
+                    ], 500);
+                }
+                
+                // Validate building coordinate ranges
+                if ($geofenceLat < -90 || $geofenceLat > 90 || 
+                    $geofenceLon < -180 || $geofenceLon > 180) {
+                    \Log::error('Building coordinates out of range', [
+                        'building' => $class->building->name,
+                        'building_id' => $class->building->id,
+                        'lat' => $geofenceLat,
+                        'lon' => $geofenceLon
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Building location is invalid. Please contact your administrator.'
+                    ], 500);
+                }
+                
                 \Log::info('Using building location for geofence validation', [
                     'building' => $class->building->name,
                     'building_id' => $class->building->id,
@@ -774,11 +851,31 @@ class ClassesController extends Controller
                 'geofenceLon' => $geofenceLon,
                 'studentLat' => $studentLat,
                 'studentLon' => $studentLon,
+                'studentCoords_valid' => ($studentLat != 0 || $studentLon != 0) ? 'yes' : 'NO - INVALID',
+                'buildingCoords_valid' => ($geofenceLat != 0 || $geofenceLon != 0) ? 'yes' : 'NO - INVALID',
                 'distance' => round($distance, 2),
                 'radius' => $geofenceRadius,
                 'withinRange' => $distance <= $geofenceRadius,
                 'testMode' => $testMode
             ]);
+            
+            // Safety check: If distance is unreasonably large (> 1000km), something is wrong
+            if ($distance > 1000000) { // 1000km
+                \Log::error('🚨 UNREASONABLE DISTANCE CALCULATED - Coordinates likely invalid', [
+                    'distance' => round($distance, 2) . 'm',
+                    'distance_km' => round($distance / 1000, 2) . 'km',
+                    'geofenceLat' => $geofenceLat,
+                    'geofenceLon' => $geofenceLon,
+                    'studentLat' => $studentLat,
+                    'studentLon' => $studentLon,
+                    'building' => $class->building ? $class->building->name : 'none'
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Location error detected. Please refresh the page, ensure location permissions are enabled, and try again. If the problem persists, contact support.',
+                    'error_type' => 'invalid_coordinates'
+                ], 400);
+            }
 
             if ($distance > $geofenceRadius) {
                 \Log::warning('🚨 Student outside geofence - SIGN-IN REJECTED', [
