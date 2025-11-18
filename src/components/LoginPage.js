@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
+import LoadingScreen from './LoadingScreen';
 import './LoginPage.css';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('student'); // 'student' or 'admin'
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -66,21 +66,29 @@ const LoginPage = () => {
     try {
       const { email, password } = formData;
       const username = email; // backend accepts username or email
-      const login_type = activeTab === 'admin' ? 'admin' : 'student';
-      const resp = await authAPI.login({ username, password, login_type });
-
-      // Store remember me preference
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      } else {
-        localStorage.removeItem('rememberMe');
-      }
-
-      setError('');
-      setValidationErrors({});
+      // REMOVED: login_type selection logic
+      // CHANGED: Remove login_type from login
+      const resp = await authAPI.login({ username, password });
+    
+    // Store remember me preference
+    if (rememberMe) {
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      localStorage.removeItem('rememberMe');
+    }
+    
+    setError('');
+    setValidationErrors({});
       const role = String(resp?.user?.role || '').toLowerCase();
-      const isStaff = role === 'admin' || role === 'teacher';
-      navigate(isStaff ? '/admin' : '/dashboard', { replace: true });
+      
+      // Route based on role
+      if (role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (role === 'teacher') {
+        navigate('/teacher', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true }); // students
+      }
     } catch (e) {
       const message = typeof e === 'string' ? e : (e?.message || 'Login failed');
       setError(message);
@@ -88,6 +96,11 @@ const LoginPage = () => {
     
     setIsLoading(false);
   };
+
+  // Show loading screen during login
+  if (isLoading) {
+    return <LoadingScreen message="Logging you in..." />;
+  }
 
   return (
     <div className="login-container">
@@ -114,29 +127,15 @@ const LoginPage = () => {
                   <rect className="grad-cap" x="38" y="32" width="24" height="2"/>
                   <line className="pin-outline" x1="58" y1="32" x2="62" y2="28"/>
                   <circle className="grad-cap" cx="62" cy="28" r="1.5"/>
-                  <path className="checkmark" d="M35 50 L42 57 L52 47" stroke="#1a365d" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path className="checkmark" d="M35 50 L42 57 L52 47" stroke="#1a365d" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle className="ripple" cx="50" cy="75" r="8"/>
                   <circle className="ripple" cx="50" cy="75" r="12"/>
                 </svg>
               </div>
-              <h1 className="login-title">Student Portal</h1>
+              <h1 className="login-title">PinPoint</h1>
             </div>
             
-            {/* Tab Navigation */}
-            <div className="tab-navigation">
-              <button
-                className={`tab-button ${activeTab === 'student' ? 'active' : ''}`}
-                onClick={() => setActiveTab('student')}
-              >
-                Student Login
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
-                onClick={() => setActiveTab('admin')}
-              >
-                Admin Login
-              </button>
-            </div>
+            {/* REMOVED: Tab Navigation for student/admin */}
             
             <form onSubmit={handleSubmit} className="login-form">
               <div className="input-group">
@@ -148,7 +147,7 @@ const LoginPage = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder={activeTab === 'student' ? 'student@gmail.com' : 'admin@gmail.com'}
+                    placeholder="Enter your email"
                     className={`form-input ${validationErrors.email ? 'error' : ''}`}
                     required
                   />
@@ -222,12 +221,11 @@ const LoginPage = () => {
 
           </div>
         </div>
-
         {/* Right Panel - Welcome Message */}
         <div className="welcome-panel">
           <div className="welcome-content">
             <h2 className="welcome-title">
-              Welcome to<br />student portal
+              Welcome to<br />PinPoint
             </h2>
             <p className="welcome-subtitle">Login to access your account.</p>
             

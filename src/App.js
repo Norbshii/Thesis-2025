@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
 import StudentProfile from './components/StudentProfile';
+import TeacherDashboard from './components/TeacherDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import { authAPI } from './services/api';
 import './App.css';
@@ -19,8 +20,9 @@ const RequireRole = ({ role, children }) => {
     return <Navigate to="/login" replace />;
   }
   const user = authAPI.getStoredUser();
-  const roles = Array.isArray(role) ? role : [role];
-  if (role && !roles.includes(user?.role)) {
+  const userRole = (user?.role || '').toLowerCase();
+  const roles = Array.isArray(role) ? role.map(r => r.toLowerCase()) : [role.toLowerCase()];
+  if (role && !roles.includes(userRole)) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -29,6 +31,9 @@ const RequireRole = ({ role, children }) => {
 function App() {
   const isAuthed = authAPI.isAuthenticated();
   const user = isAuthed ? authAPI.getStoredUser() : null;
+
+  // Debug: Log auth state
+  console.log('App render:', { isAuthed, user });
 
   return (
     <div className="App">
@@ -40,9 +45,11 @@ function App() {
               <Navigate
                 to={
                   isAuthed
-                    ? (user?.role === 'admin' || user?.role === 'teacher')
+                    ? ((user?.role || '').toLowerCase() === 'admin')
                       ? '/admin'
-                      : '/dashboard'
+                      : ((user?.role || '').toLowerCase() === 'teacher')
+                        ? '/teacher'
+                        : '/dashboard'
                     : '/login'
                 }
                 replace
@@ -61,9 +68,18 @@ function App() {
           />
 
           <Route
+            path="/teacher"
+            element={
+              <RequireRole role="teacher">
+                <TeacherDashboard />
+              </RequireRole>
+            }
+          />
+
+          <Route
             path="/admin"
             element={
-              <RequireRole role={["admin", "teacher"]}>
+              <RequireRole role="admin">
                 <AdminDashboard />
               </RequireRole>
             }

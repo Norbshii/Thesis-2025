@@ -22,9 +22,13 @@ return [
     'allowed_origins' => [
         'http://localhost:3000',
         'https://pinpointfe.onrender.com',
+        'https://pinpoint-v4o2.onrender.com',
+        'https://pinpointinfo.onrender.com',
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '/^https:\/\/.*\.onrender\.com$/',
+    ],
 
     'allowed_headers' => ['*'],
 

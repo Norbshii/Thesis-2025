@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
+  baseURL: process.env.REACT_APP_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -42,7 +42,9 @@ export const authAPI = {
   // Login user
   login: async (credentials) => {
     try {
-      const response = await api.post('/login', credentials);
+      // Only send username and password
+      const { username, password } = credentials;
+      const response = await api.post('/login', { username, password });
       const { token, user } = response.data;
       
       // Store token and user data

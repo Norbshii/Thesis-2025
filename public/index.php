@@ -54,9 +54,3 @@ $response = $kernel->handle(
 
 $kernel->terminate($request, $response);
 
-
-
-
-
-
-
