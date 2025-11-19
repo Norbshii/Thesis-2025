@@ -915,43 +915,47 @@ class ClassesController extends Controller
                 'testMode' => $testMode
             ]);
             
-            // Safety check: If distance is unreasonably large (> 1000km), something is wrong
-            if ($distance > 1000000) { // 1000km
-                \Log::error('🚨 UNREASONABLE DISTANCE CALCULATED - Coordinates likely invalid', [
-                    'distance' => round($distance, 2) . 'm',
-                    'distance_km' => round($distance / 1000, 2) . 'km',
-                    'geofenceLat' => $geofenceLat,
-                    'geofenceLon' => $geofenceLon,
-                    'studentLat' => $studentLat,
-                    'studentLon' => $studentLon,
-                    'building' => $class->building ? $class->building->name : 'none',
-                    'building_id' => $class->building ? $class->building->id : null,
-                    'possible_issue' => 'Coordinates may be swapped, invalid, or building location is incorrect'
-                ]);
-                
-                // Provide more helpful error message based on what might be wrong
-                $errorMessage = 'Location error detected. ';
-                if ($geofenceLat == 0 && $geofenceLon == 0) {
-                    $errorMessage .= 'The building location is not configured correctly. Please contact your administrator.';
-                } else if ($studentLat == 0 && $studentLon == 0) {
-                    $errorMessage .= 'Your device location could not be determined. Please refresh the page, ensure location permissions are enabled, and try again.';
-                } else {
-                    $errorMessage .= 'The distance calculation resulted in an invalid value. Please refresh the page and try again. If the problem persists, contact support.';
+            // Check geofence first - if student is outside but distance is reasonable, show geofence error
+            // Only show "Location error detected" if distance is truly invalid (> 1000km)
+            if ($distance > $geofenceRadius) {
+                // If distance is unreasonably large (> 1000km), coordinates are likely invalid
+                if ($distance > 1000000) { // 1000km
+                    \Log::error('🚨 UNREASONABLE DISTANCE CALCULATED - Coordinates likely invalid', [
+                        'distance' => round($distance, 2) . 'm',
+                        'distance_km' => round($distance / 1000, 2) . 'km',
+                        'geofenceLat' => $geofenceLat,
+                        'geofenceLon' => $geofenceLon,
+                        'studentLat' => $studentLat,
+                        'studentLon' => $studentLon,
+                        'building' => $class->building ? $class->building->name : 'none',
+                        'building_id' => $class->building ? $class->building->id : null,
+                        'possible_issue' => 'Coordinates may be swapped, invalid, or building location is incorrect'
+                    ]);
+                    
+                    // Provide more helpful error message based on what might be wrong
+                    $errorMessage = 'Location error detected. ';
+                    if ($geofenceLat == 0 && $geofenceLon == 0) {
+                        $errorMessage .= 'The building location is not configured correctly. Please contact your administrator.';
+                    } else if ($studentLat == 0 && $studentLon == 0) {
+                        $errorMessage .= 'Your device location could not be determined. Please refresh the page, ensure location permissions are enabled, and try again.';
+                    } else {
+                        $errorMessage .= 'Invalid location coordinates detected. Please refresh the page and try again. If the problem persists, contact support.';
+                    }
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                        'error_type' => 'invalid_coordinates',
+                        'debug_info' => [
+                            'student_location' => ['lat' => $studentLat, 'lon' => $studentLon],
+                            'building_location' => ['lat' => $geofenceLat, 'lon' => $geofenceLon],
+                            'calculated_distance_km' => round($distance / 1000, 2)
+                        ]
+                    ], 400);
                 }
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => $errorMessage,
-                    'error_type' => 'invalid_coordinates',
-                    'debug_info' => [
-                        'student_location' => ['lat' => $studentLat, 'lon' => $studentLon],
-                        'building_location' => ['lat' => $geofenceLat, 'lon' => $geofenceLon],
-                        'calculated_distance_km' => round($distance / 1000, 2)
-                    ]
-                ], 400);
-            }
-
-            if ($distance > $geofenceRadius) {
+                // Normal case: Student is outside geofence but coordinates are valid
+                // Show proper geofence distance error
                 \Log::warning('🚨 Student outside geofence - SIGN-IN REJECTED', [
                     'student' => $studentName,
                     'studentEmail' => $studentEmail,
