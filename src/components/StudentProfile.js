@@ -581,9 +581,13 @@ const StudentProfile = () => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
+    
+    // Standardize error duration to 2 seconds, success/info can be faster
+    const duration = type === 'error' ? 2000 : 1500;
+    
     setTimeout(() => {
       setShowToast(false);
-    }, 3000);
+    }, duration);
   };
 
   const handleEditProfile = () => {
@@ -1213,16 +1217,16 @@ const StudentProfile = () => {
             left: window.innerWidth <= 768 ? '50%' : 'auto',
             right: window.innerWidth <= 768 ? 'auto' : '20px',
             transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
-            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
+            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '450px',
             minWidth: '280px',
-            maxHeight: '80px',
+            maxHeight: 'none',
             width: 'auto',
             height: 'auto',
             background: 'white',
             borderRadius: '12px',
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             zIndex: 99999,
-            overflow: 'hidden',
+            overflow: 'visible',
             border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
             display: 'inline-block',
             pointerEvents: 'auto',
@@ -1232,22 +1236,24 @@ const StudentProfile = () => {
           <div 
             style={{ 
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: '10px',
               padding: '12px 16px',
               background: toastType === 'success' ? '#d4edda' : '#f8d7da'
             }}
           >
-            <div style={{ fontSize: '20px', flexShrink: 0 }}>
+            <div style={{ fontSize: '20px', flexShrink: 0, marginTop: '2px' }}>
               {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
             </div>
             <div style={{ 
               flex: 1,
               fontSize: '14px',
-              lineHeight: '1.4',
+              lineHeight: '1.5',
               color: toastType === 'success' ? '#155724' : '#721c24',
               fontWeight: '500',
-              wordBreak: 'break-word'
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+              whiteSpace: 'normal'
             }}>
               {toastMessage}
             </div>

@@ -153,7 +153,11 @@ const AdminDashboard = () => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    
+    // Standardize error duration to 2 seconds, success/info can be faster
+    const duration = type === 'error' ? 2000 : 1500;
+    
+    setTimeout(() => setShowToast(false), duration);
   };
 
   // User Management Functions

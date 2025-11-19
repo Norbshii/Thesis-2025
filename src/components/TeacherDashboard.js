@@ -387,9 +387,13 @@ const TeacherDashboard = () => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
+    
+    // Standardize error duration to 2 seconds, success/info can be faster
+    const duration = type === 'error' ? 2000 : 1500;
+    
     setTimeout(() => {
       setShowToast(false);
-    }, 3000);
+    }, duration);
   };
 
   const handleAddClass = async () => {
