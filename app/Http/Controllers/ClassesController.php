@@ -932,22 +932,9 @@ class ClassesController extends Controller
                 ]);
                 
                 // Format distance for display (use km if > 1000m)
-                $distanceDisplay = $distance >= 1000 
-                    ? sprintf('%.2fkm', $distance / 1000)
-                    : sprintf('%.0fm', $distance);
-                
-                $requiredDisplay = $geofenceRadius >= 1000
-                    ? sprintf('%.2fkm', $geofenceRadius / 1000)
-                    : sprintf('%.0fm', $geofenceRadius);
-                
                 return response()->json([
                     'success' => false,
-                    'message' => sprintf(
-                        'You are %s away from %s. Maximum distance allowed is %s. Please move closer to the building to sign in.',
-                        $distanceDisplay,
-                        $class->building ? $class->building->name : 'the classroom',
-                        $requiredDisplay
-                    ),
+                    'message' => 'You are too far from the classroom. Please move closer to the assigned building to sign in.',
                     'distance' => round($distance, 2),
                     'required' => $geofenceRadius,
                     'building' => $class->building ? $class->building->name : null

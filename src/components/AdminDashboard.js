@@ -1133,70 +1133,53 @@ const AdminDashboard = () => {
         <div 
           style={{
             position: 'fixed',
-            top: '20px',
-            bottom: 'auto',
+            top: '16px',
+            right: '16px',
             left: window.innerWidth <= 768 ? '50%' : 'auto',
-            right: window.innerWidth <= 768 ? 'auto' : '20px',
             transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
-            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
-            minWidth: '280px',
-            maxHeight: '80px',
             width: 'auto',
-            height: 'auto',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            zIndex: 99999,
-            overflow: 'hidden',
-            border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
-            display: 'inline-block',
-            pointerEvents: 'auto',
-            margin: '0'
+            maxWidth: '280px',
+            minWidth: '200px',
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12)',
+            border: toastType === 'success' ? '1px solid #38c172' : toastType === 'info' ? '1px solid #3490dc' : '1px solid #e3342f',
+            zIndex: 9999,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          <div 
-            style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '12px 16px',
-              background: toastType === 'success' ? '#d4edda' : '#f8d7da'
-            }}
-          >
-            <div style={{ fontSize: '20px', flexShrink: 0 }}>
-              {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
-            </div>
-            <div style={{ 
-              flex: 1,
-              fontSize: '14px',
-              lineHeight: '1.4',
-              color: toastType === 'success' ? '#155724' : '#721c24',
-              fontWeight: '500',
-              wordBreak: 'break-word'
-            }}>
-              {toastMessage}
-            </div>
-            <button 
-              onClick={() => setShowToast(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: toastType === 'success' ? '#155724' : '#721c24',
-                padding: '0',
-                lineHeight: '1',
-                flexShrink: 0,
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ×
-            </button>
+          <div style={{ 
+            width: '6px', 
+            height: '6px', 
+            borderRadius: '50%',
+            background: toastType === 'success' ? '#38c172' : toastType === 'info' ? '#3490dc' : '#e3342f' 
+          }} />
+          <div style={{ 
+            flex: 1, 
+            fontSize: '14px', 
+            color: '#2d3748', 
+            fontWeight: '500', 
+            lineHeight: '1.4'
+          }}>
+            {toastMessage}
           </div>
+          <button 
+            onClick={() => setShowToast(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#a0aec0',
+              fontSize: '18px',
+              cursor: 'pointer',
+              lineHeight: '1'
+            }}
+            aria-label="Close toast"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>
