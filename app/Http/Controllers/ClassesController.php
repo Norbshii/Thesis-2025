@@ -915,57 +915,9 @@ class ClassesController extends Controller
                 'testMode' => $testMode
             ]);
             
-            // Check geofence - always show distance error if outside geofence
-            // Only show "Location error detected" if coordinates are clearly invalid (0,0 or swapped)
+            // Check geofence - any distance greater than the configured radius is treated as outside
             if ($distance > $geofenceRadius) {
-                // Check if coordinates are clearly invalid (0,0 or swapped) BEFORE showing distance error
-                // If coordinates are valid but distance is very large, still show geofence error
-                $coordinatesInvalid = false;
-                $invalidReason = '';
-                
-                if ($geofenceLat == 0 && $geofenceLon == 0) {
-                    $coordinatesInvalid = true;
-                    $invalidReason = 'building_not_configured';
-                } else if ($studentLat == 0 && $studentLon == 0) {
-                    $coordinatesInvalid = true;
-                    $invalidReason = 'student_location_unavailable';
-                } else if ($distance > 1000000 && ($studentLat == 0 || $studentLon == 0 || abs($studentLat) > 90 || abs($studentLon) > 180)) {
-                    // Distance > 1000km AND coordinates are clearly invalid
-                    $coordinatesInvalid = true;
-                    $invalidReason = 'invalid_student_coordinates';
-                }
-                
-                if ($coordinatesInvalid && $invalidReason !== '') {
-                    \Log::error('🚨 INVALID COORDINATES DETECTED', [
-                        'reason' => $invalidReason,
-                        'distance' => round($distance, 2) . 'm',
-                        'distance_km' => round($distance / 1000, 2) . 'km',
-                        'geofenceLat' => $geofenceLat,
-                        'geofenceLon' => $geofenceLon,
-                        'studentLat' => $studentLat,
-                        'studentLon' => $studentLon,
-                        'building' => $class->building ? $class->building->name : 'none'
-                    ]);
-                    
-                    // Provide specific error message
-                    $errorMessage = '';
-                    if ($invalidReason === 'building_not_configured') {
-                        $errorMessage = 'The building location is not configured correctly. Please contact your administrator.';
-                    } else if ($invalidReason === 'student_location_unavailable') {
-                        $errorMessage = 'Your device location could not be determined. Please refresh the page, ensure location permissions are enabled, and try again.';
-                    } else {
-                        $errorMessage = 'Invalid location coordinates detected. Please refresh the page and try again.';
-                    }
-                    
-                    return response()->json([
-                        'success' => false,
-                        'message' => $errorMessage,
-                        'error_type' => 'invalid_coordinates'
-                    ], 400);
-                }
-                
-                // Normal case: Student is outside geofence - show distance error
-                // This applies even if distance is large (e.g., 5km, 10km, etc.) as long as coordinates are valid
+                // At this point, coordinates are valid (validated earlier). Always show distance error.
                 \Log::warning('🚨 Student outside geofence - SIGN-IN REJECTED', [
                     'student' => $studentName,
                     'studentEmail' => $studentEmail,
