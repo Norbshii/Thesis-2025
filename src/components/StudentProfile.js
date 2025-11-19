@@ -496,16 +496,38 @@ const StudentProfile = () => {
           
           setShowSignInModal(false);
           setSelectedClass(null);
+        } else if (error.response?.status === 400) {
+          // Handle 400 errors (validation errors, invalid coordinates, etc.)
+          const errorMsg = error.response?.data?.message || '';
+          const errorType = error.response?.data?.error_type;
+          
+          console.log('400 Error:', { message: errorMsg, type: errorType, data: error.response?.data });
+          
+          if (errorType === 'invalid_coordinates') {
+            // Show specific error message for invalid coordinates
+            showToastMessage(errorMsg || 'Invalid location detected. Please refresh the page and try again.', 'error');
+          } else if (errorMsg.includes('Location error detected')) {
+            showToastMessage(errorMsg, 'error');
+          } else if (errorMsg.includes('Invalid location')) {
+            showToastMessage(errorMsg, 'error');
+          } else if (errorMsg.includes('Location not available')) {
+            showToastMessage(errorMsg, 'error');
+          } else {
+            // Generic 400 error
+            showToastMessage(errorMsg || 'Invalid request. Please try again.', 'error');
+          }
         } else if (error.response?.status === 403) {
           const errorMsg = error.response?.data?.message || '';
           console.log('403 Error Message:', errorMsg);
           
           if (errorMsg.includes('not open')) {
             showToastMessage('⏸️ Class is not open yet. Please wait for the teacher to open the class.', 'error');
-          } else if (errorMsg.includes('not within')) {
-            showToastMessage('📍 You are not in the classroom area. Please move closer to sign in.', 'error');
+          } else if (errorMsg.includes('not within') || errorMsg.includes('away from')) {
+            showToastMessage(errorMsg || '📍 You are not in the classroom area. Please move closer to sign in.', 'error');
           } else if (errorMsg.includes('geofence not set')) {
             showToastMessage('⏸️ Class is not open yet. Teacher needs to open the class first.', 'error');
+          } else if (errorMsg.includes('building assigned')) {
+            showToastMessage(errorMsg, 'error');
           } else {
             showToastMessage(errorMsg || 'Cannot sign in at this time', 'error');
           }

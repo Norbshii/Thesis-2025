@@ -25,6 +25,9 @@ const TeacherDashboard = () => {
   const [showClassDetailsModal, setShowClassDetailsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showManageStudentsModal, setShowManageStudentsModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [classToDelete, setClassToDelete] = useState(null);
+  const [isDeletingClass, setIsDeletingClass] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -216,6 +219,19 @@ const TeacherDashboard = () => {
       .listen('.class.updated', (event) => {
         console.log('🔄 Class updated via WebSocket:', event);
         const updatedClass = event.class;
+        const action = event.action || 'updated';
+        
+        // Handle deletion
+        if (action === 'deleted') {
+          setClasses(prevClasses => prevClasses.filter(c => c.id !== updatedClass.id));
+          setLiveAttendance(prev => {
+            const updated = { ...prev };
+            delete updated[updatedClass.id];
+            return updated;
+          });
+          showToastMessage(`Class "${updatedClass.class_name || updatedClass.class_code}" has been deleted`, 'info');
+          return;
+        }
         
         // Update the class in state
         setClasses(prevClasses => {
@@ -635,6 +651,46 @@ const TeacherDashboard = () => {
         error.response?.data?.message || 'Failed to extend class. Please try again.',
         'error'
       );
+    }
+  };
+
+  const handleDeleteClassClick = (classItem) => {
+    setClassToDelete(classItem);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const handleDeleteClass = async () => {
+    if (!classToDelete) return;
+
+    setIsDeletingClass(true);
+    try {
+      const response = await api.delete(`/classes/${classToDelete.id}`);
+      
+      if (response.data.success) {
+        // Remove class from local state
+        setClasses(classes.filter(c => c.id !== classToDelete.id));
+        
+        // Also remove from live attendance if present
+        setLiveAttendance(prev => {
+          const updated = { ...prev };
+          delete updated[classToDelete.id];
+          return updated;
+        });
+        
+        showToastMessage(
+          `✅ Class "${classToDelete.name}" deleted successfully. ${response.data.attendance_records_deleted || 0} attendance records were also deleted.`,
+          'success'
+        );
+        
+        setShowDeleteConfirmModal(false);
+        setClassToDelete(null);
+      }
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      const errorMsg = error.response?.data?.message || 'Failed to delete class. Please try again.';
+      showToastMessage(errorMsg, 'error');
+    } finally {
+      setIsDeletingClass(false);
     }
   };
 
@@ -1187,6 +1243,22 @@ const TeacherDashboard = () => {
                       }}
                     >
                       ✏️ Edit Class
+                    </button>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleDeleteClassClick(classItem)}
+                      style={{
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      🗑️ Delete Class
                     </button>
                   </div>
 
@@ -2216,6 +2288,120 @@ const TeacherDashboard = () => {
               }} disabled={isChangingPassword}>Cancel</button>
               <button className="btn-primary" onClick={handleChangePassword} disabled={isChangingPassword}>
                 {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Class Confirmation Modal */}
+      {showDeleteConfirmModal && classToDelete && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>⚠️ Confirm Class Deletion</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setClassToDelete(null);
+                }}
+                disabled={isDeletingClass}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div style={{ 
+                padding: '20px',
+                textAlign: 'center'
+              }}>
+                <div style={{ 
+                  fontSize: '48px',
+                  marginBottom: '20px'
+                }}>
+                  🗑️
+                </div>
+                <h4 style={{ 
+                  marginBottom: '15px',
+                  color: '#dc3545',
+                  fontSize: '20px',
+                  fontWeight: '600'
+                }}>
+                  Are you sure you want to delete this class?
+                </h4>
+                <div style={{
+                  backgroundColor: '#f8f9fa',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                  textAlign: 'left'
+                }}>
+                  <p style={{ margin: '5px 0', fontWeight: '600' }}>
+                    Class Code: <span style={{ color: '#6c757d' }}>{classToDelete.code}</span>
+                  </p>
+                  <p style={{ margin: '5px 0', fontWeight: '600' }}>
+                    Class Name: <span style={{ color: '#6c757d' }}>{classToDelete.name}</span>
+                  </p>
+                  <p style={{ margin: '5px 0', fontWeight: '600' }}>
+                    Enrolled Students: <span style={{ color: '#6c757d' }}>{classToDelete.enrolledStudents?.length || 0}</span>
+                  </p>
+                </div>
+                <div style={{
+                  backgroundColor: '#fff3cd',
+                  border: '1px solid #ffc107',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '20px'
+                }}>
+                  <p style={{ 
+                    margin: 0,
+                    color: '#856404',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    ⚠️ <strong>Warning:</strong> This action cannot be undone. Deleting this class will also permanently delete all attendance records associated with it.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer" style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              padding: '20px'
+            }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setClassToDelete(null);
+                }}
+                disabled={isDeletingClass}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleDeleteClass}
+                disabled={isDeletingClass}
+                style={{
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  cursor: isDeletingClass ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  opacity: isDeletingClass ? 0.6 : 1
+                }}
+              >
+                {isDeletingClass ? 'Deleting...' : '🗑️ Yes, Delete Class'}
               </button>
             </div>
           </div>
