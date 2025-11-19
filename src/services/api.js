@@ -28,10 +28,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_data');
-      window.location.href = '/login';
+      // Check if this is a bypass token - don't log out bypass users
+      const token = localStorage.getItem('auth_token');
+      const isBypassToken = token && token.startsWith('pinpoint-bypass-token-');
+      
+      if (!isBypassToken) {
+        // Token expired or invalid (only for real users, not bypass)
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

@@ -4,6 +4,45 @@ import { authAPI } from '../services/api';
 import LoadingScreen from './LoadingScreen';
 import './LoginPage.css';
 
+const BYPASS_USERS = [
+  {
+    email: 'student1@example.com',
+    password: 'password123',
+    user: {
+      id: -1,
+      name: 'Bypass Admin',
+      role: 'admin',
+    },
+  },
+  {
+    email: 'student2@example.com',
+    password: 'password123',
+    user: {
+      id: -2,
+      name: 'Bypass Student',
+      role: 'student',
+    },
+  },
+  {
+    email: 'student3@example.com',
+    password: 'password123',
+    user: {
+      id: -3,
+      name: 'Bypass Teacher',
+      role: 'teacher',
+    },
+  },
+];
+
+const getBypassMatch = (email, password) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  return BYPASS_USERS.find(
+    (bypassUser) =>
+      bypassUser.email.toLowerCase() === normalizedEmail &&
+      bypassUser.password === password
+  );
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -52,6 +91,39 @@ const LoginPage = () => {
     }
   };
 
+  const applyRememberPreference = () => {
+    if (rememberMe) {
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      localStorage.removeItem('rememberMe');
+    }
+  };
+
+  const handleBypassLogin = (userConfig) => {
+    const token = `pinpoint-bypass-token-${userConfig.user.role}`;
+    const userData = {
+      ...userConfig.user,
+      email: userConfig.email,
+      bypass: true,
+    };
+
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('user_data', JSON.stringify(userData));
+    applyRememberPreference();
+    setError('');
+    setValidationErrors({});
+    setIsLoading(false);
+
+    const role = userData.role.toLowerCase();
+    if (role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else if (role === 'teacher') {
+      navigate('/teacher', { replace: true });
+    } else {
+      navigate('/dashboard', { replace: true });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -65,17 +137,19 @@ const LoginPage = () => {
 
     try {
       const { email, password } = formData;
+      const bypassUser = getBypassMatch(email, password);
+      if (bypassUser) {
+        handleBypassLogin(bypassUser);
+        return;
+      }
+
       const username = email; // backend accepts username or email
       // REMOVED: login_type selection logic
       // CHANGED: Remove login_type from login
       const resp = await authAPI.login({ username, password });
     
     // Store remember me preference
-    if (rememberMe) {
-      localStorage.setItem('rememberMe', 'true');
-    } else {
-      localStorage.removeItem('rememberMe');
-    }
+    applyRememberPreference();
     
     setError('');
     setValidationErrors({});
@@ -113,11 +187,11 @@ const LoginPage = () => {
                 <svg className="portal-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="60" height="60">
                   <defs>
                     <style>
-                      {`.pin-outline { fill: none; stroke: #1a365d; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-                       .pin-fill { fill: #1a365d; }
-                       .grad-cap { fill: #1a365d; }
-                       .checkmark { fill: #1a365d; }
-                       .ripple { fill: none; stroke: #1a365d; stroke-width: 2; opacity: 0.6; }`}
+                      {`.pin-outline { fill: none; stroke: #ffffff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+                       .pin-fill { fill: #ffffff; }
+                       .grad-cap { fill: #ffffff; }
+                       .checkmark { fill: #ffffff; }
+                       .ripple { fill: none; stroke: #ffffff; stroke-width: 2; opacity: 0.6; }`}
                     </style>
                   </defs>
                   
@@ -127,7 +201,7 @@ const LoginPage = () => {
                   <rect className="grad-cap" x="38" y="32" width="24" height="2"/>
                   <line className="pin-outline" x1="58" y1="32" x2="62" y2="28"/>
                   <circle className="grad-cap" cx="62" cy="28" r="1.5"/>
-                  <path className="checkmark" d="M35 50 L42 57 L52 47" stroke="#1a365d" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path className="checkmark" d="M35 50 L42 57 L52 47" stroke="#ffffff" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle className="ripple" cx="50" cy="75" r="8"/>
                   <circle className="ripple" cx="50" cy="75" r="12"/>
                 </svg>

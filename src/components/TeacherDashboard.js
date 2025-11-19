@@ -1052,7 +1052,7 @@ const TeacherDashboard = () => {
   }
 
   return (
-    <div className="admin-dashboard">
+    <div className="teacher-dashboard">
       <div className="profile-container">
         {/* Dashboard Title - Separate Container */}
         <div className="dashboard-title-container">
@@ -1088,12 +1088,9 @@ const TeacherDashboard = () => {
               </button>
               <button
                 className="change-password-btn"
-                style={{
-                  backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, marginLeft: '10px', marginRight: '10px'
-                }}
                 onClick={() => setShowChangePasswordModal(true)}
               >
-                🔒 Change Password
+                Change Password
               </button>
               <button 
                 className="settings-btn" 
@@ -1121,10 +1118,10 @@ const TeacherDashboard = () => {
                       <h3 className="class-code">{classItem.code}</h3>
                       <h4 className="class-name">{classItem.name}</h4>
                       <p className="class-schedule">
-                        📅 {formatDate(new Date().toISOString().split('T')[0])} | 🕒 {formatTimeString(classItem.startTime) || 'N/A'} - {formatTimeString(classItem.endTime) || 'N/A'}
+                        Schedule: {formatDate(new Date().toISOString().split('T')[0])} | {formatTimeString(classItem.startTime) || 'N/A'} - {formatTimeString(classItem.endTime) || 'N/A'}
                       </p>
                       <p className="class-stats">
-                        👥 {classItem.enrolledStudents?.length || 0}/{classItem.maxStudents || 0} students
+                        Students: {classItem.enrolledStudents?.length || 0}/{classItem.maxStudents || 0}
                       </p>
                     </div>
                     <div className="class-status">
@@ -1158,7 +1155,7 @@ const TeacherDashboard = () => {
                           fontSize: '14px'
                         }}
                       >
-                        ⏱️ Extend Time
+                        Extend Time
                       </button>
                     )}
                     <button 
@@ -1186,7 +1183,7 @@ const TeacherDashboard = () => {
                         fontSize: '14px'
                       }}
                     >
-                      ✏️ Edit Class
+                      Edit Class
                     </button>
                   </div>
 
@@ -1199,7 +1196,7 @@ const TeacherDashboard = () => {
                       marginBottom: '12px'
                     }}>
                       <h4 style={{ margin: 0, fontSize: '16px', color: '#2c3e50' }}>
-                        📍 Class Location
+                        Class Location
                       </h4>
                       {classItem.isOpen && classItem.currentSessionLat && classItem.currentSessionLon && (
                         <span style={{
@@ -1210,7 +1207,7 @@ const TeacherDashboard = () => {
                           background: '#d4edda',
                           borderRadius: '12px'
                         }}>
-                          🟢 LIVE
+                          Live
                         </span>
                       )}
                       {!classItem.isOpen && (
@@ -1222,7 +1219,7 @@ const TeacherDashboard = () => {
                           background: '#e9ecef',
                           borderRadius: '12px'
                         }}>
-                          🔴 CLOSED
+                          Closed
                         </span>
                       )}
                     </div>
@@ -1277,36 +1274,10 @@ const TeacherDashboard = () => {
         </div>
 
         {/* Logout Button - Bottom Section */}
-        <div 
-          className="logout-section"
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '40px',
-            paddingTop: '20px',
-            borderTop: '2px solid #e9ecef'
-          }}
-        >
+        <div className="logout-section">
           <button 
             className="logout-btn" 
             onClick={handleLogout}
-            style={{
-              backgroundColor: '#dc3545',
-              color: 'white',
-              padding: '12px 24px',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              width: '160px',
-              height: '48px',
-              transition: 'all 0.3s ease'
-            }}
           >
             Logout
           </button>
@@ -1459,7 +1430,7 @@ const TeacherDashboard = () => {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>✏️ Edit Class</h3>
+              <h3>Edit Class</h3>
               <button className="close-btn" onClick={() => setShowEditClassModal(false)}>
                 ×
               </button>
@@ -1531,7 +1502,7 @@ const TeacherDashboard = () => {
                     ))}
                   </select>
                   <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>
-                    ⚠️ Changing building will update the class location when opened
+                    Changing building will update the class location when opened
                   </small>
                 </div>
               </div>
@@ -1621,7 +1592,7 @@ const TeacherDashboard = () => {
                         fontWeight: 'bold',
                         marginLeft: '8px'
                       }}>
-                        🟢 LIVE - Geofence Active
+                        Live - Geofence Active
                       </span>
                     </p>
                   )}
@@ -1630,7 +1601,7 @@ const TeacherDashboard = () => {
                 {/* Live Attendance Map - Only shown when class is open */}
                 {selectedClass.isOpen && selectedClass.currentSessionLat && selectedClass.currentSessionLon && (
                   <div className="detail-section">
-                    <h4>📍 Live Attendance Map</h4>
+                    <h4>Live Attendance Map</h4>
                     <AttendanceMap
                       teacherLocation={{
                         lat: selectedClass.currentSessionLat,
@@ -1749,9 +1720,9 @@ const TeacherDashboard = () => {
 
                       {/* Search Bar */}
                       <div style={{ marginBottom: '16px' }}>
-                        <input
-                          type="text"
-                          placeholder="🔍 Search student by name or email..."
+                  <input
+                    type="text"
+                    placeholder="Search student by name or email..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           style={{
@@ -1877,7 +1848,7 @@ const TeacherDashboard = () => {
                                 }}
                                 title="Delete this attendance record"
                               >
-                                🗑️ Delete
+                                Delete
                               </button>
                             </div>
 
@@ -1892,25 +1863,25 @@ const TeacherDashboard = () => {
                               textAlign: 'center',
                               marginBottom: '10px'
                             }}>
-                              {record.isLate ? '⏰ Late' : '✅ On Time'}
+                              {record.isLate ? 'Late' : 'On Time'}
                             </div>
 
                             {/* Info */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '11px', color: '#6c757d' }}>🕐 Time</span>
+                                <span style={{ fontSize: '11px', color: '#6c757d' }}>Time</span>
                                 <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
                                 {formatTimeString(record.signInTime)}
                               </span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '11px', color: '#6c757d' }}>📍 Distance</span>
+                                <span style={{ fontSize: '11px', color: '#6c757d' }}>Distance</span>
                                 <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
                                   {record.distance ? `${Math.round(record.distance)}m` : 'N/A'}
                               </span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '11px', color: '#6c757d' }}>🎯 Status</span>
+                                <span style={{ fontSize: '11px', color: '#6c757d' }}>Status</span>
                                 <span style={{ 
                                   fontSize: '13px', 
                                   fontWeight: '600', 
@@ -1921,7 +1892,7 @@ const TeacherDashboard = () => {
                               </div>
                               {record.timeInsideGeofence !== undefined && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '11px', color: '#6c757d' }}>⏱️ Duration</span>
+                                  <span style={{ fontSize: '11px', color: '#6c757d' }}>Duration</span>
                                   <span style={{ fontSize: '13px', fontWeight: '600', color: '#2c3e50' }}>
                                     {Math.floor(record.timeInsideGeofence / 60)}m {record.timeInsideGeofence % 60}s
                                   </span>
@@ -1940,7 +1911,7 @@ const TeacherDashboard = () => {
                           background: '#f8f9fa',
                           borderRadius: '12px'
                         }}>
-                          <div style={{ fontSize: '48px', marginBottom: '10px' }}>🔍</div>
+                          <div style={{ fontSize: '48px', marginBottom: '10px' }}>Search</div>
                           <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '5px' }}>No results found</div>
                           <div style={{ fontSize: '14px' }}>Try searching with a different name or email</div>
                         </div>
@@ -2027,13 +1998,13 @@ const TeacherDashboard = () => {
                       <div className="student-info">
                             <span className="student-name">{student.name}</span>
                             <span className="student-email">{student.email}</span>
-                        <span className="student-status">✓ Enrolled</span>
+                        <span className="student-status">Enrolled</span>
                       </div>
                       <button 
                         className="remove-student-btn"
                             onClick={() => handleRemoveStudent(studentId)}
                       >
-                        ❌ Remove
+                        Remove
                       </button>
                     </div>
                       ) : null;
@@ -2064,7 +2035,6 @@ const TeacherDashboard = () => {
                     onChange={(e) => handleSearchStudents(e.target.value)}
                     className="search-input"
                   />
-                  <span className="search-icon">🔍</span>
                 </div>
 
                 {/* Available Students List */}
@@ -2133,7 +2103,7 @@ const TeacherDashboard = () => {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>🔒 Change Password</h3>
+              <h3>Change Password</h3>
               <button className="close-btn" onClick={() => {
                 setShowChangePasswordModal(false);
                 setPasswordForm({ currentPassword: '', newPassword: '', newPassword_confirmation: '' });
@@ -2242,7 +2212,7 @@ const TeacherDashboard = () => {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             zIndex: 99999,
             overflow: 'hidden',
-            border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
+            border: toastType === 'success' ? '2px solid #28a745' : toastType === 'error' ? '2px solid #dc3545' : '2px solid #17a2b8',
             display: 'inline-block',
             pointerEvents: 'auto',
             margin: '0'
@@ -2254,11 +2224,41 @@ const TeacherDashboard = () => {
               alignItems: 'center',
               gap: '10px',
               padding: '12px 16px',
-              background: toastType === 'success' ? '#d4edda' : '#f8d7da'
+              background: toastType === 'success' ? '#d4edda' : toastType === 'error' ? '#f8d7da' : '#d1ecf1'
             }}
           >
-            <div style={{ fontSize: '20px', flexShrink: 0 }}>
-              {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
+            <div style={{ 
+              fontSize: '16px', 
+              flexShrink: 0,
+              width: '24px',
+              height: '24px',
+              minWidth: '24px',
+              minHeight: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              background: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
+              color: 'white',
+              fontWeight: '600',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              lineHeight: '1',
+              padding: '0',
+              margin: '0',
+              textAlign: 'center',
+              position: 'relative'
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                lineHeight: '1',
+                margin: '0',
+                padding: '0'
+              }}>
+                {toastType === 'success' ? '✓' : toastType === 'error' ? '×' : 'ℹ'}
+              </span>
             </div>
             <div style={{ 
               flex: 1,

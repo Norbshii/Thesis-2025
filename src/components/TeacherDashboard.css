@@ -1,18 +1,28 @@
-/* Admin Dashboard Styles */
-.admin-dashboard {
+/* Teacher Dashboard Styles */
+.teacher-dashboard {
+  --pinpoint-bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  --pinpoint-card: #ffffff;
+  --pinpoint-card-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --pinpoint-primary: #1a365d;
+  --pinpoint-secondary: #495057;
+  --pinpoint-accent: #2c2c2c;
+  --pinpoint-border: #e0e6ed;
+  --pinpoint-muted: #6c757d;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 20px;
+  background: var(--pinpoint-bg-gradient);
+  padding: 30px 20px 40px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--pinpoint-secondary);
 }
 
 .profile-container {
   max-width: 600px;
   margin: 0 auto;
-  background: white;
-  border-radius: 20px;
+  background: var(--pinpoint-card);
+  border-radius: 24px;
   padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--pinpoint-card-shadow);
+  border: 1px solid var(--pinpoint-border);
 }
 
 /* Loading Spinner */
@@ -91,14 +101,14 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #2c2c2c;
+  background: var(--pinpoint-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 28px;
   font-weight: bold;
-  border: 4px solid #007bff;
+  border: 4px solid var(--pinpoint-primary);
 }
 
 .profile-info {
@@ -119,21 +129,21 @@
   text-align: center;
   font-size: 24px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
 }
 
 .profile-info p {
   margin: 0 0 5px 0;
-  color: #495057;
+  color: var(--pinpoint-secondary);
   font-size: 14px;
 }
 
 .current-time {
-  background: #f8f9fa;
+  background: rgba(26, 54, 93, 0.06);
   padding: 8px 12px;
   border-radius: 6px;
   font-weight: 600;
-  color: #495057;
+  color: var(--pinpoint-primary);
   font-size: 12px;
   display: inline-block;
   margin-top: 10px;
@@ -153,43 +163,67 @@
 }
 
 .add-class-btn,
+.change-password-btn,
 .settings-btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  width: 160px;
+  box-sizing: border-box;
+  min-height: 48px;
 }
 
 .add-class-btn {
-  background: #28a745;
+  background: var(--pinpoint-primary);
   color: white;
+  box-shadow: 0 12px 24px rgba(26, 54, 93, 0.15);
 }
 
 .add-class-btn:hover {
-  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(26, 54, 93, 0.25);
+}
+
+.change-password-btn {
+  background: var(--pinpoint-primary);
+  color: white;
+  box-shadow: 0 12px 24px rgba(26, 54, 93, 0.15);
+}
+
+.change-password-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(26, 54, 93, 0.25);
 }
 
 .settings-btn {
-  background: #6c757d;
+  background: var(--pinpoint-accent);
   color: white;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .settings-btn:hover {
-  background: #545b62;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+}
+
+.change-password-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(26, 54, 93, 0.25);
 }
 
 /* Separator Line */
 .separator-line {
   width: 100%;
   height: 2px;
-  background: #e9ecef;
+  background: var(--pinpoint-border);
   margin: 30px 0;
   border-radius: 1px;
 }
@@ -350,15 +384,17 @@
 .logout-section {
   display: flex;
   justify-content: center;
-  margin-bottom: 30px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 2px solid #e9ecef;
+  width: 100%;
 }
 
 .add-class-btn,
-.settings-btn,
-.logout-btn {
+.settings-btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -372,23 +408,25 @@
 }
 
 .add-class-btn {
-  background: #28a745;
+  background: var(--pinpoint-primary);
   color: white;
+  box-shadow: 0 10px 22px rgba(26, 54, 93, 0.18);
 }
 
 .add-class-btn:hover {
-  background: #218838;
   transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(26, 54, 93, 0.25);
 }
 
 .settings-btn {
-  background: #6c757d;
+  background: var(--pinpoint-accent);
   color: white;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
 }
 
 .settings-btn:hover {
-  background: #545b62;
   transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.28);
 }
 
 .logout-btn {
@@ -400,19 +438,21 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 30px;
+  padding: 12px 24px;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 140px;
+  width: 100%;
+  height: 48px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 22px rgba(197, 48, 48, 0.25);
 }
 
 .logout-btn:hover {
-  background: #c82333;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  box-shadow: 0 16px 32px rgba(197, 48, 48, 0.35);
 }
 
 /* Classes Section */
@@ -423,7 +463,7 @@
 .classes-title {
   font-size: 24px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin-bottom: 20px;
   text-align: center;
 }
@@ -435,17 +475,18 @@
 }
 
 .class-card {
-  background: #f8f9fa;
-  border-radius: 12px;
+  background: var(--pinpoint-card);
+  border-radius: 20px;
   padding: 20px;
-  border: 2px solid transparent;
+  border: 1px solid var(--pinpoint-border);
   transition: all 0.3s ease;
+  box-shadow: var(--pinpoint-card-shadow);
 }
 
 .class-card:hover {
-  background: #e9ecef;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-color: var(--pinpoint-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 18px 32px rgba(26, 54, 93, 0.18);
 }
 
 .class-header {
@@ -462,25 +503,25 @@
 .class-code {
   font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin: 0 0 5px 0;
 }
 
 .class-name {
   font-size: 16px;
-  color: #495057;
+  color: var(--pinpoint-secondary);
   margin: 0 0 10px 0;
 }
 
 .class-schedule {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--pinpoint-muted);
   margin: 0 0 5px 0;
 }
 
 .class-stats {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--pinpoint-muted);
   margin: 0;
 }
 
@@ -552,49 +593,53 @@
 }
 
 .toggle-btn.open {
-  background: #28a745;
+  background: var(--pinpoint-primary);
   color: white;
+  box-shadow: 0 10px 20px rgba(26, 54, 93, 0.2);
 }
 
 .toggle-btn.open:hover {
-  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(26, 54, 93, 0.25);
 }
 
 .toggle-btn.close {
-  background: #dc3545;
+  background: #c53030;
   color: white;
 }
 
 .toggle-btn.close:hover {
-  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(197, 48, 48, 0.35);
 }
 
 .details-btn {
-  background: #007bff;
+  background: var(--pinpoint-primary);
   color: white;
 }
 
 .details-btn:hover {
-  background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(26, 54, 93, 0.25);
 }
 
 .students-btn {
-  background: #6c757d;
-  color: white;
+  background: var(--pinpoint-border);
+  color: var(--pinpoint-primary);
 }
 
 .students-btn:hover {
-  background: #545b62;
+  background: rgba(26, 54, 93, 0.12);
 }
 
 /* No Classes */
 .no-classes {
   text-align: center;
   padding: 40px 20px;
-  color: #6c757d;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border: 2px dashed #dee2e6;
+  color: var(--pinpoint-secondary);
+  background: rgba(26, 54, 93, 0.05);
+  border-radius: 16px;
+  border: 2px dashed var(--pinpoint-border);
 }
 
 /* Modal Styles */
@@ -613,13 +658,14 @@
 }
 
 .modal {
-  background: white;
-  border-radius: 16px;
+  background: var(--pinpoint-card);
+  border-radius: 20px;
   max-width: 600px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25);
+  border: 1px solid var(--pinpoint-border);
 }
 
 .large-modal {
@@ -632,13 +678,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--pinpoint-border);
 }
 
 .modal-header h3 {
   font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin: 0;
 }
 
@@ -647,7 +693,7 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--pinpoint-muted);
   padding: 0;
   width: 30px;
   height: 30px;
@@ -659,8 +705,8 @@
 }
 
 .close-btn:hover {
-  background: #f8f9fa;
-  color: #2c3e50;
+  background: rgba(26, 54, 93, 0.08);
+  color: var(--pinpoint-primary);
 }
 
 .modal-body {
@@ -672,14 +718,14 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 20px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--pinpoint-border);
 }
 
 .btn-primary,
 .btn-secondary {
   padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -687,21 +733,23 @@
 }
 
 .btn-primary {
-  background: #007bff;
+  background: var(--pinpoint-primary);
   color: white;
+  box-shadow: 0 10px 22px rgba(26, 54, 93, 0.2);
 }
 
 .btn-primary:hover {
-  background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(26, 54, 93, 0.25);
 }
 
 .btn-secondary {
-  background: #6c757d;
-  color: white;
+  background: var(--pinpoint-border);
+  color: var(--pinpoint-primary);
 }
 
 .btn-secondary:hover {
-  background: #545b62;
+  background: rgba(26, 54, 93, 0.12);
 }
 
 /* Form Styles */
@@ -719,7 +767,7 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #495057;
+  color: var(--pinpoint-secondary);
   margin-bottom: 8px;
   font-size: 14px;
 }
@@ -730,7 +778,7 @@
 .form-group input[type="time"] {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--pinpoint-border);
   border-radius: 8px;
   font-size: 14px;
   transition: border-color 0.3s ease;
@@ -739,7 +787,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--pinpoint-primary);
 }
 
 .form-group label input[type="checkbox"] {
@@ -756,15 +804,15 @@
 .detail-section h4 {
   font-size: 16px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin: 0 0 15px 0;
   padding-bottom: 8px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--pinpoint-border);
 }
 
 .detail-section p {
   margin: 0 0 8px 0;
-  color: #495057;
+  color: var(--pinpoint-secondary);
   font-size: 14px;
 }
 
@@ -877,12 +925,12 @@
 
 .distance-info {
   font-size: 11px;
-  color: #6c757d;
+  color: var(--pinpoint-muted);
   white-space: nowrap;
 }
 
 .late-badge {
-  background: #dc3545;
+  background: #c53030;
   color: white;
   padding: 2px 6px;
   border-radius: 4px;
@@ -899,8 +947,8 @@
 
 .search-input {
   width: 100%;
-  padding: 12px 16px 12px 40px;
-  border: 2px solid #e9ecef;
+  padding: 12px 16px;
+  border: 2px solid var(--pinpoint-border);
   border-radius: 8px;
   font-size: 14px;
   transition: border-color 0.3s ease;
@@ -909,16 +957,7 @@
 
 .search-input:focus {
   outline: none;
-  border-color: #007bff;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6c757d;
-  font-size: 16px;
+  border-color: var(--pinpoint-primary);
 }
 
 /* Students Divider */
@@ -932,19 +971,19 @@
 .divider-line {
   flex: 1;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #667eea 50%, transparent);
+  background: linear-gradient(90deg, transparent, var(--pinpoint-primary) 50%, transparent);
   opacity: 0.3;
 }
 
 .divider-text {
-  color: #667eea;
+  color: var(--pinpoint-primary);
   font-weight: 600;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 1px;
   white-space: nowrap;
   padding: 0 10px;
-  background: white;
+  background: var(--pinpoint-card);
   position: relative;
 }
 
@@ -1195,7 +1234,6 @@
   
   .logout-btn {
     width: 100%;
-    max-width: 200px;
   }
   
   .form-row {
@@ -1234,7 +1272,7 @@
 }
 
 @media (max-width: 480px) {
-  .admin-dashboard {
+  .teacher-dashboard {
     padding: 10px;
   }
   

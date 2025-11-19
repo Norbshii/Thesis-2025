@@ -77,6 +77,21 @@ const AdminDashboard = () => {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
+      // Check if this is a bypass user - skip API calls if so
+      const user = authAPI.getStoredUser();
+      const isBypassUser = user?.bypass === true;
+      
+      if (isBypassUser) {
+        // For bypass users, just set empty data and skip API calls
+        setTeachers([]);
+        setStudents([]);
+        setBuildings([]);
+        setSections([]);
+        setStats({});
+        setLoading(false);
+        return;
+      }
+      
       await Promise.all([
         fetchUsers(),
         fetchBuildings(),
@@ -85,7 +100,11 @@ const AdminDashboard = () => {
       ]);
     } catch (error) {
       console.error('Error fetching initial data:', error);
-      showToastMessage('Error loading dashboard data', 'error');
+      // Don't show error for bypass users
+      const user = authAPI.getStoredUser();
+      if (!user?.bypass) {
+        showToastMessage('Error loading dashboard data', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -373,7 +392,7 @@ const AdminDashboard = () => {
       <div className="admin-header">
         <div className="admin-header-content">
           <div className="admin-logo">
-            <h1>📍 PinPoint Admin</h1>
+            <h1>PinPoint Admin</h1>
           </div>
           <div className="admin-user-info">
             <span className="admin-user-name">{authAPI.getStoredUser()?.name || authAPI.getStoredUser()?.email}</span>
@@ -388,25 +407,25 @@ const AdminDashboard = () => {
           className={`admin-tab ${activeTab === 'stats' ? 'active' : ''}`}
           onClick={() => setActiveTab('stats')}
         >
-          📊 Statistics
+          Overview
         </button>
         <button 
           className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          👥 Users
+          Users
         </button>
         <button 
           className={`admin-tab ${activeTab === 'buildings' ? 'active' : ''}`}
           onClick={() => setActiveTab('buildings')}
         >
-          🏢 Buildings
+          Buildings
         </button>
         <button 
           className={`admin-tab ${activeTab === 'sections' ? 'active' : ''}`}
           onClick={() => setActiveTab('sections')}
         >
-          📚 Sections
+          Sections
         </button>
       </div>
 
@@ -418,35 +437,35 @@ const AdminDashboard = () => {
             <h2>System Statistics</h2>
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-icon">👨‍🏫</div>
+                <div className="stat-icon">T</div>
                 <div className="stat-info">
                   <div className="stat-value">{stats.teachers || 0}</div>
                   <div className="stat-label">Teachers</div>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">👨‍💼</div>
+                <div className="stat-icon">A</div>
                 <div className="stat-info">
                   <div className="stat-value">{stats.admins || 0}</div>
                   <div className="stat-label">Admins</div>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">👨‍🎓</div>
+                <div className="stat-icon">S</div>
                 <div className="stat-info">
                   <div className="stat-value">{stats.students || 0}</div>
                   <div className="stat-label">Students</div>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">📚</div>
+                <div className="stat-icon">C</div>
                 <div className="stat-info">
                   <div className="stat-value">{stats.classes || 0}</div>
                   <div className="stat-label">Classes</div>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">🏢</div>
+                <div className="stat-icon">B</div>
                 <div className="stat-info">
                   <div className="stat-value">{stats.buildings || 0}</div>
                   <div className="stat-label">Buildings</div>
@@ -469,7 +488,7 @@ const AdminDashboard = () => {
                   setShowCreateUserModal(true);
                 }}
               >
-                ➕ Create User
+                + Create User
               </button>
             </div>
 
@@ -499,7 +518,7 @@ const AdminDashboard = () => {
                           <td>{teacher.username || '-'}</td>
                           <td>
                             <span className={`role-badge ${teacher.role}`}>
-                              {teacher.role === 'admin' ? '👑' : '👨‍🏫'} {teacher.role.toUpperCase()}
+                              {teacher.role.toUpperCase()}
                             </span>
                           </td>
                           <td>{new Date(teacher.created_at).toLocaleDateString()}</td>
@@ -508,13 +527,13 @@ const AdminDashboard = () => {
                               className="btn-edit"
                               onClick={() => handleEditUser(teacher)}
                             >
-                              ✏️ Edit
+                              Edit
                             </button>
                             <button 
                               className="btn-delete"
                               onClick={() => handleDeleteUser('teacher', teacher.id)}
                             >
-                              🗑️ Delete
+                              Delete
                             </button>
                           </td>
                         </tr>
@@ -588,7 +607,7 @@ const AdminDashboard = () => {
                   setShowCreateBuildingModal(true);
                 }}
               >
-                ➕ Add Building
+                + Add Building
               </button>
             </div>
 
@@ -605,7 +624,7 @@ const AdminDashboard = () => {
                       </span>
                     </div>
                     <div className="building-details">
-                      <p><strong>📍 Coordinates:</strong></p>
+                      <p><strong>Location:</strong></p>
                       <p className="coordinates">
                         Lat: {building.latitude}, Lng: {building.longitude}
                       </p>
@@ -648,19 +667,19 @@ const AdminDashboard = () => {
                         className="btn-edit"
                         onClick={() => handleEditBuilding(building)}
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
                       <button 
                         className="btn-toggle"
                         onClick={() => handleToggleBuildingActive(building.id)}
                       >
-                        {building.is_active ? '⏸️ Deactivate' : '▶️ Activate'}
+                        {building.is_active ? 'Deactivate' : 'Activate'}
                       </button>
                       <button 
                         className="btn-delete"
                         onClick={() => handleDeleteBuilding(building.id)}
                       >
-                        🗑️ Delete
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -683,7 +702,7 @@ const AdminDashboard = () => {
                   setShowCreateSectionModal(true);
                 }}
               >
-                ➕ Add Section
+                + Add Section
               </button>
             </div>
 
@@ -712,19 +731,19 @@ const AdminDashboard = () => {
                         className="btn-toggle"
                         onClick={() => handleToggleSectionActive(section.id)}
                       >
-                        {section.is_active ? '🔴 Deactivate' : '🟢 Activate'}
+                        {section.is_active ? 'Deactivate' : 'Activate'}
                       </button>
                       <button 
                         className="btn-edit"
                         onClick={() => handleEditSection(section)}
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
                       <button 
                         className="btn-delete"
                         onClick={() => handleDeleteSection(section.id)}
                       >
-                        🗑️ Delete
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -1109,7 +1128,7 @@ const AdminDashboard = () => {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             zIndex: 99999,
             overflow: 'hidden',
-            border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
+            border: toastType === 'success' ? '2px solid #28a745' : toastType === 'error' ? '2px solid #dc3545' : '2px solid #17a2b8',
             display: 'inline-block',
             pointerEvents: 'auto',
             margin: '0'
@@ -1121,17 +1140,47 @@ const AdminDashboard = () => {
               alignItems: 'center',
               gap: '10px',
               padding: '12px 16px',
-              background: toastType === 'success' ? '#d4edda' : '#f8d7da'
+              background: toastType === 'success' ? '#d4edda' : toastType === 'error' ? '#f8d7da' : '#d1ecf1'
             }}
           >
-            <div style={{ fontSize: '20px', flexShrink: 0 }}>
-              {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
+            <div style={{ 
+              fontSize: '16px', 
+              flexShrink: 0,
+              width: '24px',
+              height: '24px',
+              minWidth: '24px',
+              minHeight: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              background: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
+              color: 'white',
+              fontWeight: '600',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              lineHeight: '1',
+              padding: '0',
+              margin: '0',
+              textAlign: 'center',
+              position: 'relative'
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                lineHeight: '1',
+                margin: '0',
+                padding: '0'
+              }}>
+                {toastType === 'success' ? '✓' : toastType === 'error' ? '×' : 'ℹ'}
+              </span>
             </div>
             <div style={{ 
               flex: 1,
               fontSize: '14px',
               lineHeight: '1.4',
-              color: toastType === 'success' ? '#155724' : '#721c24',
+              color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
               fontWeight: '500',
               wordBreak: 'break-word'
             }}>
@@ -1144,7 +1193,7 @@ const AdminDashboard = () => {
                 border: 'none',
                 fontSize: '24px',
                 cursor: 'pointer',
-                color: toastType === 'success' ? '#155724' : '#721c24',
+                color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
                 padding: '0',
                 lineHeight: '1',
                 flexShrink: 0,

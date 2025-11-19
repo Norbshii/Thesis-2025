@@ -1,18 +1,28 @@
-/* Original Mobile-First Design */
+/* Student Dashboard Styles - Matching Teacher Dashboard Design System */
 .student-profile {
+  --pinpoint-bg-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  --pinpoint-card: #ffffff;
+  --pinpoint-card-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --pinpoint-primary: #1a365d;
+  --pinpoint-secondary: #495057;
+  --pinpoint-accent: #2c2c2c;
+  --pinpoint-border: #e0e6ed;
+  --pinpoint-muted: #6c757d;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 20px;
+  background: var(--pinpoint-bg-gradient);
+  padding: 30px 20px 40px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--pinpoint-secondary);
 }
 
 .profile-container {
-  max-width: 800px;
+  max-width: 600px;
   margin: 0 auto;
-  background: white;
-  border-radius: 20px;
+  background: var(--pinpoint-card);
+  border-radius: 24px;
   padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--pinpoint-card-shadow);
+  border: 1px solid var(--pinpoint-border);
 }
 
 /* Loading Spinner */
@@ -82,9 +92,17 @@
     font-size: 13px;
   }
   
-  .edit-profile-btn {
+  .edit-profile-btn,
+  .change-password-btn {
+    width: 100%;
+    max-width: 200px;
     padding: 10px 20px;
     font-size: 14px;
+  }
+  
+  .edit-profile-section {
+    flex-direction: column;
+    gap: 12px;
   }
   
   .classes-title {
@@ -117,7 +135,9 @@
     font-size: 14px;
   }
   
-  .edit-profile-btn {
+  .edit-profile-btn,
+  .change-password-btn {
+    width: 160px;
     padding: 12px 24px;
     font-size: 15px;
   }
@@ -148,7 +168,9 @@
     font-size: 14px;
   }
   
-  .edit-profile-btn {
+  .edit-profile-btn,
+  .change-password-btn {
+    width: 160px;
     padding: 12px 24px;
     font-size: 16px;
   }
@@ -179,7 +201,9 @@
     font-size: 15px;
   }
   
-  .edit-profile-btn {
+  .edit-profile-btn,
+  .change-password-btn {
+    width: 160px;
     padding: 14px 28px;
     font-size: 16px;
   }
@@ -206,14 +230,14 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #2c2c2c;
+  background: var(--pinpoint-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 28px;
   font-weight: bold;
-  border: 4px solid #007bff;
+  border: 4px solid var(--pinpoint-primary);
 }
 
 .profile-info {
@@ -246,7 +270,7 @@
 .dashboard-title-text {
   font-size: 24px;
   font-weight: 700;
-  color: #1a365d;
+  color: var(--pinpoint-primary);
   margin: 0;
   text-align: center;
 }
@@ -254,22 +278,22 @@
 .profile-info h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin: 0 0 8px 0;
 }
 
 .profile-info p {
   margin: 0 0 5px 0;
-  color: #495057;
+  color: var(--pinpoint-secondary);
   font-size: 14px;
 }
 
 .current-time {
-  background: #f8f9fa;
+  background: rgba(26, 54, 93, 0.06);
   padding: 8px 12px;
   border-radius: 6px;
   font-weight: 600;
-  color: #495057;
+  color: var(--pinpoint-primary);
   font-size: 12px;
   display: inline-block;
   margin-top: 10px;
@@ -281,40 +305,67 @@
 
 /* Student Information - Now using admin dashboard style */
 
-/* Edit Profile Button - Separate section */
+/* Edit Profile & Change Password Buttons - Separate section */
 .edit-profile-section {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: -10px 0 10px 0;
-  padding: 10px 0;
+  gap: 15px;
+  margin: 15px 0;
+  padding: 15px 0;
+  flex-wrap: wrap;
 }
 
-.edit-profile-btn {
+.edit-profile-btn,
+.change-password-btn {
   padding: 12px 24px;
-  background: #2c2c2c;
-  color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 160px;
+  height: 48px;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.edit-profile-btn {
+  background: var(--pinpoint-accent);
+  color: white;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .edit-profile-btn:hover {
-  background: #1a1a1a;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
+}
+
+.change-password-btn {
+  background: var(--pinpoint-primary);
+  color: white;
+  box-shadow: 0 12px 24px rgba(26, 54, 93, 0.15);
+}
+
+.change-password-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(26, 54, 93, 0.25);
 }
 
 /* Current Time */
 .current-time {
   text-align: center;
   padding: 15px;
-  background: #f8f9fa;
+  background: rgba(26, 54, 93, 0.06);
   border-radius: 8px;
   margin-bottom: 30px;
   font-weight: 600;
-  color: #495057;
+  color: var(--pinpoint-primary);
 }
 
 /* Classes Section */
@@ -325,7 +376,7 @@
 .classes-title {
   font-size: 24px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin-bottom: 20px;
   text-align: center;
 }
@@ -337,18 +388,20 @@
 }
 
 .class-item {
-  background: #f8f9fa;
+  background: var(--pinpoint-card);
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 2px solid var(--pinpoint-border);
+  box-shadow: var(--pinpoint-card-shadow);
 }
 
 .class-item:hover {
-  background: #e9ecef;
+  background: var(--pinpoint-card);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  border-color: var(--pinpoint-primary);
 }
 
 .class-item.unavailable {
@@ -375,28 +428,28 @@
   display: block;
   font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin-bottom: 5px;
 }
 
 .class-name {
   display: block;
   font-size: 16px;
-  color: #495057;
+  color: var(--pinpoint-secondary);
   margin-bottom: 8px;
 }
 
 .class-time {
   display: block;
   font-size: 14px;
-  color: #6c757d;
+  color: var(--pinpoint-muted);
   margin-bottom: 5px;
 }
 
 .class-instructor {
   display: block;
   font-size: 14px;
-  color: #6c757d;
+  color: var(--pinpoint-muted);
 }
 
 .class-status {
@@ -436,10 +489,20 @@
 .no-classes {
   text-align: center;
   padding: 40px 20px;
-  color: #6c757d;
+  color: var(--pinpoint-muted);
 }
 
-/* Logout Button - Copied from AdminDashboard */
+/* Logout Section */
+.logout-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 2px solid #e9ecef;
+  width: 100%;
+}
+
+/* Logout Button */
 .logout-btn {
   background: #dc3545;
   color: white;
@@ -449,22 +512,21 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 30px;
+  padding: 12px 24px;
   border: none;
   border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 140px;
   width: 100%;
-  margin-top: 30px;
-  margin-bottom: 20px;
+  height: 48px;
+  box-sizing: border-box;
+  box-shadow: 0 10px 22px rgba(197, 48, 48, 0.25);
 }
 
 .logout-btn:hover {
-  background: #c82333;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  box-shadow: 0 16px 32px rgba(197, 48, 48, 0.35);
 }
 
 /* Modal Styles */
@@ -503,7 +565,7 @@
 .modal-header h3 {
   font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--pinpoint-primary);
   margin: 0;
 }
 
@@ -544,29 +606,33 @@
 .btn-secondary {
   padding: 10px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .btn-primary {
-  background: #007bff;
+  background: var(--pinpoint-primary);
   color: white;
+  box-shadow: 0 12px 24px rgba(26, 54, 93, 0.15);
 }
 
 .btn-primary:hover {
-  background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(26, 54, 93, 0.25);
 }
 
 .btn-secondary {
-  background: #6c757d;
+  background: var(--pinpoint-muted);
   color: white;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
 
 .btn-secondary:hover {
-  background: #545b62;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary.sign-in-btn {
@@ -593,7 +659,7 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #495057;
+  color: var(--pinpoint-secondary);
   margin-bottom: 8px;
   font-size: 14px;
 }
@@ -602,7 +668,7 @@
 .form-group select {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--pinpoint-border);
   border-radius: 8px;
   font-size: 14px;
   transition: border-color 0.3s ease;
@@ -614,7 +680,7 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--pinpoint-primary);
 }
 
 .form-group select {

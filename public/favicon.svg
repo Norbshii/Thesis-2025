@@ -1,11 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
   <defs>
     <style>
-      .pin-outline { fill: none; stroke: #1a365d; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-      .pin-fill { fill: #1a365d; }
-      .grad-cap { fill: #1a365d; }
-      .checkmark { fill: #1a365d; }
-      .ripple { fill: none; stroke: #1a365d; stroke-width: 2; opacity: 0.6; }
+      /* Default (Light Mode) - Black */
+      .pin-outline { fill: none; stroke: #000000; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .pin-fill { fill: #000000; }
+      .grad-cap { fill: #000000; }
+      .checkmark { fill: none; stroke: #000000; }
+      .ripple { fill: none; stroke: #000000; stroke-width: 2; opacity: 0.6; }
+      
+      /* Dark Mode - White */
+      @media (prefers-color-scheme: dark) {
+        .pin-outline { stroke: #ffffff; }
+        .pin-fill { fill: #ffffff; }
+        .grad-cap { fill: #ffffff; }
+        .checkmark { stroke: #ffffff; }
+        .ripple { stroke: #ffffff; }
+      }
     </style>
   </defs>
   
@@ -23,12 +33,15 @@
   <circle class="grad-cap" cx="62" cy="28" r="1.5"/>
   
   <!-- Checkmark -->
-  <path class="checkmark" d="M35 50 L42 57 L52 47" stroke="#1a365d" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="checkmark" d="M35 50 L42 57 L52 47" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   
   <!-- Ripples at bottom -->
   <circle class="ripple" cx="50" cy="75" r="8"/>
   <circle class="ripple" cx="50" cy="75" r="12"/>
 </svg>
+
+
+
 
 
 

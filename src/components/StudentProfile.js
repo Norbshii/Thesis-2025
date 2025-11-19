@@ -733,24 +733,13 @@ const StudentProfile = () => {
             {/* Edit Profile & Change Password Buttons - Above Separator */}
             <div className="edit-profile-section">
               <button className="edit-profile-btn" onClick={handleEditProfile}>
-                📝 Edit Profile
+                Edit Profile
               </button>
               <button 
                 className="change-password-btn" 
                 onClick={() => setShowChangePasswordModal(true)}
-                style={{
-                  marginLeft: '10px',
-                  backgroundColor: '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}
               >
-                🔒 Change Password
+                Change Password
               </button>
             </div>
           </div>
@@ -776,7 +765,7 @@ const StudentProfile = () => {
                       color: '#6c757d',
                       fontWeight: '500'
                     }}>
-                      🏢 {classItem.building.name || 'Building'}
+                      Building: {classItem.building.name || 'Not set'}
                     </span>
                   )}
                   <span className="class-time" style={{
@@ -784,7 +773,7 @@ const StudentProfile = () => {
                     fontWeight: '600',
                     fontSize: '14px'
                   }}>
-                    {classItem.isOpen ? '🟢 OPEN' : '🔴 CLOSED'}
+                    {classItem.isOpen ? 'Open' : 'Closed'}
                   </span>
                   <span className="class-instructor">Instructor: {classItem.instructor || 'N/A'}</span>
                 </div>
@@ -808,33 +797,10 @@ const StudentProfile = () => {
         </div>
 
         {/* Logout Button - Bottom Section */}
-        <div 
-          className="logout-section"
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '40px',
-            paddingTop: '20px',
-            borderTop: '2px solid #e9ecef'
-          }}
-        >
+        <div className="logout-section">
           <button 
             className="logout-btn" 
             onClick={handleLogout}
-            style={{
-              backgroundColor: '#dc3545',
-              color: 'white',
-              padding: '12px 24px',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background-color 0.3s ease'
-            }}
           >
             Logout
           </button>
@@ -1036,7 +1002,7 @@ const StudentProfile = () => {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>🔒 Change Password</h3>
+              <h3>Change Password</h3>
               <button className="close-btn" onClick={() => {
                 setShowChangePasswordModal(false);
                 setPasswordForm({
@@ -1201,7 +1167,7 @@ const StudentProfile = () => {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             zIndex: 99999,
             overflow: 'hidden',
-            border: toastType === 'success' ? '2px solid #28a745' : '2px solid #dc3545',
+            border: toastType === 'success' ? '2px solid #28a745' : toastType === 'error' ? '2px solid #dc3545' : toastType === 'warning' ? '2px solid #ffc107' : '2px solid #17a2b8',
             display: 'inline-block',
             pointerEvents: 'auto',
             margin: '0'
@@ -1213,17 +1179,47 @@ const StudentProfile = () => {
               alignItems: 'center',
               gap: '10px',
               padding: '12px 16px',
-              background: toastType === 'success' ? '#d4edda' : '#f8d7da'
+              background: toastType === 'success' ? '#d4edda' : toastType === 'error' ? '#f8d7da' : toastType === 'warning' ? '#fff3cd' : '#d1ecf1'
             }}
           >
-            <div style={{ fontSize: '20px', flexShrink: 0 }}>
-              {toastType === 'success' ? '✅' : toastType === 'error' ? '❌' : 'ℹ️'}
+            <div style={{ 
+              fontSize: '16px', 
+              flexShrink: 0,
+              width: '24px',
+              height: '24px',
+              minWidth: '24px',
+              minHeight: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              background: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : toastType === 'warning' ? '#856404' : '#0c5460',
+              color: 'white',
+              fontWeight: '600',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              lineHeight: '1',
+              padding: '0',
+              margin: '0',
+              textAlign: 'center',
+              position: 'relative'
+            }}>
+              <span style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                lineHeight: '1',
+                margin: '0',
+                padding: '0'
+              }}>
+                {toastType === 'success' ? '✓' : toastType === 'error' ? '×' : toastType === 'warning' ? '!' : 'ℹ'}
+              </span>
             </div>
             <div style={{ 
               flex: 1,
               fontSize: '14px',
               lineHeight: '1.4',
-              color: toastType === 'success' ? '#155724' : '#721c24',
+              color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : toastType === 'warning' ? '#856404' : '#0c5460',
               fontWeight: '500',
               wordBreak: 'break-word'
             }}>
@@ -1236,7 +1232,7 @@ const StudentProfile = () => {
                 border: 'none',
                 fontSize: '24px',
                 cursor: 'pointer',
-                color: toastType === 'success' ? '#155724' : '#721c24',
+                color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : toastType === 'warning' ? '#856404' : '#0c5460',
                 padding: '0',
                 lineHeight: '1',
                 flexShrink: 0,

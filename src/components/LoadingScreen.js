@@ -35,6 +35,7 @@ const LoadingScreen = ({ message = 'Loading your dashboard...' }) => {
             <div className="orbit-dot orbit-dot-1"></div>
             <div className="orbit-dot orbit-dot-2"></div>
             <div className="orbit-dot orbit-dot-3"></div>
+            <div className="orbit-dot orbit-dot-4"></div>
           </div>
         </div>
         
