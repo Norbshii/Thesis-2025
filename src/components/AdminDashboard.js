@@ -8,6 +8,15 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './AdminDashboard.css';
 
+const TEACHER_DEPARTMENTS = [
+  'College of Education (COE)',
+  'College of Computing and Informatics (CCI)',
+  'College of Arts and Sciences (CAS)',
+  'College of Industrial and Technology (CIT)',
+  'College of Engineering and Architecture (CEA)',
+  'Others'
+];
+
 // Fix Leaflet marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -163,7 +172,11 @@ const AdminDashboard = () => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    
+    // Standardize error duration to 2 seconds, success/info can be faster
+    const duration = type === 'error' ? 2000 : 1500;
+    
+    setTimeout(() => setShowToast(false), duration);
   };
 
   // User Management Functions
@@ -219,7 +232,8 @@ const AdminDashboard = () => {
       name: user.name,
       username: user.username,
       role: user.role,
-      course: user.course
+      course: user.course,
+      department: user.department || ''
     });
     setShowCreateUserModal(true);
   };
@@ -503,6 +517,7 @@ const AdminDashboard = () => {
                       <th>Email</th>
                       <th>Username</th>
                       <th>Role</th>
+                      <th>Department</th>
                       <th>Created</th>
                       <th>Actions</th>
                     </tr>
@@ -521,6 +536,7 @@ const AdminDashboard = () => {
                               {teacher.role.toUpperCase()}
                             </span>
                           </td>
+                          <td>{teacher.department || '—'}</td>
                           <td>{new Date(teacher.created_at).toLocaleDateString()}</td>
                           <td className="actions">
                             <button 
@@ -845,6 +861,29 @@ const AdminDashboard = () => {
                 />
               </div>
 
+              {selectedRole === 'teacher' && (
+                <div className="form-group">
+                  <label>Department *</label>
+                  <select
+                    {...registerUser('department', {
+                      validate: (value) => {
+                        if (selectedRole === 'teacher' && !value) {
+                          return 'Department is required for teachers';
+                        }
+                        return true;
+                      }
+                    })}
+                    className={userErrors.department ? 'error' : ''}
+                  >
+                    <option value="">Select department...</option>
+                    {TEACHER_DEPARTMENTS.map((dept) => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                  {userErrors.department && <span className="error-message">{userErrors.department.message}</span>}
+                </div>
+              )}
+
               {selectedRole === 'student' && (
                 <div className="form-group">
                   <label>Course & Section</label>
@@ -1113,100 +1152,53 @@ const AdminDashboard = () => {
         <div 
           style={{
             position: 'fixed',
-            top: '20px',
-            bottom: 'auto',
+            top: '16px',
+            right: '16px',
             left: window.innerWidth <= 768 ? '50%' : 'auto',
-            right: window.innerWidth <= 768 ? 'auto' : '20px',
             transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
-            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
-            minWidth: '280px',
-            maxHeight: '80px',
             width: 'auto',
-            height: 'auto',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            zIndex: 99999,
-            overflow: 'hidden',
-            border: toastType === 'success' ? '2px solid #28a745' : toastType === 'error' ? '2px solid #dc3545' : '2px solid #17a2b8',
-            display: 'inline-block',
-            pointerEvents: 'auto',
-            margin: '0'
+            maxWidth: '280px',
+            minWidth: '200px',
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12)',
+            border: toastType === 'success' ? '1px solid #38c172' : toastType === 'info' ? '1px solid #3490dc' : '1px solid #e3342f',
+            zIndex: 9999,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          <div 
-            style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '12px 16px',
-              background: toastType === 'success' ? '#d4edda' : toastType === 'error' ? '#f8d7da' : '#d1ecf1'
-            }}
-          >
-            <div style={{ 
-              fontSize: '16px', 
-              flexShrink: 0,
-              width: '24px',
-              height: '24px',
-              minWidth: '24px',
-              minHeight: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              background: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
-              color: 'white',
-              fontWeight: '600',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              lineHeight: '1',
-              padding: '0',
-              margin: '0',
-              textAlign: 'center',
-              position: 'relative'
-            }}>
-              <span style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                lineHeight: '1',
-                margin: '0',
-                padding: '0'
-              }}>
-                {toastType === 'success' ? '✓' : toastType === 'error' ? '×' : 'ℹ'}
-              </span>
-            </div>
-            <div style={{ 
-              flex: 1,
-              fontSize: '14px',
-              lineHeight: '1.4',
-              color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
-              fontWeight: '500',
-              wordBreak: 'break-word'
-            }}>
-              {toastMessage}
-            </div>
-            <button 
-              onClick={() => setShowToast(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
-                padding: '0',
-                lineHeight: '1',
-                flexShrink: 0,
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ×
-            </button>
+          <div style={{ 
+            width: '6px', 
+            height: '6px', 
+            borderRadius: '50%',
+            background: toastType === 'success' ? '#38c172' : toastType === 'info' ? '#3490dc' : '#e3342f' 
+          }} />
+          <div style={{ 
+            flex: 1, 
+            fontSize: '14px', 
+            color: '#2d3748', 
+            fontWeight: '500', 
+            lineHeight: '1.4'
+          }}>
+            {toastMessage}
           </div>
+          <button 
+            onClick={() => setShowToast(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#a0aec0',
+              fontSize: '18px',
+              cursor: 'pointer',
+              lineHeight: '1'
+            }}
+            aria-label="Close toast"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>

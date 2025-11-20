@@ -17,7 +17,7 @@ class AdminController extends Controller
     public function getUsers(Request $request)
     {
         try {
-            $teachers = Teacher::select('id', 'name', 'email', 'username', 'role', 'created_at')
+            $teachers = Teacher::select('id', 'name', 'email', 'username', 'role', 'department', 'created_at')
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($teacher) {
@@ -27,6 +27,7 @@ class AdminController extends Controller
                         'email' => $teacher->email,
                         'username' => $teacher->username,
                         'role' => $teacher->role,
+                        'department' => $teacher->department,
                         'type' => 'teacher', // for frontend to distinguish
                         'created_at' => $teacher->created_at->format('Y-m-d H:i:s'),
                     ];
@@ -78,6 +79,7 @@ class AdminController extends Controller
             'last_name' => 'nullable|string|max:255',
             'course' => 'nullable|string|max:255', // For students
             'section' => 'nullable|string|max:255', // For students
+            'department' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -110,6 +112,7 @@ class AdminController extends Controller
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'role' => $role,
+                'department' => $request->department,
             ]);
 
             return response()->json([
@@ -121,6 +124,7 @@ class AdminController extends Controller
                     'email' => $user->email,
                     'username' => $user->username,
                     'role' => $user->role,
+                    'department' => $user->department,
                     'type' => 'teacher',
                 ],
             ], 201);
@@ -175,6 +179,7 @@ class AdminController extends Controller
             'username' => 'nullable|string|max:255',
             'password' => 'nullable|string|min:6',
             'course' => 'nullable|string|max:255',
+            'department' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -207,6 +212,9 @@ class AdminController extends Controller
             }
             if ($type === 'student' && $request->has('course')) {
                 $user->course = $request->course;
+            }
+            if ($type === 'teacher' && $request->has('department')) {
+                $user->department = $request->department;
             }
 
             $user->save();

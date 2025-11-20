@@ -25,6 +25,9 @@ const TeacherDashboard = () => {
   const [showClassDetailsModal, setShowClassDetailsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showManageStudentsModal, setShowManageStudentsModal] = useState(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [classToDelete, setClassToDelete] = useState(null);
+  const [isDeletingClass, setIsDeletingClass] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -216,6 +219,19 @@ const TeacherDashboard = () => {
       .listen('.class.updated', (event) => {
         console.log('🔄 Class updated via WebSocket:', event);
         const updatedClass = event.class;
+        const action = event.action || 'updated';
+        
+        // Handle deletion
+        if (action === 'deleted') {
+          setClasses(prevClasses => prevClasses.filter(c => c.id !== updatedClass.id));
+          setLiveAttendance(prev => {
+            const updated = { ...prev };
+            delete updated[updatedClass.id];
+            return updated;
+          });
+          showToastMessage(`Class "${updatedClass.class_name || updatedClass.class_code}" has been deleted`, 'info');
+          return;
+        }
         
         // Update the class in state
         setClasses(prevClasses => {
@@ -371,9 +387,13 @@ const TeacherDashboard = () => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
+    
+    // Standardize error duration to 2 seconds, success/info can be faster
+    const duration = type === 'error' ? 2000 : 1500;
+    
     setTimeout(() => {
       setShowToast(false);
-    }, 3000);
+    }, duration);
   };
 
   const handleAddClass = async () => {
@@ -635,6 +655,46 @@ const TeacherDashboard = () => {
         error.response?.data?.message || 'Failed to extend class. Please try again.',
         'error'
       );
+    }
+  };
+
+  const handleDeleteClassClick = (classItem) => {
+    setClassToDelete(classItem);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const handleDeleteClass = async () => {
+    if (!classToDelete) return;
+
+    setIsDeletingClass(true);
+    try {
+      const response = await api.delete(`/classes/${classToDelete.id}`);
+      
+      if (response.data.success) {
+        // Remove class from local state
+        setClasses(classes.filter(c => c.id !== classToDelete.id));
+        
+        // Also remove from live attendance if present
+        setLiveAttendance(prev => {
+          const updated = { ...prev };
+          delete updated[classToDelete.id];
+          return updated;
+        });
+        
+        showToastMessage(
+          `✅ Class "${classToDelete.name}" deleted successfully. ${response.data.attendance_records_deleted || 0} attendance records were also deleted.`,
+          'success'
+        );
+        
+        setShowDeleteConfirmModal(false);
+        setClassToDelete(null);
+      }
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      const errorMsg = error.response?.data?.message || 'Failed to delete class. Please try again.';
+      showToastMessage(errorMsg, 'error');
+    } finally {
+      setIsDeletingClass(false);
     }
   };
 
@@ -1184,6 +1244,22 @@ const TeacherDashboard = () => {
                       }}
                     >
                       Edit Class
+                    </button>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleDeleteClassClick(classItem)}
+                      style={{
+                        backgroundColor: '#dc3545',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '600'
+                      }}
+                    >
+                      🗑️ Delete Class
                     </button>
                   </div>
 
@@ -2192,105 +2268,172 @@ const TeacherDashboard = () => {
         </div>
       )}
 
+      {/* Delete Class Confirmation Modal */}
+      {showDeleteConfirmModal && classToDelete && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>⚠️ Confirm Class Deletion</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setClassToDelete(null);
+                }}
+                disabled={isDeletingClass}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div style={{ 
+                padding: '20px',
+                textAlign: 'center'
+              }}>
+                <div style={{ 
+                  fontSize: '48px',
+                  marginBottom: '20px'
+                }}>
+                  🗑️
+                </div>
+                <h4 style={{ 
+                  marginBottom: '15px',
+                  color: '#dc3545',
+                  fontSize: '20px',
+                  fontWeight: '600'
+                }}>
+                  Are you sure you want to delete this class?
+                </h4>
+                <div style={{
+                  backgroundColor: '#f8f9fa',
+                  padding: '15px',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                  textAlign: 'left'
+                }}>
+                  <p style={{ margin: '5px 0', fontWeight: '600' }}>
+                    Class Code: <span style={{ color: '#6c757d' }}>{classToDelete.code}</span>
+                  </p>
+                  <p style={{ margin: '5px 0', fontWeight: '600' }}>
+                    Class Name: <span style={{ color: '#6c757d' }}>{classToDelete.name}</span>
+                  </p>
+                  <p style={{ margin: '5px 0', fontWeight: '600' }}>
+                    Enrolled Students: <span style={{ color: '#6c757d' }}>{classToDelete.enrolledStudents?.length || 0}</span>
+                  </p>
+                </div>
+                <div style={{
+                  backgroundColor: '#fff3cd',
+                  border: '1px solid #ffc107',
+                  borderRadius: '8px',
+                  padding: '15px',
+                  marginBottom: '20px'
+                }}>
+                  <p style={{ 
+                    margin: 0,
+                    color: '#856404',
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }}>
+                    ⚠️ <strong>Warning:</strong> This action cannot be undone. Deleting this class will also permanently delete all attendance records associated with it.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer" style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px',
+              padding: '20px'
+            }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setClassToDelete(null);
+                }}
+                disabled={isDeletingClass}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '14px'
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleDeleteClass}
+                disabled={isDeletingClass}
+                style={{
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  cursor: isDeletingClass ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  opacity: isDeletingClass ? 0.6 : 1
+                }}
+              >
+                {isDeletingClass ? 'Deleting...' : '🗑️ Yes, Delete Class'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {showToast && (
         <div 
           style={{
             position: 'fixed',
-            top: '20px',
-            bottom: 'auto',
+            top: '16px',
+            right: '16px',
             left: window.innerWidth <= 768 ? '50%' : 'auto',
-            right: window.innerWidth <= 768 ? 'auto' : '20px',
             transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
-            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
-            minWidth: '280px',
-            maxHeight: '80px',
             width: 'auto',
-            height: 'auto',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            zIndex: 99999,
-            overflow: 'hidden',
-            border: toastType === 'success' ? '2px solid #28a745' : toastType === 'error' ? '2px solid #dc3545' : '2px solid #17a2b8',
-            display: 'inline-block',
-            pointerEvents: 'auto',
-            margin: '0'
+            maxWidth: '280px',
+            minWidth: '200px',
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12)',
+            border: toastType === 'success' ? '1px solid #38c172' : toastType === 'info' ? '1px solid #3490dc' : '1px solid #e3342f',
+            zIndex: 9999,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          <div 
-            style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '12px 16px',
-              background: toastType === 'success' ? '#d4edda' : toastType === 'error' ? '#f8d7da' : '#d1ecf1'
-            }}
-          >
-            <div style={{ 
-              fontSize: '16px', 
-              flexShrink: 0,
-              width: '24px',
-              height: '24px',
-              minWidth: '24px',
-              minHeight: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              background: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : '#0c5460',
-              color: 'white',
-              fontWeight: '600',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              lineHeight: '1',
-              padding: '0',
-              margin: '0',
-              textAlign: 'center',
-              position: 'relative'
-            }}>
-              <span style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                lineHeight: '1',
-                margin: '0',
-                padding: '0'
-              }}>
-                {toastType === 'success' ? '✓' : toastType === 'error' ? '×' : 'ℹ'}
-              </span>
-            </div>
-            <div style={{ 
-              flex: 1,
-              fontSize: '14px',
-              lineHeight: '1.4',
-              color: toastType === 'success' ? '#155724' : '#721c24',
-              fontWeight: '500',
-              wordBreak: 'break-word'
-            }}>
-              {toastMessage}
-            </div>
-            <button 
-              onClick={() => setShowToast(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: toastType === 'success' ? '#155724' : '#721c24',
-                padding: '0',
-                lineHeight: '1',
-                flexShrink: 0,
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ×
-            </button>
+          <div style={{ 
+            width: '6px', 
+            height: '6px', 
+            borderRadius: '50%',
+            background: toastType === 'success' ? '#38c172' : toastType === 'info' ? '#3490dc' : '#e3342f' 
+          }} />
+          <div style={{ 
+            flex: 1, 
+            fontSize: '14px', 
+            color: '#2d3748', 
+            fontWeight: '500', 
+            lineHeight: '1.4'
+          }}>
+            {toastMessage}
           </div>
+          <button 
+            onClick={() => setShowToast(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#a0aec0',
+              fontSize: '18px',
+              cursor: 'pointer',
+              lineHeight: '1'
+            }}
+            aria-label="Close toast"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>

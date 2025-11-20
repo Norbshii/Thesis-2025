@@ -496,16 +496,38 @@ const StudentProfile = () => {
           
           setShowSignInModal(false);
           setSelectedClass(null);
+        } else if (error.response?.status === 400) {
+          // Handle 400 errors (validation errors, invalid coordinates, etc.)
+          const errorMsg = error.response?.data?.message || '';
+          const errorType = error.response?.data?.error_type;
+          
+          console.log('400 Error:', { message: errorMsg, type: errorType, data: error.response?.data });
+          
+          if (errorType === 'invalid_coordinates') {
+            // Show specific error message for invalid coordinates
+            showToastMessage(errorMsg || 'Invalid location detected. Please refresh the page and try again.', 'error');
+          } else if (errorMsg.includes('Location error detected')) {
+            showToastMessage(errorMsg, 'error');
+          } else if (errorMsg.includes('Invalid location')) {
+            showToastMessage(errorMsg, 'error');
+          } else if (errorMsg.includes('Location not available')) {
+            showToastMessage(errorMsg, 'error');
+          } else {
+            // Generic 400 error
+            showToastMessage(errorMsg || 'Invalid request. Please try again.', 'error');
+          }
         } else if (error.response?.status === 403) {
           const errorMsg = error.response?.data?.message || '';
           console.log('403 Error Message:', errorMsg);
           
           if (errorMsg.includes('not open')) {
             showToastMessage('⏸️ Class is not open yet. Please wait for the teacher to open the class.', 'error');
-          } else if (errorMsg.includes('not within')) {
-            showToastMessage('📍 You are not in the classroom area. Please move closer to sign in.', 'error');
+          } else if (errorMsg.includes('not within') || errorMsg.includes('away from')) {
+            showToastMessage(errorMsg || '📍 You are not in the classroom area. Please move closer to sign in.', 'error');
           } else if (errorMsg.includes('geofence not set')) {
             showToastMessage('⏸️ Class is not open yet. Teacher needs to open the class first.', 'error');
+          } else if (errorMsg.includes('building assigned')) {
+            showToastMessage(errorMsg, 'error');
           } else {
             showToastMessage(errorMsg || 'Cannot sign in at this time', 'error');
           }
@@ -559,9 +581,13 @@ const StudentProfile = () => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
+    
+    // Standardize error duration to 2 seconds, success/info can be faster
+    const duration = type === 'error' ? 2000 : 1500;
+    
     setTimeout(() => {
       setShowToast(false);
-    }, 3000);
+    }, duration);
   };
 
   const handleEditProfile = () => {
@@ -1152,100 +1178,53 @@ const StudentProfile = () => {
         <div 
           style={{
             position: 'fixed',
-            top: '20px',
-            bottom: 'auto',
+            top: '16px',
+            right: '16px',
             left: window.innerWidth <= 768 ? '50%' : 'auto',
-            right: window.innerWidth <= 768 ? 'auto' : '20px',
             transform: window.innerWidth <= 768 ? 'translateX(-50%)' : 'none',
-            maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : '380px',
-            minWidth: '280px',
-            maxHeight: '80px',
             width: 'auto',
-            height: 'auto',
-            background: 'white',
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            zIndex: 99999,
-            overflow: 'hidden',
-            border: toastType === 'success' ? '2px solid #28a745' : toastType === 'error' ? '2px solid #dc3545' : toastType === 'warning' ? '2px solid #ffc107' : '2px solid #17a2b8',
-            display: 'inline-block',
-            pointerEvents: 'auto',
-            margin: '0'
+            maxWidth: '280px',
+            minWidth: '200px',
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12)',
+            border: toastType === 'success' ? '1px solid #38c172' : toastType === 'info' ? '1px solid #3490dc' : '1px solid #e3342f',
+            zIndex: 9999,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          <div 
-            style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '12px 16px',
-              background: toastType === 'success' ? '#d4edda' : toastType === 'error' ? '#f8d7da' : toastType === 'warning' ? '#fff3cd' : '#d1ecf1'
-            }}
-          >
-            <div style={{ 
-              fontSize: '16px', 
-              flexShrink: 0,
-              width: '24px',
-              height: '24px',
-              minWidth: '24px',
-              minHeight: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              background: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : toastType === 'warning' ? '#856404' : '#0c5460',
-              color: 'white',
-              fontWeight: '600',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              lineHeight: '1',
-              padding: '0',
-              margin: '0',
-              textAlign: 'center',
-              position: 'relative'
-            }}>
-              <span style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                lineHeight: '1',
-                margin: '0',
-                padding: '0'
-              }}>
-                {toastType === 'success' ? '✓' : toastType === 'error' ? '×' : toastType === 'warning' ? '!' : 'ℹ'}
-              </span>
-            </div>
-            <div style={{ 
-              flex: 1,
-              fontSize: '14px',
-              lineHeight: '1.4',
-              color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : toastType === 'warning' ? '#856404' : '#0c5460',
-              fontWeight: '500',
-              wordBreak: 'break-word'
-            }}>
-              {toastMessage}
-            </div>
-            <button 
-              onClick={() => setShowToast(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                color: toastType === 'success' ? '#155724' : toastType === 'error' ? '#721c24' : toastType === 'warning' ? '#856404' : '#0c5460',
-                padding: '0',
-                lineHeight: '1',
-                flexShrink: 0,
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ×
-            </button>
+          <div style={{ 
+            width: '6px', 
+            height: '6px', 
+            borderRadius: '50%',
+            background: toastType === 'success' ? '#38c172' : toastType === 'info' ? '#3490dc' : '#e3342f' 
+          }} />
+          <div style={{ 
+            flex: 1, 
+            fontSize: '14px', 
+            color: '#2d3748', 
+            fontWeight: '500', 
+            lineHeight: '1.4'
+          }}>
+            {toastMessage}
           </div>
+          <button
+            onClick={() => setShowToast(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#a0aec0',
+              fontSize: '18px',
+              cursor: 'pointer',
+              lineHeight: '1'
+            }}
+            aria-label="Close toast"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>

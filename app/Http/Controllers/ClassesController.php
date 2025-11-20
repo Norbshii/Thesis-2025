@@ -707,7 +707,9 @@ class ClassesController extends Controller
                     'has_lat' => $request->has('latitude'),
                     'has_lon' => $request->has('longitude'),
                     'lat_value' => $request->input('latitude'),
-                    'lon_value' => $request->input('longitude')
+                    'lon_value' => $request->input('longitude'),
+                    'lat_type' => gettype($request->input('latitude')),
+                    'lon_type' => gettype($request->input('longitude'))
                 ]);
                 return response()->json([
                     'success' => false,
@@ -715,8 +717,26 @@ class ClassesController extends Controller
                 ], 400);
             }
             
+            // Convert to float early and validate
+            $studentLat = is_numeric($studentLat) ? (float)$studentLat : null;
+            $studentLon = is_numeric($studentLon) ? (float)$studentLon : null;
+            
+            if ($studentLat === null || $studentLon === null || !is_finite($studentLat) || !is_finite($studentLon)) {
+                \Log::error('Student coordinates are not valid numbers', [
+                    'student' => $studentName,
+                    'lat_raw' => $request->input('latitude'),
+                    'lon_raw' => $request->input('longitude'),
+                    'lat_parsed' => $studentLat,
+                    'lon_parsed' => $studentLon
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid location coordinates received. Please refresh the page and try again.'
+                ], 400);
+            }
+            
             // Check if coordinates are valid (not 0,0 which is invalid)
-            if ((float)$studentLat == 0 && (float)$studentLon == 0) {
+            if ($studentLat == 0 && $studentLon == 0) {
                 \Log::error('Student coordinates are 0,0 (invalid)', [
                     'student' => $studentName,
                     'lat' => $studentLat,
@@ -729,8 +749,8 @@ class ClassesController extends Controller
             }
             
             // Validate coordinate ranges
-            if ((float)$studentLat < -90 || (float)$studentLat > 90 || 
-                (float)$studentLon < -180 || (float)$studentLon > 180) {
+            if ($studentLat < -90 || $studentLat > 90 || 
+                $studentLon < -180 || $studentLon > 180) {
                 \Log::error('Student coordinates out of range', [
                     'student' => $studentName,
                     'lat' => $studentLat,
@@ -741,11 +761,11 @@ class ClassesController extends Controller
                     'message' => 'Invalid location coordinates. Please try again.'
                 ], 400);
             }
+        } else {
+            // In test mode, still convert to float but allow null
+            $studentLat = $studentLat !== null && is_numeric($studentLat) ? (float)$studentLat : null;
+            $studentLon = $studentLon !== null && is_numeric($studentLon) ? (float)$studentLon : null;
         }
-        
-        // Cast to float for calculations
-        $studentLat = (float)$studentLat;
-        $studentLon = (float)$studentLon;
 
         try {
             // Get class record with building relationship
@@ -819,6 +839,22 @@ class ClassesController extends Controller
                 ]);
             }
 
+            // Additional validation: Check if coordinates might be swapped (common error)
+            // If lat > 90 or lat < -90, coordinates might be swapped
+            // If lon > 180 or lon < -180, coordinates might be swapped
+            if (abs($studentLat) > 90 || abs($studentLon) > 180) {
+                \Log::error('Student coordinates appear to be swapped or invalid', [
+                    'student' => $studentName,
+                    'studentLat' => $studentLat,
+                    'studentLon' => $studentLon,
+                    'note' => 'Latitude should be -90 to 90, Longitude should be -180 to 180'
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid location coordinates detected. Please refresh the page and try again. If the problem persists, ensure your device GPS is working correctly.'
+                ], 400);
+            }
+            
             // Calculate distance between student and geofence center (building location)
             // In test mode, set distance to 0 (always within geofence) - ONLY in development
             if ($testMode && env('APP_ENV') === 'local') {
@@ -879,25 +915,9 @@ class ClassesController extends Controller
                 'testMode' => $testMode
             ]);
             
-            // Safety check: If distance is unreasonably large (> 1000km), something is wrong
-            if ($distance > 1000000) { // 1000km
-                \Log::error('🚨 UNREASONABLE DISTANCE CALCULATED - Coordinates likely invalid', [
-                    'distance' => round($distance, 2) . 'm',
-                    'distance_km' => round($distance / 1000, 2) . 'km',
-                    'geofenceLat' => $geofenceLat,
-                    'geofenceLon' => $geofenceLon,
-                    'studentLat' => $studentLat,
-                    'studentLon' => $studentLon,
-                    'building' => $class->building ? $class->building->name : 'none'
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Location error detected. Please refresh the page, ensure location permissions are enabled, and try again. If the problem persists, contact support.',
-                    'error_type' => 'invalid_coordinates'
-                ], 400);
-            }
-
+            // Check geofence - any distance greater than the configured radius is treated as outside
             if ($distance > $geofenceRadius) {
+                // At this point, coordinates are valid (validated earlier). Always show distance error.
                 \Log::warning('🚨 Student outside geofence - SIGN-IN REJECTED', [
                     'student' => $studentName,
                     'studentEmail' => $studentEmail,
@@ -906,20 +926,15 @@ class ClassesController extends Controller
                     'geofenceLocation' => [$geofenceLat, $geofenceLon],
                     'studentLocation' => [$studentLat, $studentLon],
                     'distance' => round($distance, 2) . 'm',
+                    'distance_km' => round($distance / 1000, 2) . 'km',
                     'max_allowed' => $geofenceRadius . 'm',
-                    'difference' => round($distance - $geofenceRadius, 2) . 'm too far',
-                    'suspicious' => $distance > ($geofenceRadius * 2) ? 'YES - Very far from building' : 'NO'
+                    'difference' => round($distance - $geofenceRadius, 2) . 'm too far'
                 ]);
                 
+                // Format distance for display (use km if > 1000m)
                 return response()->json([
                     'success' => false,
-                    'message' => sprintf(
-                        'You are %.0fm away from %s. Maximum distance allowed is %.0fm. Please move %.0fm closer to the building to sign in.',
-                        $distance,
-                        $class->building ? $class->building->name : 'the classroom',
-                        $geofenceRadius,
-                        $distance - $geofenceRadius
-                    ),
+                    'message' => 'You are too far from the classroom. Please move closer to the assigned building to sign in.',
                     'distance' => round($distance, 2),
                     'required' => $geofenceRadius,
                     'building' => $class->building ? $class->building->name : null
@@ -1221,6 +1236,84 @@ class ClassesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete attendance record',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a class
+     */
+    public function destroy($id)
+    {
+        try {
+            $class = ClassModel::findOrFail($id);
+            
+            \Log::info('Deleting class', [
+                'class_id' => $id,
+                'class_code' => $class->class_code,
+                'class_name' => $class->class_name,
+                'teacher_email' => $class->teacher_email
+            ]);
+            
+            $classCode = $class->class_code;
+            $className = $class->class_name;
+            
+            // Store class data for broadcasting before deletion
+            $classData = [
+                'id' => $class->id,
+                'class_code' => $classCode,
+                'class_name' => $className
+            ];
+            
+            // Delete all related attendance records first
+            $attendanceCount = AttendanceEntry::where('class_code', $classCode)->count();
+            AttendanceEntry::where('class_code', $classCode)->delete();
+            
+            // Detach all students from the class
+            $class->students()->detach();
+            
+            // Delete the class
+            $class->delete();
+            
+            \Log::info('Class deleted successfully', [
+                'class_id' => $id,
+                'class_code' => $classCode,
+                'class_name' => $className,
+                'attendance_records_deleted' => $attendanceCount
+            ]);
+            
+            // Broadcast class deleted event (using stored data since class is deleted)
+            try {
+                // Create a temporary class object for broadcasting
+                $tempClass = new ClassModel();
+                $tempClass->id = $classData['id'];
+                $tempClass->class_code = $classData['class_code'];
+                $tempClass->class_name = $classData['class_name'];
+                broadcast(new ClassUpdated($tempClass, 'deleted'));
+            } catch (\Exception $broadcastError) {
+                \Log::warning('Failed to broadcast class deletion', [
+                    'error' => $broadcastError->getMessage()
+                ]);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Class deleted successfully',
+                'deleted_id' => $id,
+                'attendance_records_deleted' => $attendanceCount
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete class', [
+                'class_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete class',
                 'error' => $e->getMessage()
             ], 500);
         }
